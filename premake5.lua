@@ -20,5 +20,5 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 include "DTBaseApp"
 
 group "Dependencies"
-	--include "vendor/glfw"
+	include "vendor/glfw"
 group ""
