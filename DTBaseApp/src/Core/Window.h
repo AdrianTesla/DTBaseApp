@@ -14,6 +14,7 @@ namespace DT
 		bool IsResizable     = true;
 		bool IsDecorated     = true;
 		float StartOpacity   = 1.0f;
+		std::string IconPath = "ApplicationIcon.png";
 	};
 
 	/* platform independent desktop window */
@@ -49,5 +50,6 @@ namespace DT
 		virtual void SetSize(int32 width, int32 height) = 0;
 		virtual void SetPosition(int32 x, int32 y) = 0;
 		virtual void SetSizeLimits(int32 minWidth, int32 minHeight, int32 maxWidth, int32 maxHeight) = 0;
+		virtual void SetIcon(const std::filesystem::path& iconPath) = 0;
 	};
 }

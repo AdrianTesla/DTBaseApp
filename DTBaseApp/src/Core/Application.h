@@ -7,6 +7,7 @@ namespace DT
 	struct ApplicationSpecification
 	{
 		WindowSpecification WindowSpecification;
+		std::filesystem::path WorkingDirectory;
 	};
 
 	class Application

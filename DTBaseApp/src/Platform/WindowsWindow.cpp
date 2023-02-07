@@ -1,6 +1,7 @@
 #include "WindowsWindow.h"
 #include <GLFW/glfw3.h>
 #include "Core/Core.h"
+#include <stb_image.h>
 
 namespace DT
 {
@@ -19,9 +20,9 @@ namespace DT
 		{
 			int result = glfwInit();
 			ASSERT(result);
-			s_GLFWInitialized = true;
+			LOG_TRACE("GLFW Version {}", glfwGetVersionString());
 
-			LOG_TRACE("Initialized GLFW. Version {}", glfwGetVersionString());
+			s_GLFWInitialized = true;
 		}
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -43,6 +44,7 @@ namespace DT
 		SetResizable(m_Specification.IsResizable);
 		SetDecorated(m_Specification.IsDecorated);
 		SetOpacity(m_Specification.StartOpacity);
+		SetIcon(m_Specification.IconPath);
 	}
 
 	WindowsWindow::~WindowsWindow()
@@ -64,12 +66,16 @@ namespace DT
 
 	int32 WindowsWindow::GetWidth() const
 	{
-		return m_WindowData.Width;
+		int width;
+		glfwGetWindowSize(m_GLFWWindow, &width, nullptr);
+		return width;
 	}
 
 	int32 WindowsWindow::GetHeight() const
 	{
-		return m_WindowData.Height;
+		int height;
+		glfwGetWindowSize(m_GLFWWindow, nullptr, &height);
+		return height;
 	}
 
 	void WindowsWindow::Maximize()
@@ -161,6 +167,19 @@ namespace DT
 	void WindowsWindow::SetSizeLimits(int32 minWidth, int32 minHeight, int32 maxWidth, int32 maxHeight)
 	{
 		glfwSetWindowSizeLimits(m_GLFWWindow, minWidth, minHeight, maxWidth, maxHeight);
+	}
+
+	void WindowsWindow::SetIcon(const std::filesystem::path& iconPath)
+	{
+		if (!std::filesystem::exists(iconPath))
+			return;
+
+		GLFWimage icon;
+		int width, height, channels;
+		icon.pixels = stbi_load(iconPath.string().c_str(), &width, &height, &channels, 4);
+		icon.width = width;
+		icon.height = height;
+		glfwSetWindowIcon(m_GLFWWindow, 1, &icon);
 	}
 
 	Extent WindowsWindow::GetDisplayResolution() const

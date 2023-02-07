@@ -11,14 +11,16 @@ project "DTBaseApp"
 	files
 	{
 		"src/**.h",
-		"src/**.cpp"
+		"src/**.cpp",
+		"%{wks.location}/vendor/stb/**.h"
 	}
 
 	includedirs
 	{
 		"%{wks.location}/DTBaseApp/src",
 		"%{IncludeDir.glfw}",
-		"%{IncludeDir.spdlog}"
+		"%{IncludeDir.spdlog}",
+		"%{IncludeDir.stb}"
 	}
 
 	libdirs 

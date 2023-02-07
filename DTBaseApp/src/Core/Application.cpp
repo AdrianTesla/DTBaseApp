@@ -1,5 +1,5 @@
 #include "Application.h"
-#include "Layers/VulkanLearnLayer.h"
+#include "Layers/TestLayer.h"
 
 namespace DT
 {
@@ -11,7 +11,12 @@ namespace DT
 		m_Window = Window::Create(m_Specification.WindowSpecification);
 		m_Window->SetEventCallBack(BIND_FUNC(OnEvent));
 
-		PushLayer(new VulkanLearnLayer);
+		if (std::filesystem::exists(m_Specification.WorkingDirectory))
+			std::filesystem::current_path(m_Specification.WorkingDirectory);
+
+		LOG_INFO("Working Directory: {}", std::filesystem::current_path().string());
+
+		PushLayer(new TestLayer);
 	}
 
 	Application::~Application()
