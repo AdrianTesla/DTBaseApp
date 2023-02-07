@@ -16,6 +16,7 @@ namespace DT
 		void CloseApplication() { m_AppRunning = false; }
 
 		void OnEvent(Event& event);
+
 		Window& GetWindow() { return *m_Window; }
 
 		static Application& Get() { return *s_Instance; }

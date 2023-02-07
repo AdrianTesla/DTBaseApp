@@ -40,7 +40,6 @@ namespace DT
 			WindowResize       ,
 			WindowExitSize     ,
 			WindowFocus        ,
-			WindowLostFocus    ,
 			WindowMoved        ,
 			AppTick            ,
 			AppUpdate          ,
@@ -357,5 +356,19 @@ namespace DT
 	public:
 		IMPLEMENT_CLASS_TYPE(AppRender)
 		IMPLEMENT_CATEGORIES(CategoryApplication)
+	};
+
+	class WindowFocusEvent : public Event
+	{
+	public:
+		WindowFocusEvent(bool focused)
+			: m_Focused(focused)
+		{}
+		bool IsFocused() const { return m_Focused; }
+	public:
+		IMPLEMENT_CLASS_TYPE(WindowFocus)
+		IMPLEMENT_CATEGORIES(CategoryApplication)
+	private:
+		bool m_Focused;
 	};
 }

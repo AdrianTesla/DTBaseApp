@@ -9,5 +9,7 @@ namespace DT
 	public:
 		static bool KeyIsPressed(KeyCode key);
 		static bool MouseIsPressed(MouseCode button);
+		static int32 GetMouseX();
+		static int32 GetMouseY();
 	};
 }

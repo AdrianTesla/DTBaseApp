@@ -40,7 +40,8 @@ project "DTBaseApp"
 		defines
 		{
 			"DT_PLATFORM_WINDOWS",
-			"_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS"
+			"_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS",
+			"DT_ENABLE_LOGGING"
 		}
 
 	filter "configurations:Debug"

@@ -4,10 +4,15 @@ namespace DT
 {
 	void InitializeCore()
 	{
-		Log::Init();
+		#if DT_ENABLE_LOGGING
+			Log::Init();
+		#endif
 	}
 	
 	void ShutdownCore()
 	{
+		#if DT_ENABLE_LOGGING
+			Log::Shutdown();
+		#endif
 	}
 }

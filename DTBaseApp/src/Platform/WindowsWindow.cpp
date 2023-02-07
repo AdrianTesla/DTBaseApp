@@ -5,6 +5,7 @@
 namespace DT
 {
 	static bool s_GLFWInitialized = false;
+	static uint32 s_ActiveWindowsCount = 0u;
 
 	Window* Window::Create(const WindowSpecification& specification)
 	{
@@ -19,12 +20,27 @@ namespace DT
 			int result = glfwInit();
 			ASSERT(result);
 			s_GLFWInitialized = true;
+
+			LOG_TRACE("GLFW Version {}", glfwGetVersionString());
 		}
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		m_GLFWWindow = glfwCreateWindow(m_Specification.Width, m_Specification.Height, m_Specification.Title.c_str(), nullptr, nullptr);
+		s_ActiveWindowsCount++;
+
+		m_WindowData.Width = m_Specification.Width;
+		m_WindowData.Height = m_Specification.Height;
 
 		InstallGLFWCallbacks();
+
+		EnumerateDisplayModes();
+	}
+
+	WindowsWindow::~WindowsWindow()
+	{
+		s_ActiveWindowsCount--;
+		if (s_ActiveWindowsCount == 0u)
+			glfwTerminate();
 	}
 
 	void WindowsWindow::SetEventCallBack(const EventCallbackFn& callback) 
@@ -35,6 +51,81 @@ namespace DT
 	void WindowsWindow::ProcessEvents()
 	{
 		glfwPollEvents();
+	}
+
+	int32 WindowsWindow::GetWidth() const
+	{
+		return m_WindowData.Width;
+	}
+
+	int32 WindowsWindow::GetHeight() const
+	{
+		return m_WindowData.Height;
+	}
+
+	void WindowsWindow::Maximize()
+	{
+		glfwMaximizeWindow(m_GLFWWindow);
+	}
+
+	void WindowsWindow::ToFullscreen()
+	{
+		glfwSetWindowMonitor(m_GLFWWindow, glfwGetPrimaryMonitor(), 0, 0, 1280, 720, GLFW_DONT_CARE);
+	}
+
+	void WindowsWindow::ToWindowed()
+	{
+		glfwSetWindowMonitor(m_GLFWWindow, nullptr, 0, 0, 1280, 720, GLFW_DONT_CARE);
+	}
+
+	void WindowsWindow::FixedAspectRatio(int32 numerator, int32 denominator)
+	{
+		glfwSetWindowAspectRatio(m_GLFWWindow, numerator, denominator);
+	}
+
+	int32 WindowsWindow::GetMouseX() const
+	{
+		double xpos;
+		glfwGetCursorPos(m_GLFWWindow, &xpos, nullptr);
+		return (int32)xpos;
+	}
+	
+	int32 WindowsWindow::GetMouseY() const
+	{
+		double ypos;
+		glfwGetCursorPos(m_GLFWWindow, nullptr, &ypos);
+		return (int32)ypos;
+	}
+
+	void WindowsWindow::SetMousePosition(int32 x, int32 y)
+	{
+		glfwSetCursorPos(m_GLFWWindow, (double)x, (double)y);
+	}
+
+	std::string WindowsWindow::GetClipboardString() const
+	{
+		return glfwGetClipboardString(m_GLFWWindow);
+	}
+
+	void WindowsWindow::SetOpacity(float opacityValue)
+	{
+		glfwSetWindowOpacity(m_GLFWWindow, opacityValue);
+	}
+
+	void WindowsWindow::EnumerateDisplayModes()
+	{
+		int32 count;
+		const GLFWvidmode* videoModes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &count);
+		for (int32 i = 0u; i < count; i++)
+		{
+			LOG_INFO("Video mode {}", i);
+			LOG_TRACE("   width       = {}", videoModes[i].width);
+			LOG_TRACE("   height      = {}", videoModes[i].height);
+			LOG_TRACE("   refreshRate = {}", videoModes[i].refreshRate);
+			LOG_TRACE("   redBits     = {}", videoModes[i].redBits);
+			LOG_TRACE("   greenBits   = {}", videoModes[i].greenBits);
+			LOG_TRACE("   blueBits    = {}", videoModes[i].blueBits);
+		}
 	}
 
 	void WindowsWindow::InstallGLFWCallbacks()
@@ -57,6 +148,14 @@ namespace DT
 		{
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 			WindowClosedEvent e{};
+			data.Callback(e);
+		});
+
+		// window focus callback
+		glfwSetWindowFocusCallback(m_GLFWWindow, [](GLFWwindow* window, int focused)
+		{
+			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			WindowFocusEvent e((bool)focused);
 			data.Callback(e);
 		});
 
@@ -146,19 +245,5 @@ namespace DT
 	bool WindowsWindow::MouseIsPressed(MouseCode button) const
 	{
 		return glfwGetMouseButton(m_GLFWWindow, (int)button);
-	}
-
-	int32 WindowsWindow::GetMouseX() const
-	{
-		double posX;
-		glfwGetCursorPos(m_GLFWWindow, &posX, nullptr);
-		return (int32)std::floor(posX);
-	}
-
-	int32 WindowsWindow::GetMouseY() const
-	{
-		double posY;
-		glfwGetCursorPos(m_GLFWWindow, nullptr, &posY);
-		return (int32)std::floor(posY);
 	}
 }

@@ -25,8 +25,11 @@ using int64 = int64_t;
 	#define ASSERT(condition)
 #endif
 
-#define BIND_FUNC(x) [this](auto&&... args) -> decltype(auto) { return this->x(std::forward<decltype(args)>(args)...); }
-
+#define BIND_FUNC(x)                                        \
+[this](auto&&... args) -> decltype(auto) 					\
+{ 															\
+	return this->x(std::forward<decltype(args)>(args)...); 	\
+}
 
 template<typename T>
 static constexpr auto Bit(T x)

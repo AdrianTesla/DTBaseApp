@@ -15,4 +15,14 @@ namespace DT
         WindowsWindow* window = (WindowsWindow*)&Application::Get().GetWindow();
         return window->MouseIsPressed(button);
     }
+
+    int32 Input::GetMouseX()
+    {
+        return Application::Get().GetWindow().GetMouseX();
+    }
+
+    int32 Input::GetMouseY()
+    {
+        return Application::Get().GetWindow().GetMouseY();
+    }
 }
