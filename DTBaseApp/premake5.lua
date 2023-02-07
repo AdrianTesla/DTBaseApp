@@ -18,16 +18,19 @@ project "DTBaseApp"
 	{
 		"%{wks.location}/DTBaseApp/src",
 		"%{IncludeDir.glfw}",
-		"%{IncludeDir.spdlog}"
+		"%{IncludeDir.spdlog}",
+		"%{IncludeDir.VulkanSDK}"
 	}
 
 	libdirs 
 	{
+		""
 	}
 
 	links
 	{
-		"GLFW"
+		"GLFW",
+		"%{Library.Vulkan}"
 	}
 
 	postbuildcommands 
@@ -52,6 +55,7 @@ project "DTBaseApp"
 
 		links
 		{
+			"%{Library.Vulkan}"
 		}
 
 	filter "configurations:Release"
@@ -62,4 +66,45 @@ project "DTBaseApp"
 
 		links
 		{
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+		filter "configurations:Debug"
+		defines "DT_DEBUG"
+		runtime "Debug"
+		symbols "on"
+
+		links
+		{
+		  	"%{Library.Vulkan}",
+		  	"%{Library.ShaderC_Debug}",
+		  	"%{Library.SPIRV_Tools_Debug}",
+		  	"%{Library.SPIRV_Cross_Debug}",
+		  	"%{Library.SPIRV_Cross_GLSL_Debug}",
+		  	"%{Library.SPIRV_Cross_HLSL_Debug}"
+		}
+
+	filter "configurations:Release"
+		defines "DT_RELEASE"
+		runtime "Release"
+		optimize "on"
+
+		links
+		{
+			"%{Library.Vulkan}",
+		  	"%{Library.ShaderC_Release}",
+		  	"%{Library.SPIRV_Cross_Release}",
+		  	"%{Library.SPIRV_Tools_Release}",
+		  	"%{Library.SPIRV_Cross_GLSL_Release}",
+		  	"%{Library.SPIRV_Cross_HLSL_Release}"
 		}
