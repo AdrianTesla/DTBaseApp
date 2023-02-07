@@ -4,10 +4,15 @@
 
 namespace DT
 {
+	struct ApplicationSpecification
+	{
+		WindowSpecification WindowSpecification;
+	};
+
 	class Application
 	{
 	public:
-		Application();
+		Application(const ApplicationSpecification& specification);
 		~Application();
 
 		void PushLayer(Layer* layer);
@@ -29,6 +34,7 @@ namespace DT
 		Window* m_Window = nullptr;
 		std::vector<Layer*> m_Layers;
 
+		ApplicationSpecification m_Specification;
 		inline static Application* s_Instance = nullptr;
 	};
 }

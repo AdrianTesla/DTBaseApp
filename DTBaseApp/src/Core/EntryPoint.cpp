@@ -6,7 +6,7 @@ int main()
 {
 	DT::InitializeCore();
 
-	DT::Application* app = new DT::Application();
+	DT::Application* app = new DT::Application({});
 	app->Run();
 	delete app;
 

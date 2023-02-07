@@ -21,7 +21,7 @@ namespace DT
 			ASSERT(result);
 			s_GLFWInitialized = true;
 
-			LOG_TRACE("GLFW Version {}", glfwGetVersionString());
+			LOG_TRACE("Initialized GLFW. Version {}", glfwGetVersionString());
 		}
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -33,7 +33,16 @@ namespace DT
 
 		InstallGLFWCallbacks();
 
-		EnumerateDisplayModes();
+		if (m_Specification.StartMaximized)
+			Maximize();
+		if (m_Specification.StartCentered)
+			CenterWindow();
+		if (m_Specification.StartFullscreen)
+			ToFullscreen();
+
+		SetResizable(m_Specification.IsResizable);
+		SetDecorated(m_Specification.IsDecorated);
+		SetOpacity(m_Specification.StartOpacity);
 	}
 
 	WindowsWindow::~WindowsWindow()
@@ -78,7 +87,7 @@ namespace DT
 		glfwSetWindowMonitor(m_GLFWWindow, nullptr, 0, 0, 1280, 720, GLFW_DONT_CARE);
 	}
 
-	void WindowsWindow::FixedAspectRatio(int32 numerator, int32 denominator)
+	void WindowsWindow::SetFixedAspectRatio(int32 numerator, int32 denominator)
 	{
 		glfwSetWindowAspectRatio(m_GLFWWindow, numerator, denominator);
 	}
@@ -87,14 +96,14 @@ namespace DT
 	{
 		double xpos;
 		glfwGetCursorPos(m_GLFWWindow, &xpos, nullptr);
-		return (int32)xpos;
+		return (int32)std::floor(xpos);
 	}
 	
 	int32 WindowsWindow::GetMouseY() const
 	{
 		double ypos;
 		glfwGetCursorPos(m_GLFWWindow, nullptr, &ypos);
-		return (int32)ypos;
+		return (int32)std::floor(ypos);
 	}
 
 	void WindowsWindow::SetMousePosition(int32 x, int32 y)
@@ -112,11 +121,59 @@ namespace DT
 		glfwSetWindowOpacity(m_GLFWWindow, opacityValue);
 	}
 
+	void WindowsWindow::SetTitle(const std::string& title)
+	{
+		glfwSetWindowTitle(m_GLFWWindow, title.c_str());
+	}
+
+	void WindowsWindow::SetDecorated(bool isDecorated)
+	{
+		glfwSetWindowAttrib(m_GLFWWindow, GLFW_DECORATED, isDecorated ? GLFW_TRUE : GLFW_FALSE);
+	}
+
+	void WindowsWindow::SetResizable(bool isResizable)
+	{
+		glfwSetWindowAttrib(m_GLFWWindow, GLFW_RESIZABLE, isResizable ? GLFW_TRUE : GLFW_FALSE);
+	}
+
+	void WindowsWindow::SetSize(int32 width, int32 height)
+	{
+		glfwSetWindowSize(m_GLFWWindow, width, height);
+	}
+
+	void WindowsWindow::SetPosition(int32 x, int32 y)
+	{
+		glfwSetWindowPos(m_GLFWWindow, x, y);
+	}
+
+	void WindowsWindow::CenterWindow()
+	{
+		const GLFWvidmode* videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+		int windowWidth, windowHeight;
+		glfwGetWindowSize(m_GLFWWindow, &windowWidth, &windowHeight);
+
+		int32 x = (videoMode->width - windowWidth) / 2;
+		int32 y = (videoMode->height - windowHeight) / 2;
+		glfwSetWindowPos(m_GLFWWindow, x, y);
+	}
+
+	void WindowsWindow::SetSizeLimits(int32 minWidth, int32 minHeight, int32 maxWidth, int32 maxHeight)
+	{
+		glfwSetWindowSizeLimits(m_GLFWWindow, minWidth, minHeight, maxWidth, maxHeight);
+	}
+
+	Extent WindowsWindow::GetDisplayResolution() const
+	{
+		const GLFWvidmode* videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+		return { videoMode->width,videoMode->height };
+	}
+
 	void WindowsWindow::EnumerateDisplayModes()
 	{
-		int32 count;
-		const GLFWvidmode* videoModes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &count);
-		for (int32 i = 0u; i < count; i++)
+		int32 modeCount;
+		const GLFWvidmode* videoModes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &modeCount);
+		for (int32 i = 0u; i < modeCount; i++)
 		{
 			LOG_INFO("Video mode {}", i);
 			LOG_TRACE("   width       = {}", videoModes[i].width);
@@ -147,6 +204,7 @@ namespace DT
 		glfwSetWindowCloseCallback(m_GLFWWindow, [](GLFWwindow* window)
 		{
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+
 			WindowClosedEvent e{};
 			data.Callback(e);
 		});
@@ -155,6 +213,7 @@ namespace DT
 		glfwSetWindowFocusCallback(m_GLFWWindow, [](GLFWwindow* window, int focused)
 		{
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+
 			WindowFocusEvent e((bool)focused);
 			data.Callback(e);
 		});
@@ -232,7 +291,7 @@ namespace DT
 		{
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 		
-			MouseMovedEvent e((int32)posX, (int32)posY);
+			MouseMovedEvent e((int32)std::floor(posX), (int32)std::floor(posY));
 			data.Callback(e);
 		});
 	}

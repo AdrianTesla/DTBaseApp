@@ -3,11 +3,12 @@
 
 namespace DT
 {
-	Application::Application()
+	Application::Application(const ApplicationSpecification& specification)
+		: m_Specification(specification)
 	{
 		s_Instance = this;
 
-		m_Window = Window::Create({});
+		m_Window = Window::Create(m_Specification.WindowSpecification);
 		m_Window->SetEventCallBack(BIND_FUNC(OnEvent));
 
 		PushLayer(new VulkanLearnLayer);
