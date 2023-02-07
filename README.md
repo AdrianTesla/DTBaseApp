@@ -1,5 +1,5 @@
 # DTBaseApp
-The start of any epic journeys. :D
+To start an epic journey:
 
 1) create a folder
 2) git clone https://github.com/AdrianTesla/DTBaseApp.git --recursive
