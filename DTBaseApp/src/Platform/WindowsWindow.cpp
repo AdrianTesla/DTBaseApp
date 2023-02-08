@@ -42,12 +42,14 @@ namespace DT
 
 		SetResizable(m_Specification.IsResizable);
 		SetDecorated(m_Specification.IsDecorated);
-		SetOpacity(m_Specification.StartOpacity);
+		SetOpacity(m_Specification.Opacity);
 	}
 
 	WindowsWindow::~WindowsWindow()
 	{
+		glfwDestroyWindow(m_GLFWWindow);
 		s_ActiveWindowsCount--;
+
 		if (s_ActiveWindowsCount == 0u)
 			glfwTerminate();
 	}
@@ -64,12 +66,16 @@ namespace DT
 
 	int32 WindowsWindow::GetWidth() const
 	{
-		return m_WindowData.Width;
+		int32 width;
+		glfwGetWindowSize(m_GLFWWindow, &width, nullptr);
+		return width;
 	}
 
 	int32 WindowsWindow::GetHeight() const
 	{
-		return m_WindowData.Height;
+		int32 height;
+		glfwGetWindowSize(m_GLFWWindow, nullptr, &height);
+		return height;
 	}
 
 	void WindowsWindow::Maximize()
@@ -79,12 +85,14 @@ namespace DT
 
 	void WindowsWindow::ToFullscreen()
 	{
-		glfwSetWindowMonitor(m_GLFWWindow, glfwGetPrimaryMonitor(), 0, 0, 1280, 720, GLFW_DONT_CARE);
+		GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
+		glfwSetWindowMonitor(m_GLFWWindow, primaryMonitor, 0, 0, videoMode->width, videoMode->height, videoMode->refreshRate);
 	}
 
 	void WindowsWindow::ToWindowed()
 	{
-		glfwSetWindowMonitor(m_GLFWWindow, nullptr, 0, 0, 1280, 720, GLFW_DONT_CARE);
+		glfwSetWindowMonitor(m_GLFWWindow, nullptr, 0, 0, m_Specification.Width, m_Specification.Height, GLFW_DONT_CARE);
 	}
 
 	void WindowsWindow::SetFixedAspectRatio(int32 numerator, int32 denominator)
@@ -150,7 +158,7 @@ namespace DT
 	{
 		const GLFWvidmode* videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
-		int windowWidth, windowHeight;
+		int32 windowWidth, windowHeight;
 		glfwGetWindowSize(m_GLFWWindow, &windowWidth, &windowHeight);
 
 		int32 x = (videoMode->width - windowWidth) / 2;

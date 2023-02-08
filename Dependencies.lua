@@ -2,9 +2,10 @@ VULKAN_SDK = os.getenv("VULKAN_SDK")
 
 -- include directories
 IncludeDir = {}
-IncludeDir["glfw"]      = "%{wks.location}/vendor/glfw/include"
-IncludeDir["spdlog"]    = "%{wks.location}/vendor/spdlog/include"
-IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
+IncludeDir["glfw"]         = "%{wks.location}/vendor/glfw/include"
+IncludeDir["spdlog"]       = "%{wks.location}/vendor/spdlog/include"
+IncludeDir["vk_mem_alloc"] = "%{wks.location}/vendor/vk_mem_alloc"
+IncludeDir["VulkanSDK"]    = "%{VULKAN_SDK}/Include"
 
 -- library directories
 LibraryDir = {}

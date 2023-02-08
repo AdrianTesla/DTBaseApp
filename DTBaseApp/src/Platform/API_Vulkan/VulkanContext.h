@@ -1,4 +1,5 @@
 #pragma once
+#include "Vulkan.h"
 
 namespace DT
 {
@@ -7,6 +8,6 @@ namespace DT
 	public:
 
 	private:
-
+		inline static VkInstance s_Instance = VK_NULL_HANDLE;
 	};
 }

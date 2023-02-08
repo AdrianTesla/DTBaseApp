@@ -13,7 +13,7 @@ namespace DT
 		bool StartFullscreen = false;
 		bool IsResizable     = true;
 		bool IsDecorated     = true;
-		float StartOpacity   = 1.0f;
+		float Opacity        = 1.0f;
 	};
 
 	/* platform independent desktop window */

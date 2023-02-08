@@ -5,7 +5,6 @@
 
 namespace DT
 {
-	/**** event base class: they are BLOCKING ****/
 	class Event
 	{
 	public:
@@ -41,11 +40,7 @@ namespace DT
 			WindowExitSize     ,
 			WindowFocus        ,
 			WindowMoved        ,
-			AppTick            ,
 			AppUpdate          ,
-			AppRender          ,
-			AppToFullScreen    ,
-			AppToWindowed      ,
 			KeyPressed         ,
 			KeyReleased        ,
 			KeyTyped           ,
@@ -119,7 +114,6 @@ namespace DT
 			ss << "MouseMovedEvent Mouse Pos: [" << m_MouseX << ", " << m_MouseY << "]";
 			return ss.str();
 		}
-
 		IMPLEMENT_CLASS_TYPE(MouseMoved)
 		IMPLEMENT_CATEGORIES(CategoryInput | CategoryMouse)
 	private:
@@ -331,30 +325,12 @@ namespace DT
 		IMPLEMENT_CATEGORIES(CategoryApplication)
 	};
 
-	class AppTickEvent : public Event
-	{
-	public:
-		AppTickEvent() = default;
-	public:
-		IMPLEMENT_CLASS_TYPE(AppTick)
-		IMPLEMENT_CATEGORIES(CategoryApplication)
-	};
-
 	class AppUpdateEvent : public Event
 	{
 	public:
 		AppUpdateEvent() = default;
 	public:
 		IMPLEMENT_CLASS_TYPE(AppUpdate)
-		IMPLEMENT_CATEGORIES(CategoryApplication)
-	};
-
-	class AppRenderEvent : public Event
-	{
-	public:
-		AppRenderEvent() = default;
-	public:
-		IMPLEMENT_CLASS_TYPE(AppRender)
 		IMPLEMENT_CATEGORIES(CategoryApplication)
 	};
 
