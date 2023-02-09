@@ -18,6 +18,14 @@
 	#define VK_CALL(call) (call)
 #endif
 
+#ifdef DT_DEBUG
+	static constexpr bool s_ValidationLayerEnabled = true;
+#else
+	static constexpr bool s_ValidationLayerEnabled = false;
+#endif
+
+#define VK_VALIDATION_LAYER_NAME "VK_LAYER_KHRONOS_validation"
+
 namespace DT
 {
 
