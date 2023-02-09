@@ -1,5 +1,6 @@
 #pragma once
 #include "Event.h"
+#include "Renderer/RendererContext.h"
 
 namespace DT
 {
@@ -27,6 +28,7 @@ namespace DT
 
 		virtual void SetEventCallBack(const EventCallbackFn& callback) = 0;
 		virtual const WindowSpecification& GetSpecification() const = 0;
+		virtual Ref<RendererContext> GetRendererContext() const = 0;
 
 		virtual void ProcessEvents() = 0;
 		virtual void Maximize() = 0;

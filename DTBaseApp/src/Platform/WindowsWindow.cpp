@@ -43,6 +43,9 @@ namespace DT
 		SetResizable(m_Specification.IsResizable);
 		SetDecorated(m_Specification.IsDecorated);
 		SetOpacity(m_Specification.Opacity);
+
+		m_RendererContext = RendererContext::Create();
+		m_RendererContext->Init();
 	}
 
 	WindowsWindow::~WindowsWindow()

@@ -5,7 +5,7 @@ namespace DT
 {
 	using KeyCode = uint16;
 
-	/** Keyboard Codes (from GLFW) **/
+	/** keyboard codes (from GLFW) **/
 	namespace Key
 	{
 		enum : KeyCode
@@ -135,7 +135,7 @@ namespace DT
 
 	using MouseCode = uint16;
 
-	/**** Mouse Codes (from GLFW) ***/
+	/**** mouse Codes (from GLFW) ***/
 	namespace Mouse
 	{
 		enum : MouseCode

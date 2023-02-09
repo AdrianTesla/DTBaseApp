@@ -19,11 +19,12 @@ using int64 = int64_t;
 #include "Log.h"
 #include "Timer.h"
 #include "Utils.h"
+#include "Ref.h"
 
 #ifdef DT_DEBUG
-	#define ASSERT(condition) if(!condition) { __debugbreak(); }
+	#define ASSERT(condition) { if(!condition) { __debugbreak(); } }
 #else
-	#define ASSERT(condition)
+	#define ASSERT(condition) {}
 #endif
 
 #define BIND_FUNC(x)                                        \
