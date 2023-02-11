@@ -74,16 +74,6 @@ namespace DT
 		}
 		return false;
 	}
-	
-	bool VulkanPhysicalDevice::IsExtensionSupported(const char* deviceExtensionName)
-	{
-		for (VkExtensionProperties& extensionProperty : m_SupportedDeviceExtensions)
-		{
-			if (strcmp(extensionProperty.extensionName, deviceExtensionName) == 0)
-				return true;
-		}
-		return false;
-	}
 
 	VulkanContext::VulkanContext(const Ref<Window>& window)
 		: m_Window(window)
@@ -96,6 +86,7 @@ namespace DT
 		
 		CreateVulkanInstance();
 		SelectPhysicalDevice();
+		m_Device.Init(m_PhysicalDevice);
 	}
 
 	void VulkanContext::CreateVulkanInstance()
@@ -171,11 +162,10 @@ namespace DT
 
 	void VulkanContext::SelectPhysicalDevice()
 	{
-		// enumerate available physical devices
 		uint32 physicalDeviceCount;
 		VK_CALL(vkEnumeratePhysicalDevices(s_Instance, &physicalDeviceCount, nullptr));
-		std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
-		VK_CALL(vkEnumeratePhysicalDevices(s_Instance, &physicalDeviceCount, physicalDevices.data()));
+		m_AvailablePhysicalDevices.resize(physicalDeviceCount);
+		VK_CALL(vkEnumeratePhysicalDevices(s_Instance, &physicalDeviceCount, m_AvailablePhysicalDevices.data()));
 
 		if (physicalDeviceCount == 0u)
 			MessageBoxes::ShowError("Error", "No GPU's found on the system!");
@@ -186,99 +176,23 @@ namespace DT
 		for (uint32 i = 0u; i < physicalDeviceCount; i++)
 		{
 			VkPhysicalDeviceProperties physicalDeviceProperties;
-			vkGetPhysicalDeviceProperties(physicalDevices[i], &physicalDeviceProperties);
+			vkGetPhysicalDeviceProperties(m_AvailablePhysicalDevices[i], &physicalDeviceProperties);
 
-			VkPhysicalDeviceFeatures physicalDeviceFeatures{};
-			vkGetPhysicalDeviceFeatures(physicalDevices[i], &physicalDeviceFeatures);
-			
 			LOG_WARN("  Name: {}", physicalDeviceProperties.deviceName);
 			LOG_WARN("  Type: {}", string_VkPhysicalDeviceType(physicalDeviceProperties.deviceType));
-
+			
 			if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 			{
-				physicalDevice = physicalDevices[i];
+				physicalDevice = m_AvailablePhysicalDevices[i];
 				break;
 			}
 		}
 
+		// if no integrated GPU found, use the first enumerated one 
 		if (physicalDevice == VK_NULL_HANDLE)
-			physicalDevice = physicalDevices[0];
+			physicalDevice = m_AvailablePhysicalDevices[0];
 
 		m_PhysicalDevice.Init(physicalDevice);
-	}
-
-	void VulkanPhysicalDevice::Init(VkPhysicalDevice physicalDevice)
-	{
-		ASSERT(physicalDevice != VK_NULL_HANDLE);
-		m_PhysicalDevice = physicalDevice;
-
-		vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_PhysicalDeviceProperties);
-		vkGetPhysicalDeviceFeatures(m_PhysicalDevice, &m_PhysicalDeviceFeatures);
-		
-		uint32 deviceExtensionCount = 0u;
-		VK_CALL(vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &deviceExtensionCount, nullptr));
-		m_SupportedDeviceExtensions.resize(deviceExtensionCount);
-		VK_CALL(vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &deviceExtensionCount, m_SupportedDeviceExtensions.data()));
-
-		uint32 queueFamilyPropertyCount;
-		vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyPropertyCount, nullptr);
-		m_QueueFamilyProperties.resize(queueFamilyPropertyCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyPropertyCount, m_QueueFamilyProperties.data());
-
-		for (uint32 i = 0u; i < queueFamilyPropertyCount; i++)
-		{
-			LOG_TRACE("QueueIndex {}: {}", i, string_VkQueueFlags(m_QueueFamilyProperties[i].queueFlags));
-			
-			bool hasGraphics = (m_QueueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT);
-			bool hasTransfer = (m_QueueFamilyProperties[i].queueFlags & VK_QUEUE_TRANSFER_BIT);
-			bool hasCompute  = (m_QueueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT);
-
-			// try find (graphics + transfer + compute) which is the all-in-one queue
-			if (hasGraphics && hasTransfer && hasCompute)
-				m_QueueFamilyIndices.GraphicsIndex = i;
-
-			// try find a transfer only queue (DMA unit usually)
-			if (!hasGraphics && hasTransfer && !hasCompute)
-				m_QueueFamilyIndices.TransferIndex = i;
-
-			// try find a (compute + transfer) only queue
-			if (!hasGraphics && hasTransfer && hasCompute)
-				m_QueueFamilyIndices.ComputeIndex = i;
-		}
-
-		// if no all-in-one queue found
-		if (!m_QueueFamilyIndices.GraphicsIndex.has_value())
-			MessageBoxes::ShowError("No GPU queue with (graphics + transfer + compute) capabilities was found!");
-
-		// if no dedicated transfer queue found
-		if (!m_QueueFamilyIndices.TransferIndex.has_value())
-		{
-			LOG_WARN("No transfer-only queue found, fallback to the all-in-one graphics queue");
-			m_QueueFamilyIndices.TransferIndex = m_QueueFamilyIndices.GraphicsIndex;
-		}
-
-		// if no dedicated (compute + transfer) queue found
-		if (!m_QueueFamilyIndices.ComputeIndex.has_value())
-		{
-			LOG_WARN("No (compute + transfer) only queue found, fallback to the all-in-one graphics queue");
-			m_QueueFamilyIndices.TransferIndex = m_QueueFamilyIndices.GraphicsIndex;
-		}
-	}
-	
-	void VulkanContext::CreateLogicalDevice()
-	{
-		//VkDeviceCreateInfo deviceCreateInfo{};
-		//deviceCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-		//deviceCreateInfo.pNext                   = nullptr;
-		//deviceCreateInfo.flags                   = 0u;
-		//deviceCreateInfo.queueCreateInfoCount    ;
-		//deviceCreateInfo.pQueueCreateInfos       ;
-		//deviceCreateInfo.enabledLayerCount       ;
-		//deviceCreateInfo.ppEnabledLayerNames     ;
-		//deviceCreateInfo.enabledExtensionCount   ;
-		//deviceCreateInfo.ppEnabledExtensionNames ;
-		//deviceCreateInfo.pEnabledFeatures        ;
-		//vkCreateDevice(m_PhysicalDevice, &deviceCreateInfo, nullptr, &m_Device);
 	}
 
 	void VulkanContext::CreateMemoryAllocator()
@@ -301,6 +215,8 @@ namespace DT
 
 	VulkanContext::~VulkanContext()
 	{
+		m_Device.Shutdown();
+
 		if (s_ValidationLayerEnabled)
 			GET_INSTANCE_FUNC(vkDestroyDebugUtilsMessengerEXT)(s_Instance, m_DebugMessenger, nullptr);
 

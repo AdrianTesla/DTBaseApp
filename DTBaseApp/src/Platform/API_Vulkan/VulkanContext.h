@@ -1,35 +1,10 @@
 #pragma once
 #include "Vulkan.h"
 #include "Renderer/RendererContext.h"
+#include "VulkanDevice.h"
 
 namespace DT
 {
-	struct QueueFamilyIndices
-	{
-		std::optional<uint32> GraphicsIndex;
-		std::optional<uint32> TransferIndex;
-		std::optional<uint32> ComputeIndex;
-
-		constexpr bool IsComplete()
-		{
-			return GraphicsIndex.has_value() && TransferIndex.has_value() && ComputeIndex.has_value();
-		}
-	};
-
-	struct VulkanPhysicalDevice
-	{
-	public:
-		void Init(VkPhysicalDevice physicalDevice);
-		bool IsExtensionSupported(const char* deviceExtensionName);
-	private:
-		VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
-		VkPhysicalDeviceProperties m_PhysicalDeviceProperties{};
-		VkPhysicalDeviceFeatures m_PhysicalDeviceFeatures{};
-		std::vector<VkExtensionProperties> m_SupportedDeviceExtensions;
-		std::vector<VkQueueFamilyProperties> m_QueueFamilyProperties;
-		QueueFamilyIndices m_QueueFamilyIndices;
-	};
-
 	class VulkanContext : public RendererContext
 	{
 	public:
@@ -47,7 +22,6 @@ namespace DT
 		void CreateVulkanInstance();
 		void SelectPhysicalDevice();
 		void CreateMemoryAllocator();
-		void CreateLogicalDevice();
 	private:
 		std::vector<const char*> BuildRequestedInstanceExtensions();
 		std::vector<const char*> BuildRequestedInstanceLayers();
@@ -61,6 +35,8 @@ namespace DT
 
 		VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
 		
+		std::vector<VkPhysicalDevice> m_AvailablePhysicalDevices;
 		VulkanPhysicalDevice m_PhysicalDevice;
+		VulkanDevice m_Device;
 	};
 }
