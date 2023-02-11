@@ -20,10 +20,12 @@ namespace DT
 	{
 	public:
 		void Init(VkPhysicalDevice physicalDevice);
+		bool IsExtensionSupported(const char* deviceExtensionName);
 	private:
 		VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
 		VkPhysicalDeviceProperties m_PhysicalDeviceProperties{};
 		VkPhysicalDeviceFeatures m_PhysicalDeviceFeatures{};
+		std::vector<VkExtensionProperties> m_SupportedDeviceExtensions;
 		std::vector<VkQueueFamilyProperties> m_QueueFamilyProperties;
 		QueueFamilyIndices m_QueueFamilyIndices;
 	};
@@ -37,8 +39,8 @@ namespace DT
 		virtual void Init() override;
 		virtual void Present() override;
 
-		static bool IsExtensionAvailable(const char* extensionName);
-		static bool IsLayerAvailable(const char* layerName);
+		static bool IsInstanceExtensionSupported(const char* extensionName);
+		static bool IsInstanceLayerSupported(const char* layerName);
 
 		static VkInstance GetVulkanInstance() { return s_Instance; }
 	private:
@@ -47,15 +49,15 @@ namespace DT
 		void CreateMemoryAllocator();
 		void CreateLogicalDevice();
 	private:
-		std::vector<const char*> BuildRequestedExtensions();
-		std::vector<const char*> BuildRequestedLayers();
+		std::vector<const char*> BuildRequestedInstanceExtensions();
+		std::vector<const char*> BuildRequestedInstanceLayers();
 	private:
 		Ref<Window> m_Window;
 
 		inline static VkInstance s_Instance = VK_NULL_HANDLE;
 
-		inline static std::vector<VkLayerProperties> s_AvailableLayers;
-		inline static std::vector<VkExtensionProperties> s_AvailableExtensions;
+		inline static std::vector<VkLayerProperties> s_AvailableInstanceLayers;
+		inline static std::vector<VkExtensionProperties> s_AvailableInstanceExtensions;
 
 		VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
 		

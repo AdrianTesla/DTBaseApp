@@ -27,7 +27,7 @@ namespace DT
 		return VK_FALSE;
 	}
 
-	std::vector<const char*> VulkanContext::BuildRequestedExtensions()
+	std::vector<const char*> VulkanContext::BuildRequestedInstanceExtensions()
 	{
 		std::vector<const char*> extensions;
 
@@ -45,19 +45,19 @@ namespace DT
 		return extensions;
 	}
 
-	std::vector<const char*> VulkanContext::BuildRequestedLayers()
+	std::vector<const char*> VulkanContext::BuildRequestedInstanceLayers()
 	{
-		std::vector<const char*> layers;
+		std::vector<const char*> instanceLayers;
 
 		if (s_ValidationLayerEnabled)
-			layers.emplace_back(VK_VALIDATION_LAYER_NAME);
+			instanceLayers.emplace_back(VK_VALIDATION_LAYER_NAME);
 
-		return layers;
+		return instanceLayers;
 	}
 
-	bool VulkanContext::IsExtensionAvailable(const char* extensionName)
+	bool VulkanContext::IsInstanceExtensionSupported(const char* extensionName)
 	{
-		for (const VkExtensionProperties& extension : s_AvailableExtensions)
+		for (const VkExtensionProperties& extension : s_AvailableInstanceExtensions)
 		{
 			if (strcmp(extension.extensionName, extensionName) == 0)
 				return true;
@@ -65,11 +65,21 @@ namespace DT
 		return false;
 	}
 
-	bool VulkanContext::IsLayerAvailable(const char* layerName)
+	bool VulkanContext::IsInstanceLayerSupported(const char* layerName)
 	{
-		for (const VkLayerProperties& layer : s_AvailableLayers)
+		for (const VkLayerProperties& layer : s_AvailableInstanceLayers)
 		{
 			if (strcmp(layer.layerName, layerName) == 0)
+				return true;
+		}
+		return false;
+	}
+	
+	bool VulkanPhysicalDevice::IsExtensionSupported(const char* deviceExtensionName)
+	{
+		for (VkExtensionProperties& extensionProperty : m_SupportedDeviceExtensions)
+		{
+			if (strcmp(extensionProperty.extensionName, deviceExtensionName) == 0)
 				return true;
 		}
 		return false;
@@ -93,24 +103,24 @@ namespace DT
 		// enumerate available extensions
 		uint32 extensionCount;
 		VK_CALL(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr));
-		s_AvailableExtensions.resize(extensionCount);
-		VK_CALL(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, s_AvailableExtensions.data()));
+		s_AvailableInstanceExtensions.resize(extensionCount);
+		VK_CALL(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, s_AvailableInstanceExtensions.data()));
 		
 		// enumerate available layers
 		uint32 layerCount;
 		VK_CALL(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
-		s_AvailableLayers.resize(layerCount);
-		VK_CALL(vkEnumerateInstanceLayerProperties(&layerCount, s_AvailableLayers.data()));
+		s_AvailableInstanceLayers.resize(layerCount);
+		VK_CALL(vkEnumerateInstanceLayerProperties(&layerCount, s_AvailableInstanceLayers.data()));
 
-		// requested extensions
-		std::vector<const char*> requestedExtensions = BuildRequestedExtensions();
+		// requested instance extensions
+		std::vector<const char*> requestedExtensions = BuildRequestedInstanceExtensions();
 		for (const char* extension : requestedExtensions)
-			ASSERT(IsExtensionAvailable(extension));
+			ASSERT(IsInstanceExtensionSupported(extension));
 		
-		// requested layers
-		std::vector<const char*> requestedLayers = BuildRequestedLayers();
+		// requested instance layers
+		std::vector<const char*> requestedLayers = BuildRequestedInstanceLayers();
 		for (const char* layer : requestedLayers)
-			ASSERT(IsLayerAvailable(layer));
+			ASSERT(IsInstanceLayerSupported(layer));
 		
 		VkApplicationInfo applicationInfo{};
 		applicationInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -168,10 +178,7 @@ namespace DT
 		VK_CALL(vkEnumeratePhysicalDevices(s_Instance, &physicalDeviceCount, physicalDevices.data()));
 
 		if (physicalDeviceCount == 0u)
-		{
 			MessageBoxes::ShowError("Error", "No GPU's found on the system!");
-			return;
-		}
 
 		LOG_INFO("Found {} physical device(s):", physicalDeviceCount);
 
@@ -208,6 +215,11 @@ namespace DT
 		vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_PhysicalDeviceProperties);
 		vkGetPhysicalDeviceFeatures(m_PhysicalDevice, &m_PhysicalDeviceFeatures);
 		
+		uint32 deviceExtensionCount = 0u;
+		VK_CALL(vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &deviceExtensionCount, nullptr));
+		m_SupportedDeviceExtensions.resize(deviceExtensionCount);
+		VK_CALL(vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &deviceExtensionCount, m_SupportedDeviceExtensions.data()));
+
 		uint32 queueFamilyPropertyCount;
 		vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyPropertyCount, nullptr);
 		m_QueueFamilyProperties.resize(queueFamilyPropertyCount);
@@ -251,9 +263,6 @@ namespace DT
 			LOG_WARN("No (compute + transfer) only queue found, fallback to the all-in-one graphics queue");
 			m_QueueFamilyIndices.TransferIndex = m_QueueFamilyIndices.GraphicsIndex;
 		}
-
-		int a = 0;
-		int b = a;
 	}
 	
 	void VulkanContext::CreateLogicalDevice()
@@ -277,7 +286,7 @@ namespace DT
 		// create the vulkan memory allocator
 		//VmaAllocatorCreateInfo allocatorCreateInfo{};
 		//allocatorCreateInfo.flags                          = 0u;
-		//allocatorCreateInfo.physicalDevice                 = physicalDevice;
+		//allocatorCreateInfo.physicalDevice                 = m_PhysicalDevice.m_PhysicalDevice;
 		//allocatorCreateInfo.device                         = device;
 		//allocatorCreateInfo.preferredLargeHeapBlockSize    = 0u; // defaults to 256 MiB
 		//allocatorCreateInfo.pAllocationCallbacks           = VK_NULL_HANDLE;
