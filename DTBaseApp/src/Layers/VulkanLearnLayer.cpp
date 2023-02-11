@@ -14,6 +14,7 @@ namespace DT
 
 	void VulkanLearnLayer::OnEvent(Event& event)
 	{
+
 		Event::Dispatcher dispatcher(event);
 		dispatcher.Dispatch<KeyPressedEvent>([](KeyPressedEvent& key)
 		{
@@ -21,6 +22,7 @@ namespace DT
 			{
 				case Key::A:
 				{
+					Application::Get().GetWindow().ShowMessageBox("This is the fucking title", "This is the fucking text, enjoy piece of shitty shit");
 					break;
 				}
 				case Key::B:

@@ -1,6 +1,6 @@
 #include "Input.h"
 #include "Application.h"
-#include "Platform/WindowsWindow.h"
+#include "Platform/Windows/WindowsWindow.h"
 
 namespace DT
 {

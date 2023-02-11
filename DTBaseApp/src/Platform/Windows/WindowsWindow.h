@@ -13,8 +13,8 @@ namespace DT
 
 		virtual void SetEventCallBack(const EventCallbackFn& callback) override;
 		virtual const WindowSpecification& GetSpecification() const override { return m_Specification; }
-		virtual Ref<RendererContext> GetRendererContext() const override { return m_RendererContext; }
 
+		virtual void* GetNativeWindow() override;
 		virtual void ProcessEvents() override;
 		virtual void Maximize() override;
 		virtual void CenterWindow() override;
@@ -37,6 +37,8 @@ namespace DT
 		virtual void SetPosition(int32 x, int32 y) override;
 		virtual void SetSizeLimits(int32 minWidth, int32 minHeight, int32 maxWidth, int32 maxHeight) override;
 
+		virtual void ShowMessageBox(const std::string& title, const std::string& text) override;
+
 		bool KeyIsPressed(KeyCode key) const;
 		bool MouseIsPressed(MouseCode button) const;
 	private:
@@ -53,7 +55,6 @@ namespace DT
 		WindowData m_WindowData;
 		GLFWwindow* m_GLFWWindow;
 
-		Ref<RendererContext> m_RendererContext;
 		WindowSpecification m_Specification;
 	};
 }

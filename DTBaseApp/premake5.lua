@@ -3,7 +3,8 @@ project "DTBaseApp"
 	language "C++"
 	cppdialect "C++20"
 	staticruntime "off"
-	ignoredefaultlibraries { "LIBCMT" }
+	ignoredefaultlibraries ("LIBCMT")
+	characterset ("MBCS")
 
 	targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("%{wks.location}/bin-intermediate/" .. outputdir .. "/%{prj.name}")

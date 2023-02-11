@@ -3,8 +3,8 @@
 
 namespace DT
 {
-    Ref<RendererContext> RendererContext::Create()
+    Ref<RendererContext> RendererContext::Create(const Ref<Window>& window)
     {
-        return Ref<VulkanContext>::Create();
+        return Ref<VulkanContext>::Create(window);
     }
 }

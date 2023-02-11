@@ -11,6 +11,9 @@ namespace DT
 		m_Window = Window::Create(m_Specification.WindowSpecification);
 		m_Window->SetEventCallBack(BIND_FUNC(OnEvent));
 
+		m_RendererContext = RendererContext::Create(m_Window);
+		m_RendererContext->Init();
+
 		PushLayer(new VulkanLearnLayer);
 	}
 
@@ -21,14 +24,12 @@ namespace DT
 			layer->OnDetach();
 			delete layer;
 		}
-
-		delete m_Window;
 	}
 
 	void Application::PushLayer(Layer* layer)
 	{
-		layer->OnAttach();
 		m_Layers.emplace_back(layer);
+		layer->OnAttach();
 	}
 
 	void Application::Run()

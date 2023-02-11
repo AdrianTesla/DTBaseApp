@@ -1,6 +1,7 @@
 #pragma once
 #include "Layer.h"
 #include "Window.h"
+#include "Renderer/RendererContext.h"
 
 namespace DT
 {
@@ -31,7 +32,8 @@ namespace DT
 	private:
 		bool m_AppRunning = true;
 
-		Window* m_Window = nullptr;
+		Ref<RendererContext> m_RendererContext;
+		Ref<Window> m_Window;
 		std::vector<Layer*> m_Layers;
 
 		ApplicationSpecification m_Specification;

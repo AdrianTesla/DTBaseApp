@@ -2,14 +2,17 @@
 #include <GLFW/glfw3.h>
 #include "Core/Core.h"
 
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+
 namespace DT
 {
 	static bool s_GLFWInitialized = false;
 	static uint32 s_ActiveWindowsCount = 0u;
 
-	Window* Window::Create(const WindowSpecification& specification)
+	Ref<Window> Window::Create(const WindowSpecification& specification)
 	{
-		return new WindowsWindow(specification);
+		return Ref<WindowsWindow>::Create(specification);
 	}
 
 	WindowsWindow::WindowsWindow(const WindowSpecification& specification)
@@ -43,9 +46,6 @@ namespace DT
 		SetResizable(m_Specification.IsResizable);
 		SetDecorated(m_Specification.IsDecorated);
 		SetOpacity(m_Specification.Opacity);
-
-		m_RendererContext = RendererContext::Create();
-		m_RendererContext->Init();
 	}
 
 	WindowsWindow::~WindowsWindow()
@@ -60,6 +60,12 @@ namespace DT
 	void WindowsWindow::SetEventCallBack(const EventCallbackFn& callback) 
 	{ 
 		m_WindowData.Callback = callback; 
+	}
+
+	void* WindowsWindow::GetNativeWindow()
+	{
+		HWND hWnd = glfwGetWin32Window(m_GLFWWindow);
+		return (void*)hWnd;
 	}
 
 	void WindowsWindow::ProcessEvents()
@@ -172,6 +178,11 @@ namespace DT
 	void WindowsWindow::SetSizeLimits(int32 minWidth, int32 minHeight, int32 maxWidth, int32 maxHeight)
 	{
 		glfwSetWindowSizeLimits(m_GLFWWindow, minWidth, minHeight, maxWidth, maxHeight);
+	}
+
+	void WindowsWindow::ShowMessageBox(const std::string& title, const std::string& text)
+	{
+		MessageBoxA(nullptr, text.c_str(), title.c_str(), MB_OK | MB_ICONASTERISK);
 	}
 
 	Extent WindowsWindow::GetDisplayResolution() const
