@@ -25,30 +25,33 @@ namespace DT
 		VK_CALL(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatsCount, nullptr));
 		m_SupportDetails.SurfaceFormats.resize(surfaceFormatsCount);
 		VK_CALL(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatsCount, m_SupportDetails.SurfaceFormats.data()));
+		ASSERT(m_SupportDetails.SurfaceFormats.size() > 0u);
 
 		uint32 surfacePresentModesCount;
 		VK_CALL(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &surfacePresentModesCount, nullptr));
 		m_SupportDetails.PresentModes.resize(surfacePresentModesCount);
 		VK_CALL(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &surfacePresentModesCount, m_SupportDetails.PresentModes.data()));
+		ASSERT(m_SupportDetails.PresentModes.size() > 0u);
 
 		LOG_INFO("Swapchain image count: {} to {}", m_SupportDetails.SurfaceCapabilities.minImageCount, m_SupportDetails.SurfaceCapabilities.maxImageCount);
 	}
 
 	void VulkanSwapchain::SelectSurfaceFormat()
 	{
-		bool found = false;
+		m_SurfaceFormat.format = VK_FORMAT_UNDEFINED;
+		m_SurfaceFormat.colorSpace = VK_COLOR_SPACE_MAX_ENUM_KHR;
+
 		for (VkSurfaceFormatKHR& availableFormat : m_SupportDetails.SurfaceFormats)
 		{
 			// prefer the standard BGRA8 unorm
 			if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM)
 			{
 				m_SurfaceFormat = availableFormat;
-				found = true;
 				break;
 			}
-
 		}
-		ASSERT(found);
+		if (m_SurfaceFormat.format == VK_FORMAT_UNDEFINED)
+			m_SurfaceFormat = m_SupportDetails.SurfaceFormats[0];
 
 		LOG_INFO("Found {} swapchain surface formats", m_SupportDetails.SurfaceFormats.size());
 		for (VkSurfaceFormatKHR& supportedFormat : m_SupportDetails.SurfaceFormats)
@@ -91,11 +94,35 @@ namespace DT
 
 	void VulkanSwapchain::SelectSwapExtent()
 	{
-		uint32 minWidth  = m_SupportDetails.SurfaceCapabilities.minImageExtent.width;
-		uint32 minHeight = m_SupportDetails.SurfaceCapabilities.minImageExtent.height;
-		uint32 maxWidth  = m_SupportDetails.SurfaceCapabilities.maxImageExtent.width;
-		uint32 maxHeight = m_SupportDetails.SurfaceCapabilities.maxImageExtent.height;
-		//LOG_INFO("Swapchain image size range: {} to {}", m_SupportDetails.SurfaceCapabilities.minImageExtent.width);
+		int32 minWidth  = (int32)m_SupportDetails.SurfaceCapabilities.minImageExtent.width;
+		int32 minHeight = (int32)m_SupportDetails.SurfaceCapabilities.minImageExtent.height;
+		int32 maxWidth  = (int32)m_SupportDetails.SurfaceCapabilities.maxImageExtent.width;
+		int32 maxHeight = (int32)m_SupportDetails.SurfaceCapabilities.maxImageExtent.height;
+
+		uint32 currentWidth = m_SupportDetails.SurfaceCapabilities.currentExtent.width;
+		uint32 currentHeight = m_SupportDetails.SurfaceCapabilities.currentExtent.height;
+
+		if ((currentWidth != UINT32_MAX) && (currentHeight != UINT32_MAX))
+		{
+			m_Width = (int32)currentWidth;
+			m_Height = (int32)currentHeight;
+		}
+		else
+		{
+			GLFWwindow* glfwWindow = (GLFWwindow*)VulkanContext::Get().GetWindow()->GetPlatformWindow();
+			glfwGetFramebufferSize(glfwWindow, &m_Width, &m_Height);
+
+			// clamp to the supported range
+			if (m_Width < minWidth) m_Width = minWidth;
+			if (m_Width > maxWidth) m_Width = maxWidth;
+			if (m_Height < minHeight) m_Height = minHeight;
+			if (m_Height > maxHeight) m_Height = maxHeight;
+
+			LOG_TRACE("Manually setting the swapchain's extent to ({}, {})", m_Width, m_Height);
+		}
+
+		ASSERT(minWidth > 0u && minHeight > 0u && maxWidth > 0u && maxHeight > 0u);
+		ASSERT(m_Width >= minWidth && m_Height >= minHeight && m_Width <= maxWidth && m_Height <= maxHeight);
 	}
 
 	void VulkanSwapchain::Shutdown()

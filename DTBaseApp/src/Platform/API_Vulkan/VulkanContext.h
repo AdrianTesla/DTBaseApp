@@ -20,7 +20,8 @@ namespace DT
 		
 		VkSurfaceKHR GetSurface() const { return m_Surface; }
 		VkPhysicalDevice GetCurrentPhysicalDevice() { return m_PhysicalDevice.GetPhysicalDevice(); }
-		
+		Ref<Window> GetWindow() const { return m_Window; }
+
 		static VulkanContext& Get() { return *s_Context; }
 		static VkInstance GetVulkanInstance() { return s_Context->m_Instance; }
 	private:
@@ -39,6 +40,8 @@ namespace DT
 		Ref<Window> m_Window;
 
 		VkInstance m_Instance = VK_NULL_HANDLE;
+		VmaAllocator m_MemoryAllocator = VK_NULL_HANDLE;
+
 		VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
 		VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
 		

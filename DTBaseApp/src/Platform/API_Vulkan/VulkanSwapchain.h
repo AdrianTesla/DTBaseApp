@@ -30,6 +30,9 @@ namespace DT
 		VkSurfaceFormatKHR m_SurfaceFormat;
 		VkPresentModeKHR m_PresentMode;
 
+		int32 m_Width;
+		int32 m_Height;
+
 		bool m_VerticalSync;
 	};
 }

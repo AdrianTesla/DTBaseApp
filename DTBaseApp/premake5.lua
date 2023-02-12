@@ -12,7 +12,8 @@ project "DTBaseApp"
 	files
 	{
 		"src/**.h",
-		"src/**.cpp"
+		"src/**.cpp",
+		"%{IncludeDir.vk_mem_alloc}/vk_mem_alloc.cpp"
 	}
 
 	includedirs

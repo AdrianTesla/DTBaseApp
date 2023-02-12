@@ -23,7 +23,7 @@ namespace DT
 		m_QueueFamilyProperties.resize(queueFamilyPropertyCount);
 		vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyPropertyCount, m_QueueFamilyProperties.data());
 
-		LOG_INFO("Queue families found: {}", queueFamilyPropertyCount);
+		LOG_INFO("Found {} queue families:", queueFamilyPropertyCount);
 		VkSurfaceKHR surface = VulkanContext::Get().GetSurface();
 		for (uint32 i = 0u; i < queueFamilyPropertyCount; i++)
 		{

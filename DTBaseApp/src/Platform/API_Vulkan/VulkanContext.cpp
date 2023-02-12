@@ -90,6 +90,7 @@ namespace DT
 		CreateWindowSurface();
 		SelectPhysicalDevice();
 		CreateLogicalDevice();
+		CreateMemoryAllocator();
 		CreateSwapchain();
 	}
 
@@ -198,7 +199,7 @@ namespace DT
 			physicalDevice = m_AvailablePhysicalDevices[0];
 
 		// GPU selection override for debug
-	//  physicalDevice = m_AvailablePhysicalDevices[0];
+	    //physicalDevice = m_AvailablePhysicalDevices[1];
 
 		LOG_INFO("Found {} physical device(s):", physicalDeviceCount);
 		for (uint32 i = 0u; i < physicalDeviceCount; i++)
@@ -206,13 +207,10 @@ namespace DT
 			VkPhysicalDeviceProperties physicalDeviceProperties;
 			vkGetPhysicalDeviceProperties(m_AvailablePhysicalDevices[i], &physicalDeviceProperties);
 
-			if (physicalDevice == m_AvailablePhysicalDevices[i])
-			{
+			if (physicalDevice == m_AvailablePhysicalDevices[i]) {
 				LOG_WARN("  name: {}", physicalDeviceProperties.deviceName);
 				LOG_WARN("  type: {}", string_VkPhysicalDeviceType(physicalDeviceProperties.deviceType));
-			}
-			else
-			{
+			} else {
 				LOG_TRACE("  name: {}", physicalDeviceProperties.deviceName);
 				LOG_TRACE("  type: {}", string_VkPhysicalDeviceType(physicalDeviceProperties.deviceType));
 			}
@@ -234,19 +232,19 @@ namespace DT
 	void VulkanContext::CreateMemoryAllocator()
 	{		
 		// create the vulkan memory allocator
-		//VmaAllocatorCreateInfo allocatorCreateInfo{};
-		//allocatorCreateInfo.flags                          = 0u;
-		//allocatorCreateInfo.physicalDevice                 = m_PhysicalDevice.m_PhysicalDevice;
-		//allocatorCreateInfo.device                         = device;
-		//allocatorCreateInfo.preferredLargeHeapBlockSize    = 0u; // defaults to 256 MiB
-		//allocatorCreateInfo.pAllocationCallbacks           = VK_NULL_HANDLE;
-		//allocatorCreateInfo.pDeviceMemoryCallbacks         = VK_NULL_HANDLE;
-		//allocatorCreateInfo.pHeapSizeLimit                 = VK_NULL_HANDLE;
-		//allocatorCreateInfo.pVulkanFunctions               = VK_NULL_HANDLE;
-		//allocatorCreateInfo.instance                       = m_Instance;
-		//allocatorCreateInfo.vulkanApiVersion               = VK_API_VERSION_1_3;
-		//allocatorCreateInfo.pTypeExternalMemoryHandleTypes = VK_NULL_HANDLE;
-		//VK_CALL(vmaCreateAllocator(&allocatorCreateInfo, &s_Allocator));
+		VmaAllocatorCreateInfo allocatorCreateInfo{};
+		allocatorCreateInfo.flags                          = 0u;
+		allocatorCreateInfo.physicalDevice                 = m_PhysicalDevice.GetPhysicalDevice();
+		allocatorCreateInfo.device                         = m_Device.GetVulkanDevice();
+		allocatorCreateInfo.preferredLargeHeapBlockSize    = 0u; // defaults to 256 MiB
+		allocatorCreateInfo.pAllocationCallbacks           = VK_NULL_HANDLE;
+		allocatorCreateInfo.pDeviceMemoryCallbacks         = VK_NULL_HANDLE;
+		allocatorCreateInfo.pHeapSizeLimit                 = VK_NULL_HANDLE;
+		allocatorCreateInfo.pVulkanFunctions               = VK_NULL_HANDLE;
+		allocatorCreateInfo.instance                       = m_Instance;
+		allocatorCreateInfo.vulkanApiVersion               = VK_API_VERSION_1_3;
+		allocatorCreateInfo.pTypeExternalMemoryHandleTypes = VK_NULL_HANDLE;
+		VK_CALL(vmaCreateAllocator(&allocatorCreateInfo, &m_MemoryAllocator));
 	}
 
 	VulkanContext::~VulkanContext()
