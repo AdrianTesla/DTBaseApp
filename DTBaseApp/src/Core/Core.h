@@ -20,6 +20,8 @@ using int64 = int64_t;
 #include "Timer.h"
 #include "Utils.h"
 #include "Ref.h"
+#include "FileSystem.h"
+#include "Buffer.h"
 
 #ifdef DT_DEBUG
 #define ASSERT(condition) { if(!(condition)) { LOG_ERROR(#condition); __debugbreak(); } }
