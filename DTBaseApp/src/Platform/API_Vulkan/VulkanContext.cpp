@@ -85,11 +85,12 @@ namespace DT
 	{
 		if (!glfwVulkanSupported())
 			MessageBoxes::ShowError("Vulkan is not supported on the system!", "Error");
-		
+
 		CreateVulkanInstance();
 		CreateWindowSurface();
 		SelectPhysicalDevice();
 		CreateLogicalDevice();
+		CreateSwapchain();
 	}
 
 	void VulkanContext::CreateVulkanInstance()
@@ -179,16 +180,16 @@ namespace DT
 		if (physicalDeviceCount == 0u)
 			MessageBoxes::ShowError("Error", "No GPU's found on the system!");
 
-		LOG_INFO("Found {} physical device(s):", physicalDeviceCount);
-
 		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+
+		LOG_INFO("Found {} physical device(s):", physicalDeviceCount);
 		for (uint32 i = 0u; i < physicalDeviceCount; i++)
 		{
 			VkPhysicalDeviceProperties physicalDeviceProperties;
 			vkGetPhysicalDeviceProperties(m_AvailablePhysicalDevices[i], &physicalDeviceProperties);
 
-			LOG_WARN("  Name: {}", physicalDeviceProperties.deviceName);
-			LOG_WARN("  Type: {}", string_VkPhysicalDeviceType(physicalDeviceProperties.deviceType));
+			LOG_TRACE("  name: {}", physicalDeviceProperties.deviceName);
+			LOG_TRACE("  type: {}", string_VkPhysicalDeviceType(physicalDeviceProperties.deviceType));
 			
 			if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 			{
@@ -207,6 +208,11 @@ namespace DT
 	void VulkanContext::CreateLogicalDevice()
 	{
 		m_Device.Init(m_PhysicalDevice);
+	}
+
+	void VulkanContext::CreateSwapchain()
+	{
+		m_Swapchain.Init();
 	}
 
 	void VulkanContext::CreateMemoryAllocator()

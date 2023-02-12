@@ -19,17 +19,19 @@ namespace DT
 		bool IsInstanceLayerSupported(const char* layerName) const;
 		
 		VkSurfaceKHR GetSurface() const { return m_Surface; }
+		VkPhysicalDevice GetCurrentPhysicalDevice() { return m_PhysicalDevice.GetPhysicalDevice(); }
+		
 		const std::vector<VkPhysicalDevice>& GetAvailablePhysicalDevices() const { return m_AvailablePhysicalDevices; }
 
-		static VkInstance GetVulkanInstance() { return s_Context->m_Instance; }
-
 		static VulkanContext& Get() { return *s_Context; }
+		static VkInstance GetVulkanInstance() { return s_Context->m_Instance; }
 	private:
 		void CreateVulkanInstance();
 		void CreateWindowSurface();
 		void SelectPhysicalDevice();
 		void CreateMemoryAllocator();
 		void CreateLogicalDevice();
+		void CreateSwapchain();
 	private:
 		std::vector<const char*> BuildRequestedInstanceExtensions();
 		std::vector<const char*> BuildRequestedInstanceLayers();

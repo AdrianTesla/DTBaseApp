@@ -25,13 +25,14 @@ namespace DT
 		if (VulkanContext::Get().GetAvailablePhysicalDevices().size() > 1u)
 			LOG_WARN("Selected GPU: {}", m_PhysicalDeviceProperties.deviceName);
 
+		LOG_INFO("Queue families found: {}", queueFamilyPropertyCount);
 		VkSurfaceKHR surface = VulkanContext::Get().GetSurface();
 		for (uint32 i = 0u; i < queueFamilyPropertyCount; i++)
 		{
 			VkBool32 presentSupported;
 			VK_CALL(vkGetPhysicalDeviceSurfaceSupportKHR(m_PhysicalDevice, i, surface, &presentSupported));
 			
-			LOG_TRACE("QueueIndex {}: {} presentSupport: {}", i, string_VkQueueFlags(m_QueueFamilyProperties[i].queueFlags), (bool)presentSupported);
+			LOG_TRACE("  index {}: {} presentSupport: {}", i, string_VkQueueFlags(m_QueueFamilyProperties[i].queueFlags), (bool)presentSupported);
 
 			bool hasGraphics = (m_QueueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT);
 			bool hasTransfer = (m_QueueFamilyProperties[i].queueFlags & VK_QUEUE_TRANSFER_BIT);
