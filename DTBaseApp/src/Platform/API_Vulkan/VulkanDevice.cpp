@@ -90,11 +90,11 @@ namespace DT
 		return false;
 	}
 
-	void VulkanDevice::Init(VulkanPhysicalDevice& physicalDevice)
+	void VulkanDevice::Init()
 	{
-		m_PhysicalDevice = &physicalDevice;
+		VulkanPhysicalDevice& physicalDevice = VulkanContext::GetCurrentPhysicalDevice();
 
-		const QueueFamilyIndices& queueFamilyIndices = m_PhysicalDevice->GetQueueFamilyIndices();
+		const QueueFamilyIndices& queueFamilyIndices = physicalDevice.GetQueueFamilyIndices();
 		std::set<uint32> uniqueQueueIndices = {
 			queueFamilyIndices.GraphicsIndex.value(),
 			queueFamilyIndices.TransferIndex.value(),
@@ -121,7 +121,7 @@ namespace DT
 		std::vector<const char*> deviceExtensions = BuildRequestedDeviceExtensions();
 		for (const char* extensionName : deviceExtensions)
 		{
-			if (!m_PhysicalDevice->IsExtensionSupported(extensionName))
+			if (!physicalDevice.IsExtensionSupported(extensionName))
 				MessageBoxes::ShowError(std::format("Extension {} is not supported on the selected GPU", extensionName));
 		}
 		VkPhysicalDeviceFeatures enabledFeatures{};
@@ -138,7 +138,7 @@ namespace DT
 		deviceCreateInfo.enabledExtensionCount   = (uint32)deviceExtensions.size();
 		deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
 		deviceCreateInfo.pEnabledFeatures        = &enabledFeatures;
-		VK_CALL(vkCreateDevice(m_PhysicalDevice->GetPhysicalDevice(), &deviceCreateInfo, nullptr, &m_Device));
+		VK_CALL(vkCreateDevice(physicalDevice.GetVkPhysicalDevice(), &deviceCreateInfo, nullptr, &m_Device));
 	
 		vkGetDeviceQueue(m_Device, queueFamilyIndices.GraphicsIndex.value(), 0u, &m_GraphicsQueue);
 		vkGetDeviceQueue(m_Device, queueFamilyIndices.TransferIndex.value(), 0u, &m_TransferQueue);
@@ -150,7 +150,6 @@ namespace DT
 	{
 		vkDestroyDevice(m_Device, nullptr);
 		m_Device = VK_NULL_HANDLE;
-		m_PhysicalDevice = nullptr;
 	}
 	
 	std::vector<const char*> VulkanDevice::BuildRequestedDeviceExtensions()
@@ -164,7 +163,8 @@ namespace DT
 	{
 		features->wideLines = VK_TRUE;
 
-		const VkPhysicalDeviceFeatures& supportedFeatures = m_PhysicalDevice->GetSupportedFeatures();
+		VulkanPhysicalDevice& physicalDevice = VulkanContext::GetCurrentPhysicalDevice();
+		const VkPhysicalDeviceFeatures& supportedFeatures = physicalDevice.GetSupportedFeatures();
 		const VkBool32* supported = (VkBool32*)&supportedFeatures;
 		const VkBool32* requested = (VkBool32*)features;
 		constexpr uint32 featureCount = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);

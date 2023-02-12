@@ -18,12 +18,18 @@ namespace DT
 		bool IsInstanceExtensionSupported(const char* extensionName) const;
 		bool IsInstanceLayerSupported(const char* layerName) const;
 		
-		VkSurfaceKHR GetSurface() const { return m_Surface; }
-		VkPhysicalDevice GetCurrentPhysicalDevice() { return m_PhysicalDevice.GetPhysicalDevice(); }
 		Ref<Window> GetWindow() const { return m_Window; }
+		
+		VkSurfaceKHR GetSurface() const { return m_Surface; }
 
 		static VulkanContext& Get() { return *s_Context; }
 		static VkInstance GetVulkanInstance() { return s_Context->m_Instance; }
+		
+		static VulkanDevice& GetCurrentDevice() { return s_Context->m_Device; }
+		static VulkanPhysicalDevice& GetCurrentPhysicalDevice() { return s_Context->m_PhysicalDevice; }
+
+		static VkDevice GetCurrentVulkanDevice() { return s_Context->m_Device.GetVkDevice(); }
+		static VkPhysicalDevice GetCurrentVulkanPhysicalDevice() { return s_Context->m_PhysicalDevice.GetVkPhysicalDevice(); }
 	private:
 		void CreateVulkanInstance();
 		void CreateWindowSurface();

@@ -18,7 +18,7 @@ namespace DT
 		void Init(VkPhysicalDevice physicalDevice);
 		bool IsExtensionSupported(const char* deviceExtensionName);
 
-		VkPhysicalDevice GetPhysicalDevice() const { return m_PhysicalDevice; }
+		VkPhysicalDevice GetVkPhysicalDevice() const { return m_PhysicalDevice; }
 		const QueueFamilyIndices& GetQueueFamilyIndices() const { return m_QueueFamilyIndices; }
 		const VkPhysicalDeviceFeatures& GetSupportedFeatures() const { return m_PhysicalDeviceFeatures; }
 	private:
@@ -33,15 +33,14 @@ namespace DT
 	class VulkanDevice
 	{
 	public:
-		void Init(VulkanPhysicalDevice& physicalDevice);
+		void Init();
 		void Shutdown();
 
-		VkDevice GetVulkanDevice() const { return m_Device; }
+		VkDevice GetVkDevice() const { return m_Device; }
 	private:
 		std::vector<const char*> BuildRequestedDeviceExtensions();
 		void BuildEnabledFeatures(VkPhysicalDeviceFeatures* features);
 	private:
-		VulkanPhysicalDevice* m_PhysicalDevice = nullptr;
 		VkDevice m_Device = VK_NULL_HANDLE;
 
 		VkQueue m_GraphicsQueue = VK_NULL_HANDLE;

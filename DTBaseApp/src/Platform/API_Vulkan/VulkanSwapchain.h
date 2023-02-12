@@ -24,11 +24,24 @@ namespace DT
 		void SelectSurfaceFormat();
 		void SelectPresentMode();
 		void SelectSwapExtent();
+		void SelectImageCount();
+		void SelectImageUsage();
+		void SelectCompositeAlpha();
+		void SelectSurfaceTransform();
+		void CreateSwapchain();
 	private:
 		SwapchainSupportDetails m_SupportDetails;
 
 		VkSurfaceFormatKHR m_SurfaceFormat;
 		VkPresentModeKHR m_PresentMode;
+		VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
+
+		uint32 m_ImageCount;
+		VkImageUsageFlags m_SwapImageUsage;
+		VkCompositeAlphaFlagBitsKHR m_CompositeAlpha;
+		VkSurfaceTransformFlagBitsKHR m_SurfaceTransform;
+
+		std::vector<VkImage> m_SwapchainImages;
 
 		int32 m_Width;
 		int32 m_Height;

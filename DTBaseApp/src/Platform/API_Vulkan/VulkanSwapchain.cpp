@@ -12,11 +12,16 @@ namespace DT
 		SelectSurfaceFormat();
 		SelectPresentMode();
 		SelectSwapExtent();
+		SelectImageCount();
+		SelectImageUsage();
+		SelectCompositeAlpha();
+		SelectSurfaceTransform();
+		CreateSwapchain();
 	}
 
 	void VulkanSwapchain::GetSupportDetails()
 	{
-		VkPhysicalDevice physicalDevice = VulkanContext::Get().GetCurrentPhysicalDevice();
+		VkPhysicalDevice physicalDevice = VulkanContext::GetCurrentVulkanPhysicalDevice();
 		VkSurfaceKHR surface = VulkanContext::Get().GetSurface();
 
 		VK_CALL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &m_SupportDetails.SurfaceCapabilities));
@@ -33,7 +38,7 @@ namespace DT
 		VK_CALL(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &surfacePresentModesCount, m_SupportDetails.PresentModes.data()));
 		ASSERT(m_SupportDetails.PresentModes.size() > 0u);
 
-		LOG_INFO("Swapchain image count: {} to {}", m_SupportDetails.SurfaceCapabilities.minImageCount, m_SupportDetails.SurfaceCapabilities.maxImageCount);
+		LOG_INFO("Swapchain image count range: {} to {}", m_SupportDetails.SurfaceCapabilities.minImageCount, m_SupportDetails.SurfaceCapabilities.maxImageCount);
 	}
 
 	void VulkanSwapchain::SelectSurfaceFormat()
@@ -125,8 +130,143 @@ namespace DT
 		ASSERT(m_Width >= minWidth && m_Height >= minHeight && m_Width <= maxWidth && m_Height <= maxHeight);
 	}
 
+	void VulkanSwapchain::SelectImageCount()
+	{		
+		uint32 minImageCount = m_SupportDetails.SurfaceCapabilities.minImageCount;
+		uint32 maxImageCount = m_SupportDetails.SurfaceCapabilities.maxImageCount;
+
+		m_ImageCount = minImageCount + 1u;
+		if (maxImageCount != 0 && m_ImageCount > maxImageCount)
+			m_ImageCount = maxImageCount;
+	}
+
+	void VulkanSwapchain::SelectImageUsage()
+	{
+		VkImageUsageFlags supportedUsageFlags = m_SupportDetails.SurfaceCapabilities.supportedUsageFlags;
+		
+		m_SwapImageUsage = 0u;
+		if (supportedUsageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+			m_SwapImageUsage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+		LOG_INFO("Supported swapchain image usage flags:");
+		uint32 index = 0u;
+		while (supportedUsageFlags) 
+		{
+			VkImageUsageFlagBits currentFlag = (VkImageUsageFlagBits)(1u << index);
+			if (supportedUsageFlags & 1u) 
+			{
+				if (m_SwapImageUsage & currentFlag)
+					LOG_WARN("  {}", string_VkImageUsageFlagBits(currentFlag));
+				else
+					LOG_TRACE("  {}", string_VkImageUsageFlagBits(currentFlag));
+			}
+			index++;
+			supportedUsageFlags >>= 1u;
+		}
+	}
+
+	void VulkanSwapchain::SelectCompositeAlpha()
+	{
+		VkCompositeAlphaFlagsKHR supportedFlags = m_SupportDetails.SurfaceCapabilities.supportedCompositeAlpha;
+
+		m_CompositeAlpha = VK_COMPOSITE_ALPHA_FLAG_BITS_MAX_ENUM_KHR;
+		if (supportedFlags & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR)
+			m_CompositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+
+		LOG_INFO("Supported swapchain composite alpha flags:");
+		uint32 index = 0u;
+		while (supportedFlags)
+		{
+			VkCompositeAlphaFlagBitsKHR currentFlag = (VkCompositeAlphaFlagBitsKHR)(1u << index);
+			if (supportedFlags & 1u)
+			{
+				if (m_CompositeAlpha & currentFlag)
+					LOG_WARN("  {}", string_VkCompositeAlphaFlagBitsKHR(currentFlag));
+				else
+					LOG_TRACE("  {}", string_VkCompositeAlphaFlagBitsKHR(currentFlag));
+			}
+			index++;
+			supportedFlags >>= 1u;
+		}
+	}
+
+	void VulkanSwapchain::SelectSurfaceTransform()
+	{
+		VkSurfaceTransformFlagsKHR supportedTransforms = m_SupportDetails.SurfaceCapabilities.supportedTransforms;
+
+		m_SurfaceTransform = m_SupportDetails.SurfaceCapabilities.currentTransform;
+
+		LOG_INFO("Supported swapchain surface transforms:");
+		uint32 index = 0u;
+		while (supportedTransforms)
+		{
+			VkSurfaceTransformFlagBitsKHR currentFlag = (VkSurfaceTransformFlagBitsKHR)(1u << index);
+			if (supportedTransforms & 1u)
+			{
+				if (m_SurfaceTransform & currentFlag)
+					LOG_WARN("  {}", string_VkSurfaceTransformFlagBitsKHR(currentFlag));
+				else
+					LOG_TRACE("  {}", string_VkSurfaceTransformFlagBitsKHR(currentFlag));
+			}
+			index++;
+			supportedTransforms >>= 1u;
+		}
+	}
+
+	void VulkanSwapchain::CreateSwapchain()
+	{
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+		VulkanPhysicalDevice& physicalDevice = VulkanContext::GetCurrentPhysicalDevice();
+
+		const QueueFamilyIndices& queueFamilyIndices = physicalDevice.GetQueueFamilyIndices();
+
+		uint32 graphicsAndPresentIndices[] = {
+			queueFamilyIndices.GraphicsIndex.value(),
+			queueFamilyIndices.PresentIndex.value()
+		};
+
+		// if the present and graphics queues are different, we need to share the swapchain images across the queues
+		VkSharingMode imageSharingMode;
+		if (queueFamilyIndices.GraphicsIndex != queueFamilyIndices.PresentIndex)
+			imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+		else
+			imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+		VkSwapchainCreateInfoKHR swapchainCreateInfo{};
+		swapchainCreateInfo.sType                 = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+		swapchainCreateInfo.pNext                 = nullptr;
+		swapchainCreateInfo.flags                 = 0u;
+		swapchainCreateInfo.surface               = VulkanContext::Get().GetSurface();
+		swapchainCreateInfo.minImageCount         = m_ImageCount;
+		swapchainCreateInfo.imageFormat           = m_SurfaceFormat.format;
+		swapchainCreateInfo.imageColorSpace       = m_SurfaceFormat.colorSpace;
+		swapchainCreateInfo.imageExtent.width     = (uint32)m_Width;
+		swapchainCreateInfo.imageExtent.height    = (uint32)m_Height;
+		swapchainCreateInfo.imageArrayLayers      = 1u;
+		swapchainCreateInfo.imageUsage            = m_SwapImageUsage;
+		swapchainCreateInfo.imageSharingMode      = imageSharingMode;
+		swapchainCreateInfo.queueFamilyIndexCount = ((imageSharingMode == VK_SHARING_MODE_CONCURRENT) ? 2u : 0u);
+		swapchainCreateInfo.pQueueFamilyIndices   = graphicsAndPresentIndices;
+		swapchainCreateInfo.preTransform          = m_SupportDetails.SurfaceCapabilities.currentTransform;
+		swapchainCreateInfo.compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+		swapchainCreateInfo.presentMode           = m_PresentMode;
+		swapchainCreateInfo.clipped               = VK_TRUE;
+		swapchainCreateInfo.oldSwapchain          = m_Swapchain;
+		VK_CALL(vkCreateSwapchainKHR(device, &swapchainCreateInfo, nullptr, &m_Swapchain));
+
+		// retrieve the automatically created swapchain images
+		VK_CALL(vkGetSwapchainImagesKHR(device, m_Swapchain, &m_ImageCount, nullptr));
+		m_SwapchainImages.resize(m_ImageCount);
+		VK_CALL(vkGetSwapchainImagesKHR(device, m_Swapchain, &m_ImageCount, m_SwapchainImages.data()));
+
+
+	}
+
 	void VulkanSwapchain::Shutdown()
 	{
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+		vkDestroySwapchainKHR(device, m_Swapchain, nullptr);
+		m_Swapchain = VK_NULL_HANDLE;
 	}
 
 	void VulkanSwapchain::Resize(int32 width, int32 height)
