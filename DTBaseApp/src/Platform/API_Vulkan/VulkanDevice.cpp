@@ -1,6 +1,7 @@
 #include "VulkanDevice.h"
 #include "Platform/PlatformUtils.h"
 #include "VulkanContext.h"
+#include <set>
 
 namespace DT
 {
@@ -21,9 +22,6 @@ namespace DT
 		vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyPropertyCount, nullptr);
 		m_QueueFamilyProperties.resize(queueFamilyPropertyCount);
 		vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyPropertyCount, m_QueueFamilyProperties.data());
-
-		if (VulkanContext::Get().GetAvailablePhysicalDevices().size() > 1u)
-			LOG_WARN("Selected GPU: {}", m_PhysicalDeviceProperties.deviceName);
 
 		LOG_INFO("Queue families found: {}", queueFamilyPropertyCount);
 		VkSurfaceKHR surface = VulkanContext::Get().GetSurface();
@@ -74,7 +72,7 @@ namespace DT
 		if (!m_QueueFamilyIndices.ComputeIndex.has_value())
 		{
 			LOG_WARN("No (compute + transfer) only queue found, fallback to the all-in-one graphics queue");
-			m_QueueFamilyIndices.TransferIndex = m_QueueFamilyIndices.GraphicsIndex;
+			m_QueueFamilyIndices.ComputeIndex = m_QueueFamilyIndices.GraphicsIndex;
 		}
 
 		// if no present queue found, we are done
@@ -96,21 +94,28 @@ namespace DT
 	{
 		m_PhysicalDevice = &physicalDevice;
 
-		VkDeviceQueueCreateInfo deviceQueueCreateInfos[3];
-		for (uint8 i = 0u; i < 3u; i++)
+		const QueueFamilyIndices& queueFamilyIndices = m_PhysicalDevice->GetQueueFamilyIndices();
+		std::set<uint32> uniqueQueueIndices = {
+			queueFamilyIndices.GraphicsIndex.value(),
+			queueFamilyIndices.TransferIndex.value(),
+			queueFamilyIndices.ComputeIndex.value(),
+			queueFamilyIndices.PresentIndex.value()
+		};
+
+		std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos;
+		deviceQueueCreateInfos.reserve(uniqueQueueIndices.size());
+		for (uint32 queueIndex : uniqueQueueIndices)
 		{
 			constexpr float defaultQueuePriority = 1.0f;
-			deviceQueueCreateInfos[i].sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-			deviceQueueCreateInfos[i].pNext            = nullptr;
-			deviceQueueCreateInfos[i].flags            = 0u;
-			deviceQueueCreateInfos[i].queueCount       = 1u;
-			deviceQueueCreateInfos[i].pQueuePriorities = &defaultQueuePriority;
+			
+			VkDeviceQueueCreateInfo& deviceQueueCreateInfo = deviceQueueCreateInfos.emplace_back();
+			deviceQueueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			deviceQueueCreateInfo.pNext            = nullptr;
+			deviceQueueCreateInfo.flags            = 0u;
+			deviceQueueCreateInfo.queueFamilyIndex = queueIndex;
+			deviceQueueCreateInfo.queueCount       = 1u;
+			deviceQueueCreateInfo.pQueuePriorities = &defaultQueuePriority;
 		}
-
-		const QueueFamilyIndices& queueFamilyIndices = m_PhysicalDevice->GetQueueFamilyIndices();
-		deviceQueueCreateInfos[0].queueFamilyIndex = queueFamilyIndices.GraphicsIndex.value();
-		deviceQueueCreateInfos[1].queueFamilyIndex = queueFamilyIndices.TransferIndex.value();
-		deviceQueueCreateInfos[2].queueFamilyIndex = queueFamilyIndices.ComputeIndex.value();
 
 		// requested extension and availability check
 		std::vector<const char*> deviceExtensions = BuildRequestedDeviceExtensions();
@@ -126,8 +131,8 @@ namespace DT
 		deviceCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		deviceCreateInfo.pNext                   = nullptr;
 		deviceCreateInfo.flags                   = 0u;
-		deviceCreateInfo.queueCreateInfoCount    = (uint32)std::size(deviceQueueCreateInfos);
-		deviceCreateInfo.pQueueCreateInfos       = deviceQueueCreateInfos;
+		deviceCreateInfo.queueCreateInfoCount    = (uint32)deviceQueueCreateInfos.size();
+		deviceCreateInfo.pQueueCreateInfos       = deviceQueueCreateInfos.data();
 		deviceCreateInfo.enabledLayerCount       = 0u;
 		deviceCreateInfo.ppEnabledLayerNames     = nullptr;
 		deviceCreateInfo.enabledExtensionCount   = (uint32)deviceExtensions.size();

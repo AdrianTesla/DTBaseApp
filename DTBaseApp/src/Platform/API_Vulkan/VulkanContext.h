@@ -21,8 +21,6 @@ namespace DT
 		VkSurfaceKHR GetSurface() const { return m_Surface; }
 		VkPhysicalDevice GetCurrentPhysicalDevice() { return m_PhysicalDevice.GetPhysicalDevice(); }
 		
-		const std::vector<VkPhysicalDevice>& GetAvailablePhysicalDevices() const { return m_AvailablePhysicalDevices; }
-
 		static VulkanContext& Get() { return *s_Context; }
 		static VkInstance GetVulkanInstance() { return s_Context->m_Instance; }
 	private:

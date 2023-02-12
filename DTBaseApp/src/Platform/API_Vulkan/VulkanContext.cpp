@@ -180,28 +180,43 @@ namespace DT
 		if (physicalDeviceCount == 0u)
 			MessageBoxes::ShowError("Error", "No GPU's found on the system!");
 
+		// prefer dedicated GPU's
 		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-
-		bool found = false;
-		LOG_INFO("Found {} physical device(s):", physicalDeviceCount);
 		for (uint32 i = 0u; i < physicalDeviceCount; i++)
 		{
 			VkPhysicalDeviceProperties physicalDeviceProperties;
 			vkGetPhysicalDeviceProperties(m_AvailablePhysicalDevices[i], &physicalDeviceProperties);
-
-			LOG_TRACE("  name: {}", physicalDeviceProperties.deviceName);
-			LOG_TRACE("  type: {}", string_VkPhysicalDeviceType(physicalDeviceProperties.deviceType));
-			
-			if (!found && (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU))
+			if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 			{
 				physicalDevice = m_AvailablePhysicalDevices[i];
-				found = true;
+				break;
 			}
 		}
 
 		// if no dedicated GPU found, use the first enumerated one 
 		if (physicalDevice == VK_NULL_HANDLE)
 			physicalDevice = m_AvailablePhysicalDevices[0];
+
+		// GPU selection override for debug
+	//  physicalDevice = m_AvailablePhysicalDevices[0];
+
+		LOG_INFO("Found {} physical device(s):", physicalDeviceCount);
+		for (uint32 i = 0u; i < physicalDeviceCount; i++)
+		{
+			VkPhysicalDeviceProperties physicalDeviceProperties;
+			vkGetPhysicalDeviceProperties(m_AvailablePhysicalDevices[i], &physicalDeviceProperties);
+
+			if (physicalDevice == m_AvailablePhysicalDevices[i])
+			{
+				LOG_WARN("  name: {}", physicalDeviceProperties.deviceName);
+				LOG_WARN("  type: {}", string_VkPhysicalDeviceType(physicalDeviceProperties.deviceType));
+			}
+			else
+			{
+				LOG_TRACE("  name: {}", physicalDeviceProperties.deviceName);
+				LOG_TRACE("  type: {}", string_VkPhysicalDeviceType(physicalDeviceProperties.deviceType));
+			}
+		}
 
 		m_PhysicalDevice.Init(physicalDevice);
 	}
