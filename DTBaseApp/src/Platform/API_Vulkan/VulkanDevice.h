@@ -47,5 +47,6 @@ namespace DT
 		VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
 		VkQueue m_TransferQueue = VK_NULL_HANDLE;
 		VkQueue m_ComputeQueue = VK_NULL_HANDLE;
+		VkQueue m_PresentQueue = VK_NULL_HANDLE;
 	};
 }

@@ -55,7 +55,7 @@ namespace DT
 		return instanceLayers;
 	}
 
-	bool VulkanContext::IsInstanceExtensionSupported(const char* extensionName)
+	bool VulkanContext::IsInstanceExtensionSupported(const char* extensionName) const
 	{
 		for (const VkExtensionProperties& extension : m_AvailableInstanceExtensions)
 		{
@@ -65,7 +65,7 @@ namespace DT
 		return false;
 	}
 
-	bool VulkanContext::IsInstanceLayerSupported(const char* layerName)
+	bool VulkanContext::IsInstanceLayerSupported(const char* layerName) const
 	{
 		for (const VkLayerProperties& layer : s_Context->m_AvailableInstanceLayers)
 		{
@@ -135,7 +135,7 @@ namespace DT
 		instanceCreateInfo.enabledExtensionCount   = (uint32)requestedExtensions.size();
 		instanceCreateInfo.ppEnabledExtensionNames = requestedExtensions.data();
 		
-		// inject a debug messenger before instance creation
+		// inject a debug messenger for the instance creation
 		VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfo{};
 		if (s_ValidationLayerEnabled)
 		{
@@ -165,7 +165,8 @@ namespace DT
 
 	void VulkanContext::CreateWindowSurface()
 	{
-		m_Swapchain.Init(m_Window);
+		GLFWwindow* glfwWindow = (GLFWwindow*)m_Window->GetPlatformWindow();
+		VK_CALL(glfwCreateWindowSurface(m_Instance, glfwWindow, nullptr, &m_Surface));
 	}
 
 	void VulkanContext::SelectPhysicalDevice()
@@ -229,7 +230,9 @@ namespace DT
 	VulkanContext::~VulkanContext()
 	{
 		m_Device.Shutdown();
-		m_Swapchain.Shutdown();
+		
+		vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
+		m_Surface = VK_NULL_HANDLE;
 
 		if (s_ValidationLayerEnabled)
 			GET_INSTANCE_FUNC(vkDestroyDebugUtilsMessengerEXT)(m_Instance, m_DebugMessenger, nullptr);

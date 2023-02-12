@@ -15,9 +15,10 @@ namespace DT
 		virtual void Init() override;
 		virtual void Present() override;
 
-		bool IsInstanceExtensionSupported(const char* extensionName);
-		bool IsInstanceLayerSupported(const char* layerName);
+		bool IsInstanceExtensionSupported(const char* extensionName) const;
+		bool IsInstanceLayerSupported(const char* layerName) const;
 		
+		VkSurfaceKHR GetSurface() const { return m_Surface; }
 		const std::vector<VkPhysicalDevice>& GetAvailablePhysicalDevices() const { return m_AvailablePhysicalDevices; }
 
 		static VkInstance GetVulkanInstance() { return s_Context->m_Instance; }
@@ -39,9 +40,11 @@ namespace DT
 
 		VkInstance m_Instance = VK_NULL_HANDLE;
 		VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
+		VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
+		
 		VulkanPhysicalDevice m_PhysicalDevice;
-		VulkanSwapchain m_Swapchain;
 		VulkanDevice m_Device;
+		VulkanSwapchain m_Swapchain;
 
 		std::vector<VkPhysicalDevice> m_AvailablePhysicalDevices;
 		std::vector<VkLayerProperties> m_AvailableInstanceLayers;

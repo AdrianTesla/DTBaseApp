@@ -7,7 +7,7 @@ namespace DT
 	class VulkanSwapchain
 	{
 	public:
-		void Init(const Ref<Window>& window);
+		void Init();
 		void Shutdown();
 
 		void Resize(int32 width, int32 height);
