@@ -9,6 +9,7 @@ namespace DT
 		std::optional<uint32> GraphicsIndex;
 		std::optional<uint32> TransferIndex;
 		std::optional<uint32> ComputeIndex;
+		std::optional<uint32> PresentIndex;
 	};
 
 	class VulkanPhysicalDevice
@@ -29,27 +30,22 @@ namespace DT
 		std::vector<VkQueueFamilyProperties> m_QueueFamilyProperties;
 	};
 
-	struct VulkanDevice
+	class VulkanDevice
 	{
 	public:
 		void Init(VulkanPhysicalDevice& physicalDevice);
 		void Shutdown();
+
+		VkDevice GetVulkanDevice() const { return m_Device; }
 	private:
-		std::vector<const char*> BuildRequestedDeviceExtensions()
-		{
-			std::vector<const char*> deviceExtensions;
-
-			return deviceExtensions;
-		}
-		void BuildEnabledFeatures(VkPhysicalDeviceFeatures* features)
-		{
-			const VkPhysicalDeviceFeatures& supportedFeatures = m_PhysicalDevice->GetSupportedFeatures();
-
-			ASSERT(supportedFeatures.wideLines);
-			features->wideLines = VK_TRUE;
-		}
+		std::vector<const char*> BuildRequestedDeviceExtensions();
+		void BuildEnabledFeatures(VkPhysicalDeviceFeatures* features);
 	private:
 		VulkanPhysicalDevice* m_PhysicalDevice = nullptr;
 		VkDevice m_Device = VK_NULL_HANDLE;
+
+		VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
+		VkQueue m_TransferQueue = VK_NULL_HANDLE;
+		VkQueue m_ComputeQueue = VK_NULL_HANDLE;
 	};
 }

@@ -26,7 +26,7 @@
 
 #define VK_VALIDATION_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 
-#define GET_INSTANCE_FUNC(x) ((PFN_##x)vkGetInstanceProcAddr(s_Instance, #x))
+#define GET_INSTANCE_FUNC(x) ((PFN_##x)vkGetInstanceProcAddr(m_Instance, #x))
 
 namespace DT
 {

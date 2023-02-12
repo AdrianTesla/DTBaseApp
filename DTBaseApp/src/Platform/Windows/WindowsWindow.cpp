@@ -62,7 +62,12 @@ namespace DT
 		m_WindowData.Callback = callback; 
 	}
 
-	void* WindowsWindow::GetNativeWindow()
+	void* WindowsWindow::GetPlatformWindow() const
+	{
+		return m_GLFWWindow;
+	}
+
+	void* WindowsWindow::GetNativeWindow() const
 	{
 		HWND hWnd = glfwGetWin32Window(m_GLFWWindow);
 		return (void*)hWnd;

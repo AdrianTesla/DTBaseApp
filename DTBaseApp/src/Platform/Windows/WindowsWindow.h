@@ -14,7 +14,8 @@ namespace DT
 		virtual void SetEventCallBack(const EventCallbackFn& callback) override;
 		virtual const WindowSpecification& GetSpecification() const override { return m_Specification; }
 
-		virtual void* GetNativeWindow() override;
+		virtual void* GetPlatformWindow() const override;
+		virtual void* GetNativeWindow() const override;
 		virtual void ProcessEvents() override;
 		virtual void Maximize() override;
 		virtual void CenterWindow() override;

@@ -28,7 +28,8 @@ namespace DT
 		virtual void SetEventCallBack(const EventCallbackFn& callback) = 0;
 		virtual const WindowSpecification& GetSpecification() const = 0;
 
-		virtual void* GetNativeWindow() = 0;
+		virtual void* GetPlatformWindow() const = 0;
+		virtual void* GetNativeWindow() const = 0;
 		virtual void ProcessEvents() = 0;
 		virtual void Maximize() = 0;
 		virtual void CenterWindow() = 0;

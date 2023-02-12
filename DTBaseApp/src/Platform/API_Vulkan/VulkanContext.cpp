@@ -57,7 +57,7 @@ namespace DT
 
 	bool VulkanContext::IsInstanceExtensionSupported(const char* extensionName)
 	{
-		for (const VkExtensionProperties& extension : s_AvailableInstanceExtensions)
+		for (const VkExtensionProperties& extension : m_AvailableInstanceExtensions)
 		{
 			if (strcmp(extension.extensionName, extensionName) == 0)
 				return true;
@@ -67,7 +67,7 @@ namespace DT
 
 	bool VulkanContext::IsInstanceLayerSupported(const char* layerName)
 	{
-		for (const VkLayerProperties& layer : s_AvailableInstanceLayers)
+		for (const VkLayerProperties& layer : s_Context->m_AvailableInstanceLayers)
 		{
 			if (strcmp(layer.layerName, layerName) == 0)
 				return true;
@@ -77,7 +77,9 @@ namespace DT
 
 	VulkanContext::VulkanContext(const Ref<Window>& window)
 		: m_Window(window)
-	{}
+	{
+		s_Context = this;
+	}
 
 	void VulkanContext::Init()
 	{
@@ -85,23 +87,24 @@ namespace DT
 			MessageBoxes::ShowError("Vulkan is not supported on the system!", "Error");
 		
 		CreateVulkanInstance();
+		CreateWindowSurface();
 		SelectPhysicalDevice();
-		m_Device.Init(m_PhysicalDevice);
+		CreateLogicalDevice();
 	}
 
 	void VulkanContext::CreateVulkanInstance()
 	{
-		// enumerate available extensions
+		// enumerate available instance extensions
 		uint32 extensionCount;
 		VK_CALL(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr));
-		s_AvailableInstanceExtensions.resize(extensionCount);
-		VK_CALL(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, s_AvailableInstanceExtensions.data()));
+		m_AvailableInstanceExtensions.resize(extensionCount);
+		VK_CALL(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, m_AvailableInstanceExtensions.data()));
 		
-		// enumerate available layers
+		// enumerate available instance layers
 		uint32 layerCount;
 		VK_CALL(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
-		s_AvailableInstanceLayers.resize(layerCount);
-		VK_CALL(vkEnumerateInstanceLayerProperties(&layerCount, s_AvailableInstanceLayers.data()));
+		m_AvailableInstanceLayers.resize(layerCount);
+		VK_CALL(vkEnumerateInstanceLayerProperties(&layerCount, m_AvailableInstanceLayers.data()));
 
 		// requested instance extensions
 		std::vector<const char*> requestedExtensions = BuildRequestedInstanceExtensions();
@@ -153,19 +156,24 @@ namespace DT
 			instanceCreateInfo.pNext = &debugUtilsMessengerCreateInfo;
 		}
 		
-		VK_CALL(vkCreateInstance(&instanceCreateInfo, nullptr, &s_Instance));
+		VK_CALL(vkCreateInstance(&instanceCreateInfo, nullptr, &m_Instance));
 
 		// create the actual debug messenger
 		if (s_ValidationLayerEnabled)
-			VK_CALL(GET_INSTANCE_FUNC(vkCreateDebugUtilsMessengerEXT)(s_Instance, &debugUtilsMessengerCreateInfo, nullptr, &m_DebugMessenger));
+			VK_CALL(GET_INSTANCE_FUNC(vkCreateDebugUtilsMessengerEXT)(m_Instance, &debugUtilsMessengerCreateInfo, nullptr, &m_DebugMessenger));
+	}
+
+	void VulkanContext::CreateWindowSurface()
+	{
+		m_Swapchain.Init(m_Window);
 	}
 
 	void VulkanContext::SelectPhysicalDevice()
 	{
 		uint32 physicalDeviceCount;
-		VK_CALL(vkEnumeratePhysicalDevices(s_Instance, &physicalDeviceCount, nullptr));
+		VK_CALL(vkEnumeratePhysicalDevices(m_Instance, &physicalDeviceCount, nullptr));
 		m_AvailablePhysicalDevices.resize(physicalDeviceCount);
-		VK_CALL(vkEnumeratePhysicalDevices(s_Instance, &physicalDeviceCount, m_AvailablePhysicalDevices.data()));
+		VK_CALL(vkEnumeratePhysicalDevices(m_Instance, &physicalDeviceCount, m_AvailablePhysicalDevices.data()));
 
 		if (physicalDeviceCount == 0u)
 			MessageBoxes::ShowError("Error", "No GPU's found on the system!");
@@ -188,11 +196,16 @@ namespace DT
 			}
 		}
 
-		// if no integrated GPU found, use the first enumerated one 
+		// if no dedicated GPU found, use the first enumerated one 
 		if (physicalDevice == VK_NULL_HANDLE)
 			physicalDevice = m_AvailablePhysicalDevices[0];
 
 		m_PhysicalDevice.Init(physicalDevice);
+	}
+	
+	void VulkanContext::CreateLogicalDevice()
+	{
+		m_Device.Init(m_PhysicalDevice);
 	}
 
 	void VulkanContext::CreateMemoryAllocator()
@@ -207,7 +220,7 @@ namespace DT
 		//allocatorCreateInfo.pDeviceMemoryCallbacks         = VK_NULL_HANDLE;
 		//allocatorCreateInfo.pHeapSizeLimit                 = VK_NULL_HANDLE;
 		//allocatorCreateInfo.pVulkanFunctions               = VK_NULL_HANDLE;
-		//allocatorCreateInfo.instance                       = s_Instance;
+		//allocatorCreateInfo.instance                       = m_Instance;
 		//allocatorCreateInfo.vulkanApiVersion               = VK_API_VERSION_1_3;
 		//allocatorCreateInfo.pTypeExternalMemoryHandleTypes = VK_NULL_HANDLE;
 		//VK_CALL(vmaCreateAllocator(&allocatorCreateInfo, &s_Allocator));
@@ -216,15 +229,17 @@ namespace DT
 	VulkanContext::~VulkanContext()
 	{
 		m_Device.Shutdown();
+		m_Swapchain.Shutdown();
 
 		if (s_ValidationLayerEnabled)
-			GET_INSTANCE_FUNC(vkDestroyDebugUtilsMessengerEXT)(s_Instance, m_DebugMessenger, nullptr);
+			GET_INSTANCE_FUNC(vkDestroyDebugUtilsMessengerEXT)(m_Instance, m_DebugMessenger, nullptr);
 
-		vkDestroyInstance(s_Instance, nullptr);
-		s_Instance = VK_NULL_HANDLE;
+		vkDestroyInstance(m_Instance, nullptr);
+		m_Instance = VK_NULL_HANDLE;
 	}
 
 	void VulkanContext::Present()
 	{
+		m_Swapchain.Present();
 	}
 }

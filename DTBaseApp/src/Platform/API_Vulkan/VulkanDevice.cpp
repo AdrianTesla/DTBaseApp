@@ -1,5 +1,6 @@
 #include "VulkanDevice.h"
 #include "Platform/PlatformUtils.h"
+#include "VulkanContext.h"
 
 namespace DT
 {
@@ -21,7 +22,8 @@ namespace DT
 		m_QueueFamilyProperties.resize(queueFamilyPropertyCount);
 		vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyPropertyCount, m_QueueFamilyProperties.data());
 
-		LOG_WARN("Selected GPU: {}", m_PhysicalDeviceProperties.deviceName);
+		if (VulkanContext::Get().GetAvailablePhysicalDevices().size() > 1u)
+			LOG_WARN("Selected GPU: {}", m_PhysicalDeviceProperties.deviceName);
 
 		for (uint32 i = 0u; i < queueFamilyPropertyCount; i++)
 		{
@@ -88,9 +90,10 @@ namespace DT
 			deviceQueueCreateInfos[i].pQueuePriorities = &defaultQueuePriority;
 		}
 
-		deviceQueueCreateInfos[0].queueFamilyIndex = m_PhysicalDevice->GetQueueFamilyIndices().GraphicsIndex.value();
-		deviceQueueCreateInfos[1].queueFamilyIndex = m_PhysicalDevice->GetQueueFamilyIndices().TransferIndex.value();
-		deviceQueueCreateInfos[2].queueFamilyIndex = m_PhysicalDevice->GetQueueFamilyIndices().ComputeIndex.value();
+		const QueueFamilyIndices& queueFamilyIndices = m_PhysicalDevice->GetQueueFamilyIndices();
+		deviceQueueCreateInfos[0].queueFamilyIndex = queueFamilyIndices.GraphicsIndex.value();
+		deviceQueueCreateInfos[1].queueFamilyIndex = queueFamilyIndices.TransferIndex.value();
+		deviceQueueCreateInfos[2].queueFamilyIndex = queueFamilyIndices.ComputeIndex.value();
 
 		// requested extension and availability check
 		std::vector<const char*> deviceExtensions = BuildRequestedDeviceExtensions();
@@ -114,6 +117,10 @@ namespace DT
 		deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
 		deviceCreateInfo.pEnabledFeatures = &enabledFeatures;
 		VK_CALL(vkCreateDevice(m_PhysicalDevice->GetPhysicalDevice(), &deviceCreateInfo, nullptr, &m_Device));
+	
+		vkGetDeviceQueue(m_Device, queueFamilyIndices.GraphicsIndex.value(), 0u, &m_GraphicsQueue);
+		vkGetDeviceQueue(m_Device, queueFamilyIndices.TransferIndex.value(), 0u, &m_TransferQueue);
+		vkGetDeviceQueue(m_Device, queueFamilyIndices.ComputeIndex.value(), 0u, &m_ComputeQueue);
 	}
 
 	void VulkanDevice::Shutdown()
@@ -121,5 +128,20 @@ namespace DT
 		vkDestroyDevice(m_Device, nullptr);
 		m_Device = VK_NULL_HANDLE;
 		m_PhysicalDevice = nullptr;
+	}
+	
+	std::vector<const char*> VulkanDevice::BuildRequestedDeviceExtensions()
+	{
+		std::vector<const char*> deviceExtensions;
+		//deviceExtensions.emplace_back("VK_KHR_swapchain");
+		return deviceExtensions;
+	}
+	
+	void VulkanDevice::BuildEnabledFeatures(VkPhysicalDeviceFeatures* features)
+	{
+		const VkPhysicalDeviceFeatures& supportedFeatures = m_PhysicalDevice->GetSupportedFeatures();
+
+		ASSERT(supportedFeatures.wideLines);
+		features->wideLines = VK_TRUE;
 	}
 }

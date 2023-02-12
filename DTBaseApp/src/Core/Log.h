@@ -20,7 +20,7 @@ namespace DT
 	#define LOG_WARN(...)     ::DT::Log::GetDefaultLogger()->warn(__VA_ARGS__)
 	#define LOG_ERROR(...)    ::DT::Log::GetDefaultLogger()->error(__VA_ARGS__)
 	#define LOG_CRITICAL(...) ::DT::Log::GetDefaultLogger()->critical(__VA_ARGS__)
-#else
+#else 
 	#define LOG_TRACE(...)
 	#define LOG_INFO(...)
 	#define LOG_WARN(...)
