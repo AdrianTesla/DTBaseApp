@@ -182,6 +182,7 @@ namespace DT
 
 		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
+		bool found = false;
 		LOG_INFO("Found {} physical device(s):", physicalDeviceCount);
 		for (uint32 i = 0u; i < physicalDeviceCount; i++)
 		{
@@ -191,10 +192,10 @@ namespace DT
 			LOG_TRACE("  name: {}", physicalDeviceProperties.deviceName);
 			LOG_TRACE("  type: {}", string_VkPhysicalDeviceType(physicalDeviceProperties.deviceType));
 			
-			if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+			if (!found && (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU))
 			{
 				physicalDevice = m_AvailablePhysicalDevices[i];
-				break;
+				found = true;
 			}
 		}
 
