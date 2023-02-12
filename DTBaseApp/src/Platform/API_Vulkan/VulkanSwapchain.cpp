@@ -17,6 +17,7 @@ namespace DT
 		SelectCompositeAlpha();
 		SelectSurfaceTransform();
 		CreateSwapchain();
+		CreateSwapchainImageViews();
 	}
 
 	void VulkanSwapchain::GetSupportDetails()
@@ -258,13 +259,44 @@ namespace DT
 		VK_CALL(vkGetSwapchainImagesKHR(device, m_Swapchain, &m_ImageCount, nullptr));
 		m_SwapchainImages.resize(m_ImageCount);
 		VK_CALL(vkGetSwapchainImagesKHR(device, m_Swapchain, &m_ImageCount, m_SwapchainImages.data()));
+	}
 
+	void VulkanSwapchain::CreateSwapchainImageViews()
+	{
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 
+		m_SwapchainImageViews.resize(m_ImageCount);
+		for (uint32 i = 0u; i < m_ImageCount; i++)
+		{
+			VkImageViewCreateInfo imageViewCreateInfo{};
+			imageViewCreateInfo.sType      = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+			imageViewCreateInfo.pNext      = nullptr;
+			imageViewCreateInfo.flags      = 0u;
+			imageViewCreateInfo.image      = m_SwapchainImages[i];
+			imageViewCreateInfo.viewType   = VK_IMAGE_VIEW_TYPE_2D;
+			imageViewCreateInfo.format     = m_SurfaceFormat.format;
+			imageViewCreateInfo.components = {
+				VK_COMPONENT_SWIZZLE_IDENTITY,
+				VK_COMPONENT_SWIZZLE_IDENTITY,
+				VK_COMPONENT_SWIZZLE_IDENTITY,
+				VK_COMPONENT_SWIZZLE_IDENTITY
+			};
+			imageViewCreateInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+			imageViewCreateInfo.subresourceRange.baseMipLevel   = 0u;
+			imageViewCreateInfo.subresourceRange.levelCount     = 1u;
+			imageViewCreateInfo.subresourceRange.baseArrayLayer = 0u;
+			imageViewCreateInfo.subresourceRange.layerCount     = 1u;
+			VK_CALL(vkCreateImageView(device, &imageViewCreateInfo, nullptr, &m_SwapchainImageViews[i]));
+		}
 	}
 
 	void VulkanSwapchain::Shutdown()
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+
+		for (uint32 i = 0u; i < m_ImageCount; i++)
+			vkDestroyImageView(device, m_SwapchainImageViews[i], nullptr);
+
 		vkDestroySwapchainKHR(device, m_Swapchain, nullptr);
 		m_Swapchain = VK_NULL_HANDLE;
 	}

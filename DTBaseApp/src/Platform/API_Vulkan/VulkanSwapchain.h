@@ -29,6 +29,7 @@ namespace DT
 		void SelectCompositeAlpha();
 		void SelectSurfaceTransform();
 		void CreateSwapchain();
+		void CreateSwapchainImageViews();
 	private:
 		SwapchainSupportDetails m_SupportDetails;
 
@@ -42,6 +43,7 @@ namespace DT
 		VkSurfaceTransformFlagBitsKHR m_SurfaceTransform;
 
 		std::vector<VkImage> m_SwapchainImages;
+		std::vector<VkImageView> m_SwapchainImageViews;
 
 		int32 m_Width;
 		int32 m_Height;
