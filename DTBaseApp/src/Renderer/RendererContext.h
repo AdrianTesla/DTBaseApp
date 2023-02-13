@@ -12,5 +12,6 @@ namespace DT
 
 		virtual void Init() = 0;
 		virtual void Present() = 0;
+		virtual void DoFrameTest() = 0;
 	};
 }

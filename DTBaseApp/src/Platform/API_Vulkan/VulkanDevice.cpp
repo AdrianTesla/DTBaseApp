@@ -10,18 +10,29 @@ namespace DT
 		ASSERT(physicalDevice != VK_NULL_HANDLE);
 		m_PhysicalDevice = physicalDevice;
 
-		vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_PhysicalDeviceProperties);
-		vkGetPhysicalDeviceFeatures(m_PhysicalDevice, &m_PhysicalDeviceFeatures);
+		GetSupportDetails();
+		SelectQueueFamilyIndices();
+	}
+
+	void VulkanPhysicalDevice::GetSupportDetails()
+	{
+		vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_SupportDetails.Properties);
+		vkGetPhysicalDeviceFeatures(m_PhysicalDevice, &m_SupportDetails.Features);
 		
 		uint32 deviceExtensionCount = 0u;
 		VK_CALL(vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &deviceExtensionCount, nullptr));
-		m_SupportedDeviceExtensions.resize(deviceExtensionCount);
-		VK_CALL(vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &deviceExtensionCount, m_SupportedDeviceExtensions.data()));
+		m_SupportDetails.Extensions.resize(deviceExtensionCount);
+		VK_CALL(vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &deviceExtensionCount, m_SupportDetails.Extensions.data()));
 
 		uint32 queueFamilyPropertyCount;
 		vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyPropertyCount, nullptr);
-		m_QueueFamilyProperties.resize(queueFamilyPropertyCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyPropertyCount, m_QueueFamilyProperties.data());
+		m_SupportDetails.QueueFamilyProperties.resize(queueFamilyPropertyCount);
+		vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyPropertyCount, m_SupportDetails.QueueFamilyProperties.data());
+	}
+
+	void VulkanPhysicalDevice::SelectQueueFamilyIndices()
+	{
+		uint32 queueFamilyPropertyCount = (uint32)m_SupportDetails.QueueFamilyProperties.size();
 
 		LOG_INFO("Found {} queue families:", queueFamilyPropertyCount);
 		VkSurfaceKHR surface = VulkanContext::Get().GetSurface();
@@ -29,12 +40,10 @@ namespace DT
 		{
 			VkBool32 presentSupported;
 			VK_CALL(vkGetPhysicalDeviceSurfaceSupportKHR(m_PhysicalDevice, i, surface, &presentSupported));
-			
-			LOG_TRACE("  index {}: {} presentSupport: {}", i, string_VkQueueFlags(m_QueueFamilyProperties[i].queueFlags), (bool)presentSupported);
 
-			bool hasGraphics = (m_QueueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT);
-			bool hasTransfer = (m_QueueFamilyProperties[i].queueFlags & VK_QUEUE_TRANSFER_BIT);
-			bool hasCompute  = (m_QueueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT);
+			bool hasGraphics = (m_SupportDetails.QueueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT);
+			bool hasTransfer = (m_SupportDetails.QueueFamilyProperties[i].queueFlags & VK_QUEUE_TRANSFER_BIT);
+			bool hasCompute  = (m_SupportDetails.QueueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT);
 
 			// try find (graphics + transfer + compute) which is the all-in-one queue
 			if (hasGraphics && hasTransfer && hasCompute)
@@ -78,11 +87,33 @@ namespace DT
 		// if no present queue found, we are done
 		if (!m_QueueFamilyIndices.PresentIndex.has_value())
 			MessageBoxes::ShowError("No GPU queue with present capabilities found!");
+
+		for (uint32 i = 0u; i < queueFamilyPropertyCount; i++)
+		{
+			VkBool32 presentSupported;
+			VK_CALL(vkGetPhysicalDeviceSurfaceSupportKHR(m_PhysicalDevice, i, surface, &presentSupported));
+
+			const char* currentFamilyName;
+			if (i == m_QueueFamilyIndices.GraphicsIndex.value())
+				currentFamilyName = "GraphicsIndex";
+			else if (i == m_QueueFamilyIndices.TransferIndex.value())
+				currentFamilyName = "TransferIndex";
+			else if (i == m_QueueFamilyIndices.ComputeIndex.value())
+				currentFamilyName = "ComputeIndex";
+
+			if (i == m_QueueFamilyIndices.PresentIndex.value())
+				LOG_WARN("  index {} ({} && PresentIndex):", i, currentFamilyName);
+			else
+				LOG_WARN("  index {} ({}):", i, currentFamilyName);
+
+			LOG_TRACE("    flags: {}", string_VkQueueFlags(m_SupportDetails.QueueFamilyProperties[i].queueFlags));
+			LOG_TRACE("    presentSupport: {}", (bool)presentSupported);
+		}
 	}
 
 	bool VulkanPhysicalDevice::IsExtensionSupported(const char* deviceExtensionName)
 	{
-		for (VkExtensionProperties& extensionProperty : m_SupportedDeviceExtensions)
+		for (VkExtensionProperties& extensionProperty : m_SupportDetails.Extensions)
 		{
 			if (strcmp(extensionProperty.extensionName, deviceExtensionName) == 0)
 				return true;
@@ -91,6 +122,12 @@ namespace DT
 	}
 
 	void VulkanDevice::Init()
+	{
+		CreateDevice();
+		CreateCommandPools();
+	}
+
+	void VulkanDevice::CreateDevice()
 	{
 		VulkanPhysicalDevice& physicalDevice = VulkanContext::GetCurrentPhysicalDevice();
 
@@ -139,15 +176,43 @@ namespace DT
 		deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
 		deviceCreateInfo.pEnabledFeatures        = &enabledFeatures;
 		VK_CALL(vkCreateDevice(physicalDevice.GetVulkanPhysicalDevice(), &deviceCreateInfo, nullptr, &m_Device));
-	
+
 		vkGetDeviceQueue(m_Device, queueFamilyIndices.GraphicsIndex.value(), 0u, &m_GraphicsQueue);
 		vkGetDeviceQueue(m_Device, queueFamilyIndices.TransferIndex.value(), 0u, &m_TransferQueue);
 		vkGetDeviceQueue(m_Device, queueFamilyIndices.ComputeIndex.value(), 0u, &m_ComputeQueue);
 		vkGetDeviceQueue(m_Device, queueFamilyIndices.PresentIndex.value(), 0u, &m_PresentQueue);
 	}
 
+	void VulkanDevice::CreateCommandPools()
+	{
+		VulkanPhysicalDevice& physicalDevice = VulkanContext::GetCurrentPhysicalDevice();
+
+		VkCommandPoolCreateInfo commandPoolCreateInfo{};
+		commandPoolCreateInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		commandPoolCreateInfo.pNext            = nullptr;
+		commandPoolCreateInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		commandPoolCreateInfo.queueFamilyIndex = physicalDevice.GetQueueFamilyIndices().GraphicsIndex.value();
+		VK_CALL(vkCreateCommandPool(m_Device, &commandPoolCreateInfo, nullptr, &m_GraphicsCommandPool));
+	}
+
+	VkCommandBuffer VulkanDevice::AllocateCommandBuffer()
+	{
+		VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+
+		VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
+		commandBufferAllocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		commandBufferAllocateInfo.pNext              = nullptr;
+		commandBufferAllocateInfo.commandPool        = m_GraphicsCommandPool;
+		commandBufferAllocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		commandBufferAllocateInfo.commandBufferCount = 1u;
+		VK_CALL(vkAllocateCommandBuffers(m_Device, &commandBufferAllocateInfo, &commandBuffer));
+
+		return commandBuffer;
+	}
+
 	void VulkanDevice::Shutdown()
 	{
+		vkDestroyCommandPool(m_Device, m_GraphicsCommandPool, nullptr);
 		vkDestroyDevice(m_Device, nullptr);
 		m_Device = VK_NULL_HANDLE;
 	}

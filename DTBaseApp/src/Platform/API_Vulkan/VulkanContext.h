@@ -14,6 +14,7 @@ namespace DT
 
 		virtual void Init() override;
 		virtual void Present() override;
+		virtual void DoFrameTest() override;
 
 		bool IsInstanceExtensionSupported(const char* extensionName) const;
 		bool IsInstanceLayerSupported(const char* layerName) const;
@@ -39,6 +40,10 @@ namespace DT
 		void CreateSwapchain();
 
 		void CreateGraphicsPipeline();
+		void CreateRenderPass();
+		void CreateFramebuffers();
+		void CreateCommandBuffer();
+		void RecordCommandBuffers();
 	private:
 		std::vector<const char*> BuildRequestedInstanceExtensions();
 		std::vector<const char*> BuildRequestedInstanceLayers();
@@ -58,6 +63,10 @@ namespace DT
 		VulkanSwapchain m_Swapchain;
 
 		VkPipeline m_Pipeline = VK_NULL_HANDLE;
+		VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
+		VkRenderPass m_RenderPass = VK_NULL_HANDLE;
+		std::vector<VkFramebuffer> m_Framebuffers;
+		VkCommandBuffer m_CommandBuffer = VK_NULL_HANDLE;
 
 		std::vector<VkPhysicalDevice> m_AvailablePhysicalDevices;
 		std::vector<VkLayerProperties> m_AvailableInstanceLayers;

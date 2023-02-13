@@ -53,6 +53,8 @@ namespace DT
 	{
 		for (Layer* layer : m_Layers)
 			layer->OnRender();
+
+		m_RendererContext->DoFrameTest();
 	}
 
 	void Application::OnEvent(Event& event)

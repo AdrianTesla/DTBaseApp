@@ -259,6 +259,8 @@ namespace DT
 		VK_CALL(vkGetSwapchainImagesKHR(device, m_Swapchain, &m_ImageCount, nullptr));
 		m_SwapchainImages.resize(m_ImageCount);
 		VK_CALL(vkGetSwapchainImagesKHR(device, m_Swapchain, &m_ImageCount, m_SwapchainImages.data()));
+
+		LOG_INFO("Created swapchain with {} images", m_ImageCount);
 	}
 
 	void VulkanSwapchain::CreateSwapchainImageViews()

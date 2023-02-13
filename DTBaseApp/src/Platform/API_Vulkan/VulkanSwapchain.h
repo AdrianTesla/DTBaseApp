@@ -19,6 +19,14 @@ namespace DT
 
 		void Resize(int32 width, int32 height);
 		void Present();
+
+		VkFormat GetImageFormat() const { return m_SurfaceFormat.format; }
+		uint32 GetImageCount() const { return m_ImageCount; }
+
+		uint32 GetWidth() const { return (uint32)m_Width; }
+		uint32 GetHeight() const { return (uint32)m_Height; }
+
+		const std::vector<VkImageView>& GetImageViews() const { return m_SwapchainImageViews; }
 	private:
 		void GetSupportDetails();
 		void SelectSurfaceFormat();

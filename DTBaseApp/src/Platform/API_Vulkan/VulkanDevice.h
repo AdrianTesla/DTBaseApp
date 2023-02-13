@@ -12,6 +12,14 @@ namespace DT
 		std::optional<uint32> PresentIndex;
 	};
 
+	struct PhysicalDeviceSupportDetails
+	{
+		VkPhysicalDeviceFeatures Features{};
+		VkPhysicalDeviceProperties Properties{};
+		std::vector<VkExtensionProperties> Extensions;
+		std::vector<VkQueueFamilyProperties> QueueFamilyProperties;
+	};
+
 	class VulkanPhysicalDevice
 	{
 	public:
@@ -20,14 +28,14 @@ namespace DT
 
 		VkPhysicalDevice GetVulkanPhysicalDevice() const { return m_PhysicalDevice; }
 		const QueueFamilyIndices& GetQueueFamilyIndices() const { return m_QueueFamilyIndices; }
-		const VkPhysicalDeviceFeatures& GetSupportedFeatures() const { return m_PhysicalDeviceFeatures; }
+		const VkPhysicalDeviceFeatures& GetSupportedFeatures() const { return m_SupportDetails.Features; }
+	private:
+		void GetSupportDetails();
+		void SelectQueueFamilyIndices();
 	private:
 		VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
 		QueueFamilyIndices m_QueueFamilyIndices;
-		VkPhysicalDeviceFeatures m_PhysicalDeviceFeatures{};
-		VkPhysicalDeviceProperties m_PhysicalDeviceProperties{};
-		std::vector<VkExtensionProperties> m_SupportedDeviceExtensions;
-		std::vector<VkQueueFamilyProperties> m_QueueFamilyProperties;
+		PhysicalDeviceSupportDetails m_SupportDetails;
 	};
 
 	class VulkanDevice
@@ -36,7 +44,11 @@ namespace DT
 		void Init();
 		void Shutdown();
 
+		VkCommandBuffer AllocateCommandBuffer();
 		VkDevice GetVulkanDevice() const { return m_Device; }
+	private:
+		void CreateDevice();
+		void CreateCommandPools();
 	private:
 		std::vector<const char*> BuildRequestedDeviceExtensions();
 		void BuildEnabledFeatures(VkPhysicalDeviceFeatures* features);
@@ -47,5 +59,7 @@ namespace DT
 		VkQueue m_TransferQueue = VK_NULL_HANDLE;
 		VkQueue m_ComputeQueue = VK_NULL_HANDLE;
 		VkQueue m_PresentQueue = VK_NULL_HANDLE;
+
+		VkCommandPool m_GraphicsCommandPool = VK_NULL_HANDLE;
 	};
 }
