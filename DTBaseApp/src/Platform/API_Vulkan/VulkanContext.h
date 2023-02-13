@@ -28,8 +28,8 @@ namespace DT
 		static VulkanDevice& GetCurrentDevice() { return s_Context->m_Device; }
 		static VulkanPhysicalDevice& GetCurrentPhysicalDevice() { return s_Context->m_PhysicalDevice; }
 
-		static VkDevice GetCurrentVulkanDevice() { return s_Context->m_Device.GetVkDevice(); }
-		static VkPhysicalDevice GetCurrentVulkanPhysicalDevice() { return s_Context->m_PhysicalDevice.GetVkPhysicalDevice(); }
+		static VkDevice GetCurrentVulkanDevice() { return s_Context->m_Device.GetVulkanDevice(); }
+		static VkPhysicalDevice GetCurrentVulkanPhysicalDevice() { return s_Context->m_PhysicalDevice.GetVulkanPhysicalDevice(); }
 	private:
 		void CreateVulkanInstance();
 		void CreateWindowSurface();
@@ -37,6 +37,8 @@ namespace DT
 		void CreateMemoryAllocator();
 		void CreateLogicalDevice();
 		void CreateSwapchain();
+
+		void CreateGraphicsPipeline();
 	private:
 		std::vector<const char*> BuildRequestedInstanceExtensions();
 		std::vector<const char*> BuildRequestedInstanceLayers();
@@ -54,6 +56,8 @@ namespace DT
 		VulkanPhysicalDevice m_PhysicalDevice;
 		VulkanDevice m_Device;
 		VulkanSwapchain m_Swapchain;
+
+		VkPipeline m_Pipeline = VK_NULL_HANDLE;
 
 		std::vector<VkPhysicalDevice> m_AvailablePhysicalDevices;
 		std::vector<VkLayerProperties> m_AvailableInstanceLayers;

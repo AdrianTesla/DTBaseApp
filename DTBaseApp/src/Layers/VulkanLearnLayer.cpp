@@ -6,6 +6,7 @@ namespace DT
 {
 	void VulkanLearnLayer::OnAttach()
 	{
+		
 	}
 
 	void VulkanLearnLayer::OnUpdate(float dt)

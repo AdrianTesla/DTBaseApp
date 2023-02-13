@@ -92,6 +92,8 @@ namespace DT
 		CreateLogicalDevice();
 		CreateMemoryAllocator();
 		CreateSwapchain();
+
+		CreateGraphicsPipeline();
 	}
 
 	void VulkanContext::CreateVulkanInstance()
@@ -229,13 +231,18 @@ namespace DT
 		m_Swapchain.Init();
 	}
 
+	void VulkanContext::CreateGraphicsPipeline()
+	{
+		
+	}
+
 	void VulkanContext::CreateMemoryAllocator()
 	{		
 		// create the vulkan memory allocator
 		VmaAllocatorCreateInfo allocatorCreateInfo{};
 		allocatorCreateInfo.flags                          = 0u;
-		allocatorCreateInfo.physicalDevice                 = m_PhysicalDevice.GetVkPhysicalDevice();
-		allocatorCreateInfo.device                         = m_Device.GetVkDevice();
+		allocatorCreateInfo.physicalDevice                 = m_PhysicalDevice.GetVulkanPhysicalDevice();
+		allocatorCreateInfo.device                         = m_Device.GetVulkanDevice();
 		allocatorCreateInfo.preferredLargeHeapBlockSize    = 0u; // defaults to 256 MiB
 		allocatorCreateInfo.pAllocationCallbacks           = VK_NULL_HANDLE;
 		allocatorCreateInfo.pDeviceMemoryCallbacks         = VK_NULL_HANDLE;

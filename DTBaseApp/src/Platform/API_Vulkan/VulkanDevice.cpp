@@ -138,7 +138,7 @@ namespace DT
 		deviceCreateInfo.enabledExtensionCount   = (uint32)deviceExtensions.size();
 		deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
 		deviceCreateInfo.pEnabledFeatures        = &enabledFeatures;
-		VK_CALL(vkCreateDevice(physicalDevice.GetVkPhysicalDevice(), &deviceCreateInfo, nullptr, &m_Device));
+		VK_CALL(vkCreateDevice(physicalDevice.GetVulkanPhysicalDevice(), &deviceCreateInfo, nullptr, &m_Device));
 	
 		vkGetDeviceQueue(m_Device, queueFamilyIndices.GraphicsIndex.value(), 0u, &m_GraphicsQueue);
 		vkGetDeviceQueue(m_Device, queueFamilyIndices.TransferIndex.value(), 0u, &m_TransferQueue);
