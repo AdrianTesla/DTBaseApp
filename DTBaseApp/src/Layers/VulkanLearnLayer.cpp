@@ -7,6 +7,7 @@ namespace DT
 {
 	void VulkanLearnLayer::OnAttach()
 	{
+		Application::Get().GetWindow().SetResizable(false);
 	}
 
 	void VulkanLearnLayer::OnUpdate(float dt)
