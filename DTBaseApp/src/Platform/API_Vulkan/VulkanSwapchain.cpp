@@ -307,7 +307,25 @@ namespace DT
 	{
 	}
 
-	void VulkanSwapchain::Present()
+	void VulkanSwapchain::AquireNextImage(VkSemaphore imageAvailableSemaphore)
 	{
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+		VK_CALL(vkAcquireNextImageKHR(device, m_Swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &m_CurrentImageIndex));
+	}
+
+	void VulkanSwapchain::Present(VkSemaphore renderCompleteSemaphore)
+	{
+		VkQueue presentQueue = VulkanContext::GetCurrentDevice().GetPresentQueue();
+		
+		VkPresentInfoKHR presentInfo{};
+		presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		presentInfo.pNext              = nullptr;
+		presentInfo.waitSemaphoreCount = 1u;
+		presentInfo.pWaitSemaphores    = &renderCompleteSemaphore;
+		presentInfo.swapchainCount     = 1u;
+		presentInfo.pSwapchains        = &m_Swapchain;
+		presentInfo.pImageIndices      = &m_CurrentImageIndex;
+		presentInfo.pResults           = nullptr;
+		VK_CALL(vkQueuePresentKHR(presentQueue, &presentInfo));
 	}
 }

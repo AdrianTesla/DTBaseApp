@@ -54,7 +54,7 @@ namespace DT
 		for (Layer* layer : m_Layers)
 			layer->OnRender();
 
-		m_RendererContext->DoFrameTest();
+		m_RendererContext->DrawFrameTest();
 	}
 
 	void Application::OnEvent(Event& event)

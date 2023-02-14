@@ -24,7 +24,7 @@ using int64 = int64_t;
 #include "Buffer.h"
 
 #ifdef DT_DEBUG
-#define ASSERT(condition) { if(!(condition)) { LOG_ERROR(#condition); __debugbreak(); } }
+	#define ASSERT(condition) { if(!(condition)) { LOG_ERROR(#condition); __debugbreak(); } }
 #else
 	#define ASSERT(condition) {}
 #endif

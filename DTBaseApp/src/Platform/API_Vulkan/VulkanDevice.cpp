@@ -195,7 +195,7 @@ namespace DT
 		VK_CALL(vkCreateCommandPool(m_Device, &commandPoolCreateInfo, nullptr, &m_GraphicsCommandPool));
 	}
 
-	VkCommandBuffer VulkanDevice::AllocateCommandBuffer()
+	VkCommandBuffer VulkanDevice::AllocateGraphicsCommandBuffer()
 	{
 		VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
 

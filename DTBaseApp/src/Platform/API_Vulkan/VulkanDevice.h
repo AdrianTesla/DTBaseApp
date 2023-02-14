@@ -44,8 +44,10 @@ namespace DT
 		void Init();
 		void Shutdown();
 
-		VkCommandBuffer AllocateCommandBuffer();
+		VkCommandBuffer AllocateGraphicsCommandBuffer();
 		VkDevice GetVulkanDevice() const { return m_Device; }
+
+		VkQueue GetPresentQueue() const { return m_PresentQueue; }
 	private:
 		void CreateDevice();
 		void CreateCommandPools();

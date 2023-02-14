@@ -97,6 +97,7 @@ namespace DT
 		CreateGraphicsPipeline();
 		CreateFramebuffers();
 		CreateCommandBuffer();
+		CreateSyncronizationObjects();
 	}
 
 	void VulkanContext::CreateVulkanInstance()
@@ -448,7 +449,9 @@ namespace DT
 	}
 
 	void VulkanContext::CreateRenderPass()
-	{		
+	{
+		VkDevice device = m_Device.GetVulkanDevice();
+
 		VkAttachmentDescription attachmentDescription{};
 		attachmentDescription.flags          = 0u;
 		attachmentDescription.format         = m_Swapchain.GetImageFormat();
@@ -461,7 +464,7 @@ namespace DT
 		attachmentDescription.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 		VkAttachmentReference colorAttachmentReference{};
-		colorAttachmentReference.attachment = 0;
+		colorAttachmentReference.attachment = 0u;
 		colorAttachmentReference.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		VkSubpassDescription subpassDescription{};
@@ -486,7 +489,7 @@ namespace DT
 		renderPassCreateInfo.pSubpasses      = &subpassDescription;
 		renderPassCreateInfo.dependencyCount = 0u;	
 		renderPassCreateInfo.pDependencies   = nullptr;
-		VK_CALL(vkCreateRenderPass(m_Device.GetVulkanDevice(), &renderPassCreateInfo, nullptr, &m_RenderPass));
+		VK_CALL(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &m_RenderPass));
 	}
 
 	void VulkanContext::CreateFramebuffers()
@@ -512,33 +515,29 @@ namespace DT
 
 	void VulkanContext::CreateCommandBuffer()
 	{
-		m_CommandBuffer = m_Device.AllocateCommandBuffer();
+		m_GraphicsCommandBuffer = m_Device.AllocateGraphicsCommandBuffer();
 	}
 
-	void VulkanContext::RecordCommandBuffers()
+	void VulkanContext::RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32 imageIndex)
 	{
 		VkCommandBufferBeginInfo commandBufferBeginInfo{};
 		commandBufferBeginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		commandBufferBeginInfo.pNext            = nullptr;
 		commandBufferBeginInfo.flags            = 0u;
 		commandBufferBeginInfo.pInheritanceInfo = nullptr;
-		VK_CALL(vkBeginCommandBuffer(m_CommandBuffer, &commandBufferBeginInfo));
 
-		VkClearValue clearValue = {{{ 0.0f,0.0f,0.0f,1.0f}}};
+		VkClearValue clearValue = {{{ 0.0f,0.0f,0.0f,1.0f }}};
 
 		VkRenderPassBeginInfo renderPassBeginInfo{};
 		renderPassBeginInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassBeginInfo.pNext             = nullptr;
 		renderPassBeginInfo.renderPass        = m_RenderPass;
-		renderPassBeginInfo.framebuffer       = m_Framebuffers[0];
+		renderPassBeginInfo.framebuffer       = m_Framebuffers[imageIndex];
 		renderPassBeginInfo.renderArea.offset = { 0u,0u };
 		renderPassBeginInfo.renderArea.extent = { (uint32)m_Swapchain.GetWidth(),(uint32)m_Swapchain.GetHeight() };
 		renderPassBeginInfo.clearValueCount   = 1u;
 		renderPassBeginInfo.pClearValues      = &clearValue;
-		vkCmdBeginRenderPass(m_CommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-		vkCmdBindPipeline(m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
-
+			
 		VkViewport viewport{};
 		viewport.x        = 0.0f;
 		viewport.y        = 0.0f;
@@ -546,17 +545,42 @@ namespace DT
 		viewport.height   = (float)m_Swapchain.GetHeight();
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
-		vkCmdSetViewport(m_CommandBuffer, 0u, 1u, &viewport);
 
 		VkRect2D scissor{};
 		scissor.offset = { 0u,0u };
 		scissor.extent = { (uint32)m_Swapchain.GetWidth(),(uint32)m_Swapchain.GetHeight() };
-		vkCmdSetScissor(m_CommandBuffer, 0, 1, &scissor);
-		vkCmdDraw(m_CommandBuffer, 3u, 1u, 0u, 0u);
 
-		vkCmdEndRenderPass(m_CommandBuffer);
+		VK_CALL(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
+		{
+			vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+			{
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+				vkCmdSetViewport(commandBuffer, 0u, 1u, &viewport);
+				vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+				vkCmdDraw(commandBuffer, 3u, 1u, 0u, 0u);
+			}
+			vkCmdEndRenderPass(commandBuffer);
+		}
+		VK_CALL(vkEndCommandBuffer(commandBuffer));
+	}
 
-		VK_CALL(vkEndCommandBuffer(m_CommandBuffer));
+	void VulkanContext::CreateSyncronizationObjects()
+	{
+		VkDevice device = m_Device.GetVulkanDevice();
+
+		// create image available and render complete semaphores
+		VkSemaphoreCreateInfo semaphoreCreateInfo{};
+		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		semaphoreCreateInfo.pNext = nullptr;
+		semaphoreCreateInfo.flags = 0u;
+		VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_ImageAvailableSemaphore));
+		VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_RenderCompleteSemaphore));
+
+		VkFenceCreateInfo fenceCreateInfo{};
+		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceCreateInfo.pNext = nullptr;
+		fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+		VK_CALL(vkCreateFence(device, &fenceCreateInfo, nullptr, &m_PreviousFrameFinishedFence));
 	}
 
 	void VulkanContext::CreateMemoryAllocator()
@@ -578,8 +602,14 @@ namespace DT
 
 	VulkanContext::~VulkanContext()
 	{
+		VK_CALL(vkDeviceWaitIdle(m_Device.GetVulkanDevice()));
+
 		// pipeline
 		VkDevice device = m_Device.GetVulkanDevice();
+
+		vkDestroySemaphore(device, m_ImageAvailableSemaphore, nullptr);
+		vkDestroySemaphore(device, m_RenderCompleteSemaphore, nullptr);
+		vkDestroyFence(device, m_PreviousFrameFinishedFence, nullptr);
 
 		for (size_t i = 0u; i < m_Framebuffers.size(); i++)
 			vkDestroyFramebuffer(device, m_Framebuffers[i], nullptr);
@@ -606,12 +636,38 @@ namespace DT
 
 	void VulkanContext::Present()
 	{
-		m_Swapchain.Present();
+		//m_Swapchain.Present();
 	}
 
-	void VulkanContext::DoFrameTest()
+	void VulkanContext::DrawFrameTest()
 	{
-		RecordCommandBuffers();
-		m_Swapchain.Present();
+		VkDevice device = m_Device.GetVulkanDevice();
+
+		VK_CALL(vkWaitForFences(device, 1u, &m_PreviousFrameFinishedFence, VK_TRUE, UINT64_MAX));
+		VK_CALL(vkResetFences(device, 1u, &m_PreviousFrameFinishedFence));
+
+		m_Swapchain.AquireNextImage(m_ImageAvailableSemaphore);
+
+		// prepara la lista della spesa
+		RecordCommandBuffers(m_GraphicsCommandBuffer, m_Swapchain.GetCurrentImageIndex());
+
+		VkPipelineStageFlags waitStages[] = { 
+			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+		};
+
+		// va a fa la spesa e aspetta che abbia finito di acquisire l'immagine
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.pNext                = nullptr;
+		submitInfo.waitSemaphoreCount   = 1u;
+		submitInfo.pWaitSemaphores      = &m_ImageAvailableSemaphore;
+		submitInfo.pWaitDstStageMask    = waitStages;
+		submitInfo.commandBufferCount   = 1u;
+		submitInfo.pCommandBuffers      = &m_GraphicsCommandBuffer;
+		submitInfo.signalSemaphoreCount = 1u;
+		submitInfo.pSignalSemaphores    = &m_RenderCompleteSemaphore;
+		VK_CALL(vkQueueSubmit(m_Device.GetPresentQueue(), 1u, &submitInfo, m_PreviousFrameFinishedFence));
+
+		m_Swapchain.Present(m_RenderCompleteSemaphore);
 	}
 }

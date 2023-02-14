@@ -18,10 +18,12 @@ namespace DT
 		void Shutdown();
 
 		void Resize(int32 width, int32 height);
-		void Present();
+		void AquireNextImage(VkSemaphore imageAvailableSemaphore);
+		void Present(VkSemaphore renderCompleteSemaphore);
 
 		VkFormat GetImageFormat() const { return m_SurfaceFormat.format; }
 		uint32 GetImageCount() const { return m_ImageCount; }
+		uint32 GetCurrentImageIndex() const { return m_CurrentImageIndex; }
 
 		uint32 GetWidth() const { return (uint32)m_Width; }
 		uint32 GetHeight() const { return (uint32)m_Height; }
@@ -52,6 +54,7 @@ namespace DT
 
 		std::vector<VkImage> m_SwapchainImages;
 		std::vector<VkImageView> m_SwapchainImageViews;
+		uint32 m_CurrentImageIndex = 0u;
 
 		int32 m_Width;
 		int32 m_Height;

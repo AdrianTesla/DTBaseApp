@@ -14,8 +14,8 @@ namespace DT
 
 		virtual void Init() override;
 		virtual void Present() override;
-		virtual void DoFrameTest() override;
-
+		virtual void DrawFrameTest() override;
+		
 		bool IsInstanceExtensionSupported(const char* extensionName) const;
 		bool IsInstanceLayerSupported(const char* layerName) const;
 		
@@ -43,7 +43,8 @@ namespace DT
 		void CreateRenderPass();
 		void CreateFramebuffers();
 		void CreateCommandBuffer();
-		void RecordCommandBuffers();
+		void RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32 imageIndex);
+		void CreateSyncronizationObjects();
 	private:
 		std::vector<const char*> BuildRequestedInstanceExtensions();
 		std::vector<const char*> BuildRequestedInstanceLayers();
@@ -66,7 +67,11 @@ namespace DT
 		VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
 		VkRenderPass m_RenderPass = VK_NULL_HANDLE;
 		std::vector<VkFramebuffer> m_Framebuffers;
-		VkCommandBuffer m_CommandBuffer = VK_NULL_HANDLE;
+		VkCommandBuffer m_GraphicsCommandBuffer = VK_NULL_HANDLE;
+
+		VkSemaphore m_ImageAvailableSemaphore = VK_NULL_HANDLE;
+		VkSemaphore m_RenderCompleteSemaphore = VK_NULL_HANDLE;
+		VkFence m_PreviousFrameFinishedFence = VK_NULL_HANDLE;
 
 		std::vector<VkPhysicalDevice> m_AvailablePhysicalDevices;
 		std::vector<VkLayerProperties> m_AvailableInstanceLayers;
