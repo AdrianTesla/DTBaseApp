@@ -92,7 +92,6 @@ namespace DT
 		CreateLogicalDevice();
 		CreateMemoryAllocator();
 		CreateSwapchain();
-
 		CreateRenderPass();
 		CreateGraphicsPipeline();
 		CreateFramebuffers();
@@ -576,11 +575,12 @@ namespace DT
 		VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_ImageAvailableSemaphore));
 		VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_RenderCompleteSemaphore));
 
+		// create the fence that waits for the presentation to be finish
 		VkFenceCreateInfo fenceCreateInfo{};
 		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fenceCreateInfo.pNext = nullptr;
 		fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-		VK_CALL(vkCreateFence(device, &fenceCreateInfo, nullptr, &m_PreviousFrameFinishedFence));
+		VK_CALL(vkCreateFence(device, &fenceCreateInfo, nullptr, &m_PreviousPresentCompleteFence));
 	}
 
 	void VulkanContext::CreateMemoryAllocator()
@@ -609,7 +609,7 @@ namespace DT
 
 		vkDestroySemaphore(device, m_ImageAvailableSemaphore, nullptr);
 		vkDestroySemaphore(device, m_RenderCompleteSemaphore, nullptr);
-		vkDestroyFence(device, m_PreviousFrameFinishedFence, nullptr);
+		vkDestroyFence(device, m_PreviousPresentCompleteFence, nullptr);
 
 		for (size_t i = 0u; i < m_Framebuffers.size(); i++)
 			vkDestroyFramebuffer(device, m_Framebuffers[i], nullptr);
@@ -643,19 +643,17 @@ namespace DT
 	{
 		VkDevice device = m_Device.GetVulkanDevice();
 
-		VK_CALL(vkWaitForFences(device, 1u, &m_PreviousFrameFinishedFence, VK_TRUE, UINT64_MAX));
-		VK_CALL(vkResetFences(device, 1u, &m_PreviousFrameFinishedFence));
+		VK_CALL(vkWaitForFences(device, 1u, &m_PreviousPresentCompleteFence, VK_TRUE, UINT64_MAX));
+		VK_CALL(vkResetFences(device, 1u, &m_PreviousPresentCompleteFence));
 
 		m_Swapchain.AquireNextImage(m_ImageAvailableSemaphore);
 
-		// prepara la lista della spesa
 		RecordCommandBuffers(m_GraphicsCommandBuffer, m_Swapchain.GetCurrentImageIndex());
 
 		VkPipelineStageFlags waitStages[] = { 
-			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
 		};
 
-		// va a fa la spesa e aspetta che abbia finito di acquisire l'immagine
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.pNext                = nullptr;
@@ -666,7 +664,7 @@ namespace DT
 		submitInfo.pCommandBuffers      = &m_GraphicsCommandBuffer;
 		submitInfo.signalSemaphoreCount = 1u;
 		submitInfo.pSignalSemaphores    = &m_RenderCompleteSemaphore;
-		VK_CALL(vkQueueSubmit(m_Device.GetPresentQueue(), 1u, &submitInfo, m_PreviousFrameFinishedFence));
+		VK_CALL(vkQueueSubmit(m_Device.GetPresentQueue(), 1u, &submitInfo, m_PreviousPresentCompleteFence));
 
 		m_Swapchain.Present(m_RenderCompleteSemaphore);
 	}

@@ -43,6 +43,7 @@ namespace DT
 		bool KeyIsPressed(KeyCode key) const;
 		bool MouseIsPressed(MouseCode button) const;
 	private:
+		void CreateAndSpawnWindow();
 		void EnumerateDisplayModes();
 		void InstallGLFWCallbacks();
 	private:

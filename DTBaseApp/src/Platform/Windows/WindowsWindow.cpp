@@ -27,25 +27,40 @@ namespace DT
 			LOG_TRACE("Initialized GLFW. Version {}", glfwGetVersionString());
 		}
 
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		m_GLFWWindow = glfwCreateWindow(m_Specification.Width, m_Specification.Height, m_Specification.Title.c_str(), nullptr, nullptr);
-		s_ActiveWindowsCount++;
-
-		m_WindowData.Width = m_Specification.Width;
-		m_WindowData.Height = m_Specification.Height;
-
+		CreateAndSpawnWindow();
 		InstallGLFWCallbacks();
+	}
 
-		if (m_Specification.StartMaximized)
-			Maximize();
+	void WindowsWindow::CreateAndSpawnWindow()
+	{
+		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
+
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+		glfwWindowHint(GLFW_RED_BITS, videoMode->redBits);
+		glfwWindowHint(GLFW_GREEN_BITS, videoMode->greenBits);
+		glfwWindowHint(GLFW_BLUE_BITS, videoMode->blueBits);
+		glfwWindowHint(GLFW_REFRESH_RATE, videoMode->refreshRate);
+		glfwWindowHint(GLFW_MAXIMIZED, (int)m_Specification.StartMaximized);
+		glfwWindowHint(GLFW_RESIZABLE, (int)m_Specification.IsResizable);
+
+		if (m_Specification.StartFullscreen)
+			m_GLFWWindow = glfwCreateWindow(videoMode->width, videoMode->height, m_Specification.Title.c_str(), monitor, nullptr);
+		else
+			m_GLFWWindow = glfwCreateWindow(m_Specification.Width, m_Specification.Height, m_Specification.Title.c_str(), nullptr, nullptr);
+
 		if (m_Specification.StartCentered)
 			CenterWindow();
-		if (m_Specification.StartFullscreen)
-			ToFullscreen();
 
-		SetResizable(m_Specification.IsResizable);
-		SetDecorated(m_Specification.IsDecorated);
-		SetOpacity(m_Specification.Opacity);
+		if (!m_Specification.IsDecorated)
+			SetDecorated(false);
+
+		if (m_Specification.Opacity != 1.0f)
+			SetOpacity(m_Specification.Opacity);
+
+		glfwGetWindowSize(m_GLFWWindow, &m_WindowData.Width, &m_WindowData.Height);
+
+		s_ActiveWindowsCount++;
 	}
 
 	WindowsWindow::~WindowsWindow()

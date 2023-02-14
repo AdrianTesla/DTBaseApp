@@ -26,6 +26,9 @@ namespace DT
 					break;
 				case Key::C:
 					break;
+				case Key::F:
+					Application::Get().GetWindow().ToFullscreen();
+					break;
 			}
 			return false;
 		});

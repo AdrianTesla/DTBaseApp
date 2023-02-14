@@ -71,7 +71,7 @@ namespace DT
 
 		VkSemaphore m_ImageAvailableSemaphore = VK_NULL_HANDLE;
 		VkSemaphore m_RenderCompleteSemaphore = VK_NULL_HANDLE;
-		VkFence m_PreviousFrameFinishedFence = VK_NULL_HANDLE;
+		VkFence m_PreviousPresentCompleteFence = VK_NULL_HANDLE;
 
 		std::vector<VkPhysicalDevice> m_AvailablePhysicalDevices;
 		std::vector<VkLayerProperties> m_AvailableInstanceLayers;

@@ -6,7 +6,7 @@ namespace DT
 	struct WindowSpecification
 	{
 		std::string Title    = "Dodge This!";
-		uint32 Width         = 1280u;
+		uint32 Width         = 960u;
 		uint32 Height        = 720u;
 		bool StartMaximized  = false;
 		bool StartCentered   = true;
