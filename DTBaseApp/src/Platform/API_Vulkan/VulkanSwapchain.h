@@ -18,8 +18,9 @@ namespace DT
 		void Shutdown();
 
 		void Resize(int32 width, int32 height);
-		void AquireNextImage(VkSemaphore imageAvailableSemaphore);
-		void Present(VkSemaphore renderCompleteSemaphore);
+		void AquireNextImage();
+		void QueueSubmit(VkCommandBuffer commandBuffer);
+		void Present();
 
 		VkFormat GetImageFormat() const { return m_SurfaceFormat.format; }
 		uint32 GetImageCount() const { return m_ImageCount; }
@@ -27,6 +28,8 @@ namespace DT
 
 		uint32 GetWidth() const { return (uint32)m_Width; }
 		uint32 GetHeight() const { return (uint32)m_Height; }
+
+		VkSemaphore& GetImageAvailableSemaphore() { return m_ImageAvailableSemaphore; }
 
 		const std::vector<VkImageView>& GetImageViews() const { return m_SwapchainImageViews; }
 	private:
@@ -40,6 +43,7 @@ namespace DT
 		void SelectSurfaceTransform();
 		void CreateSwapchain();
 		void CreateSwapchainImageViews();
+		void CreateSyncronizationObjects();
 	private:
 		SwapchainSupportDetails m_SupportDetails;
 
@@ -55,6 +59,10 @@ namespace DT
 		std::vector<VkImage> m_SwapchainImages;
 		std::vector<VkImageView> m_SwapchainImageViews;
 		uint32 m_CurrentImageIndex = 0u;
+
+		VkSemaphore m_ImageAvailableSemaphore = VK_NULL_HANDLE;
+		VkSemaphore m_RenderCompleteSemaphore = VK_NULL_HANDLE;
+		VkFence m_PreviousPresentCompleteFence = VK_NULL_HANDLE;
 
 		int32 m_Width;
 		int32 m_Height;

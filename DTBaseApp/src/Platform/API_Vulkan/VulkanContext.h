@@ -44,7 +44,6 @@ namespace DT
 		void CreateFramebuffers();
 		void CreateCommandBuffer();
 		void RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32 imageIndex);
-		void CreateSyncronizationObjects();
 	private:
 		std::vector<const char*> BuildRequestedInstanceExtensions();
 		std::vector<const char*> BuildRequestedInstanceLayers();
@@ -68,10 +67,6 @@ namespace DT
 		VkRenderPass m_RenderPass = VK_NULL_HANDLE;
 		std::vector<VkFramebuffer> m_Framebuffers;
 		VkCommandBuffer m_GraphicsCommandBuffer = VK_NULL_HANDLE;
-
-		VkSemaphore m_ImageAvailableSemaphore = VK_NULL_HANDLE;
-		VkSemaphore m_RenderCompleteSemaphore = VK_NULL_HANDLE;
-		VkFence m_PreviousPresentCompleteFence = VK_NULL_HANDLE;
 
 		std::vector<VkPhysicalDevice> m_AvailablePhysicalDevices;
 		std::vector<VkLayerProperties> m_AvailableInstanceLayers;

@@ -23,12 +23,15 @@ namespace DT
 			{
 				case Key::A:
 					break;
+				case Key::F11:
+					Application::Get().CloseApplication();
+					break;
 				case Key::G:
 					break;
 				case Key::C:
 					break;
 				case Key::F:
-					Application::Get().GetWindow().ToFullscreen();
+					Application::Get().Run();
 					break;
 			}
 			return false;

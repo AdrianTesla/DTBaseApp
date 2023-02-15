@@ -96,7 +96,6 @@ namespace DT
 		CreateGraphicsPipeline();
 		CreateFramebuffers();
 		CreateCommandBuffer();
-		CreateSyncronizationObjects();
 	}
 
 	void VulkanContext::CreateVulkanInstance()
@@ -563,26 +562,6 @@ namespace DT
 		VK_CALL(vkEndCommandBuffer(commandBuffer));
 	}
 
-	void VulkanContext::CreateSyncronizationObjects()
-	{
-		VkDevice device = m_Device.GetVulkanDevice();
-
-		// create image available and render complete semaphores
-		VkSemaphoreCreateInfo semaphoreCreateInfo{};
-		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-		semaphoreCreateInfo.pNext = nullptr;
-		semaphoreCreateInfo.flags = 0u;
-		VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_ImageAvailableSemaphore));
-		VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_RenderCompleteSemaphore));
-
-		// create the fence that waits for the presentation to be finish
-		VkFenceCreateInfo fenceCreateInfo{};
-		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-		fenceCreateInfo.pNext = nullptr;
-		fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-		VK_CALL(vkCreateFence(device, &fenceCreateInfo, nullptr, &m_PreviousPresentCompleteFence));
-	}
-
 	void VulkanContext::CreateMemoryAllocator()
 	{		
 		VmaAllocatorCreateInfo allocatorCreateInfo{};
@@ -606,10 +585,6 @@ namespace DT
 
 		// pipeline
 		VkDevice device = m_Device.GetVulkanDevice();
-
-		vkDestroySemaphore(device, m_ImageAvailableSemaphore, nullptr);
-		vkDestroySemaphore(device, m_RenderCompleteSemaphore, nullptr);
-		vkDestroyFence(device, m_PreviousPresentCompleteFence, nullptr);
 
 		for (size_t i = 0u; i < m_Framebuffers.size(); i++)
 			vkDestroyFramebuffer(device, m_Framebuffers[i], nullptr);
@@ -643,29 +618,11 @@ namespace DT
 	{
 		VkDevice device = m_Device.GetVulkanDevice();
 
-		VK_CALL(vkWaitForFences(device, 1u, &m_PreviousPresentCompleteFence, VK_TRUE, UINT64_MAX));
-		VK_CALL(vkResetFences(device, 1u, &m_PreviousPresentCompleteFence));
-
-		m_Swapchain.AquireNextImage(m_ImageAvailableSemaphore);
+		m_Swapchain.AquireNextImage();
 
 		RecordCommandBuffers(m_GraphicsCommandBuffer, m_Swapchain.GetCurrentImageIndex());
 
-		VkPipelineStageFlags waitStages[] = { 
-			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-		};
-
-		VkSubmitInfo submitInfo{};
-		submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.pNext                = nullptr;
-		submitInfo.waitSemaphoreCount   = 1u;
-		submitInfo.pWaitSemaphores      = &m_ImageAvailableSemaphore;
-		submitInfo.pWaitDstStageMask    = waitStages;
-		submitInfo.commandBufferCount   = 1u;
-		submitInfo.pCommandBuffers      = &m_GraphicsCommandBuffer;
-		submitInfo.signalSemaphoreCount = 1u;
-		submitInfo.pSignalSemaphores    = &m_RenderCompleteSemaphore;
-		VK_CALL(vkQueueSubmit(m_Device.GetPresentQueue(), 1u, &submitInfo, m_PreviousPresentCompleteFence));
-
-		m_Swapchain.Present(m_RenderCompleteSemaphore);
+		m_Swapchain.QueueSubmit(m_GraphicsCommandBuffer);
+		m_Swapchain.Present();
 	}
 }

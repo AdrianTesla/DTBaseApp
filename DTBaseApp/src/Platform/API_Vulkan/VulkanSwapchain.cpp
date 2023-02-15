@@ -18,6 +18,7 @@ namespace DT
 		SelectSurfaceTransform();
 		CreateSwapchain();
 		CreateSwapchainImageViews();
+		CreateSyncronizationObjects();
 	}
 
 	void VulkanSwapchain::GetSupportDetails()
@@ -292,9 +293,31 @@ namespace DT
 		}
 	}
 
+	void VulkanSwapchain::CreateSyncronizationObjects()
+	{
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+
+		VkSemaphoreCreateInfo semaphoreCreateInfo{};
+		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		semaphoreCreateInfo.pNext = nullptr;
+		semaphoreCreateInfo.flags = 0u;
+		VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_ImageAvailableSemaphore));
+		VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_RenderCompleteSemaphore));
+
+		VkFenceCreateInfo fenceCreateInfo{};
+		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceCreateInfo.pNext = nullptr;
+		fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+		VK_CALL(vkCreateFence(device, &fenceCreateInfo, nullptr, &m_PreviousPresentCompleteFence));
+	}
+
 	void VulkanSwapchain::Shutdown()
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+
+		vkDestroySemaphore(device, m_ImageAvailableSemaphore, nullptr);
+		vkDestroySemaphore(device, m_RenderCompleteSemaphore, nullptr);
+		vkDestroyFence(device, m_PreviousPresentCompleteFence, nullptr);
 
 		for (uint32 i = 0u; i < m_ImageCount; i++)
 			vkDestroyImageView(device, m_SwapchainImageViews[i], nullptr);
@@ -307,13 +330,39 @@ namespace DT
 	{
 	}
 
-	void VulkanSwapchain::AquireNextImage(VkSemaphore imageAvailableSemaphore)
+	void VulkanSwapchain::AquireNextImage()
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
-		VK_CALL(vkAcquireNextImageKHR(device, m_Swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &m_CurrentImageIndex));
+		
+		// wait previous presentation to be complete
+		VK_CALL(vkWaitForFences(device, 1u, &m_PreviousPresentCompleteFence, VK_TRUE, UINT64_MAX));
+		VK_CALL(vkResetFences(device, 1u, &m_PreviousPresentCompleteFence));
+
+		VK_CALL(vkAcquireNextImageKHR(device, m_Swapchain, UINT64_MAX, m_ImageAvailableSemaphore, VK_NULL_HANDLE, &m_CurrentImageIndex));
 	}
 
-	void VulkanSwapchain::Present(VkSemaphore renderCompleteSemaphore)
+	void VulkanSwapchain::QueueSubmit(VkCommandBuffer commandBuffer)
+	{
+		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
+
+		VkPipelineStageFlags waitStages[] = {
+			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+		};
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.pNext                = nullptr;
+		submitInfo.waitSemaphoreCount   = 1u;
+		submitInfo.pWaitSemaphores      = &m_ImageAvailableSemaphore;
+		submitInfo.pWaitDstStageMask    = waitStages;
+		submitInfo.commandBufferCount   = 1u;
+		submitInfo.pCommandBuffers      = &commandBuffer;
+		submitInfo.signalSemaphoreCount = 1u;
+		submitInfo.pSignalSemaphores    = &m_RenderCompleteSemaphore;
+		VK_CALL(vkQueueSubmit(vulkanDevice.GetPresentQueue(), 1u, &submitInfo, m_PreviousPresentCompleteFence));
+	}
+
+	void VulkanSwapchain::Present()
 	{
 		VkQueue presentQueue = VulkanContext::GetCurrentDevice().GetPresentQueue();
 		
@@ -321,7 +370,7 @@ namespace DT
 		presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.pNext              = nullptr;
 		presentInfo.waitSemaphoreCount = 1u;
-		presentInfo.pWaitSemaphores    = &renderCompleteSemaphore;
+		presentInfo.pWaitSemaphores    = &m_RenderCompleteSemaphore;
 		presentInfo.swapchainCount     = 1u;
 		presentInfo.pSwapchains        = &m_Swapchain;
 		presentInfo.pImageIndices      = &m_CurrentImageIndex;
