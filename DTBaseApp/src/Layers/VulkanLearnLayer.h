@@ -10,5 +10,8 @@ namespace DT
 		virtual void OnUpdate(float dt) override;
 		virtual void OnEvent(Event& event) override;
 		virtual void OnDetach() override;
+	private:
+		uint32 m_TimeStepIndex = 0u;
+		std::array<float, 1000> m_TimeSteps;
 	};
 }

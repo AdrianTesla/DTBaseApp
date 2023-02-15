@@ -56,6 +56,8 @@ namespace DT
 		VkCompositeAlphaFlagBitsKHR m_CompositeAlpha;
 		VkSurfaceTransformFlagBitsKHR m_SurfaceTransform;
 
+		VkQueue m_PresentQueue = VK_NULL_HANDLE;
+
 		std::vector<VkImage> m_SwapchainImages;
 		std::vector<VkImageView> m_SwapchainImageViews;
 		uint32 m_CurrentImageIndex = 0u;

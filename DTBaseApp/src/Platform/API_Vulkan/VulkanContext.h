@@ -43,7 +43,7 @@ namespace DT
 		void CreateRenderPass();
 		void CreateFramebuffers();
 		void CreateCommandBuffer();
-		void RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32 imageIndex);
+		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
 	private:
 		std::vector<const char*> BuildRequestedInstanceExtensions();
 		std::vector<const char*> BuildRequestedInstanceLayers();

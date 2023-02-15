@@ -12,6 +12,17 @@ namespace DT
 
 	void VulkanLearnLayer::OnUpdate(float dt)
 	{
+		m_TimeSteps[m_TimeStepIndex++] = dt;
+
+		if (m_TimeStepIndex >= m_TimeSteps.size())
+		{
+			float fps = 0.0f;
+			for (size_t i = 0u; i < m_TimeSteps.size(); i++)
+				fps += m_TimeSteps[i];
+			fps = (float)m_TimeSteps.size() / fps;
+			Application::Get().GetWindow().SetTitle(std::format("Dodge this! {} FPS", (uint32)fps));
+			m_TimeStepIndex = 0u;
+		}
 	}
 
 	void VulkanLearnLayer::OnEvent(Event& event)
@@ -23,7 +34,7 @@ namespace DT
 			{
 				case Key::A:
 					break;
-				case Key::F11:
+				case Key::Q:
 					Application::Get().CloseApplication();
 					break;
 				case Key::G:
@@ -32,6 +43,12 @@ namespace DT
 					break;
 				case Key::F:
 					Application::Get().Run();
+					break;
+				case Key::Enter:
+					static float opacity = 1.0f;
+					opacity = (opacity == 1.0f ? 0.5f : 1.0f);
+					if (Input::KeyIsPressed(Key::LeftAlt))
+						Application::Get().GetWindow().SetOpacity(opacity);
 					break;
 			}
 			return false;

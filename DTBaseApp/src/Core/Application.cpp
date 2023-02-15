@@ -40,6 +40,7 @@ namespace DT
 			m_Window->ProcessEvents();
 			UpdatePhase(timer.Mark());
 			RenderPhase();
+			m_FrameCount++;
 		}
 	}
 

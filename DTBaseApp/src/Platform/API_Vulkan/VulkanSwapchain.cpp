@@ -7,6 +7,7 @@ namespace DT
 	void VulkanSwapchain::Init(bool verticalSync)
 	{
 		m_VerticalSync = verticalSync;
+		m_PresentQueue = VulkanContext::GetCurrentDevice().GetPresentQueue();
 
 		GetSupportDetails();
 		SelectSurfaceFormat();
@@ -249,7 +250,7 @@ namespace DT
 		swapchainCreateInfo.imageSharingMode      = imageSharingMode;
 		swapchainCreateInfo.queueFamilyIndexCount = ((imageSharingMode == VK_SHARING_MODE_CONCURRENT) ? 2u : 0u);
 		swapchainCreateInfo.pQueueFamilyIndices   = graphicsAndPresentIndices;
-		swapchainCreateInfo.preTransform          = m_SupportDetails.SurfaceCapabilities.currentTransform;
+		swapchainCreateInfo.preTransform          = m_SurfaceTransform;
 		swapchainCreateInfo.compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 		swapchainCreateInfo.presentMode           = m_PresentMode;
 		swapchainCreateInfo.clipped               = VK_TRUE;
@@ -338,7 +339,15 @@ namespace DT
 		VK_CALL(vkWaitForFences(device, 1u, &m_PreviousPresentCompleteFence, VK_TRUE, UINT64_MAX));
 		VK_CALL(vkResetFences(device, 1u, &m_PreviousPresentCompleteFence));
 
-		VK_CALL(vkAcquireNextImageKHR(device, m_Swapchain, UINT64_MAX, m_ImageAvailableSemaphore, VK_NULL_HANDLE, &m_CurrentImageIndex));
+		VkAcquireNextImageInfoKHR aquireNextImageInfo{};
+		aquireNextImageInfo.sType      = VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR;
+		aquireNextImageInfo.pNext      = nullptr;
+		aquireNextImageInfo.swapchain  = m_Swapchain;
+		aquireNextImageInfo.timeout    = UINT64_MAX;
+		aquireNextImageInfo.semaphore  = m_ImageAvailableSemaphore;
+		aquireNextImageInfo.fence      = VK_NULL_HANDLE;
+		aquireNextImageInfo.deviceMask = 0b1u;
+		VK_CALL(vkAcquireNextImage2KHR(device, &aquireNextImageInfo, &m_CurrentImageIndex));
 	}
 
 	void VulkanSwapchain::QueueSubmit(VkCommandBuffer commandBuffer)
@@ -346,7 +355,7 @@ namespace DT
 		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
 
 		VkPipelineStageFlags waitStages[] = {
-			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
 		};
 
 		VkSubmitInfo submitInfo{};
@@ -364,8 +373,6 @@ namespace DT
 
 	void VulkanSwapchain::Present()
 	{
-		VkQueue presentQueue = VulkanContext::GetCurrentDevice().GetPresentQueue();
-		
 		VkPresentInfoKHR presentInfo{};
 		presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.pNext              = nullptr;
@@ -375,6 +382,6 @@ namespace DT
 		presentInfo.pSwapchains        = &m_Swapchain;
 		presentInfo.pImageIndices      = &m_CurrentImageIndex;
 		presentInfo.pResults           = nullptr;
-		VK_CALL(vkQueuePresentKHR(presentQueue, &presentInfo));
+		VK_CALL(vkQueuePresentKHR(m_PresentQueue, &presentInfo));
 	}
 }

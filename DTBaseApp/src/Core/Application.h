@@ -38,5 +38,7 @@ namespace DT
 
 		ApplicationSpecification m_Specification;
 		inline static Application* s_Instance = nullptr;
+
+		uint32 m_FrameCount = 0u;
 	};
 }

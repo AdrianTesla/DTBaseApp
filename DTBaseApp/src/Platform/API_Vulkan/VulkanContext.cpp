@@ -17,10 +17,12 @@ namespace DT
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
 				LOG_WARN(pCallbackData->pMessage);
 				MessageBoxes::ShowWarning(pCallbackData->pMessage, "Vulkan Validation Warning!");
+				__debugbreak();
 				break;
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
 				LOG_ERROR(pCallbackData->pMessage);
 				MessageBoxes::ShowError(pCallbackData->pMessage, "Vulkan Validation Error!");
+				__debugbreak();
 				break;
 			default: ASSERT(false);
 		}
@@ -516,7 +518,7 @@ namespace DT
 		m_GraphicsCommandBuffer = m_Device.AllocateGraphicsCommandBuffer();
 	}
 
-	void VulkanContext::RecordCommandBuffers(VkCommandBuffer commandBuffer, uint32 imageIndex)
+	void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex)
 	{
 		VkCommandBufferBeginInfo commandBufferBeginInfo{};
 		commandBufferBeginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -588,6 +590,7 @@ namespace DT
 
 		for (size_t i = 0u; i < m_Framebuffers.size(); i++)
 			vkDestroyFramebuffer(device, m_Framebuffers[i], nullptr);
+
 		vkDestroyPipelineLayout(device, m_PipelineLayout, nullptr);
 		vkDestroyPipeline(device, m_Pipeline, nullptr);
 		vkDestroyRenderPass(device, m_RenderPass, nullptr);
@@ -611,16 +614,13 @@ namespace DT
 
 	void VulkanContext::Present()
 	{
-		//m_Swapchain.Present();
 	}
 
 	void VulkanContext::DrawFrameTest()
 	{
-		VkDevice device = m_Device.GetVulkanDevice();
-
 		m_Swapchain.AquireNextImage();
 
-		RecordCommandBuffers(m_GraphicsCommandBuffer, m_Swapchain.GetCurrentImageIndex());
+		RecordCommandBuffer(m_GraphicsCommandBuffer, m_Swapchain.GetCurrentImageIndex());
 
 		m_Swapchain.QueueSubmit(m_GraphicsCommandBuffer);
 		m_Swapchain.Present();
