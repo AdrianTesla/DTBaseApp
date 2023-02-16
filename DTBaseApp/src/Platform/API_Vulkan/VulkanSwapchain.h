@@ -28,7 +28,7 @@ namespace DT
 		uint32 GetWidth() const { return (uint32)m_Width; }
 		uint32 GetHeight() const { return (uint32)m_Height; }
 
-		VkSemaphore& GetImageAvailableSemaphore() { return m_ImageAvailableSemaphore; }
+		VkSemaphore& GetImageAvailableSemaphore();
 
 		const std::vector<VkImageView>& GetImageViews() const { return m_SwapchainImageViews; }
 	private:
@@ -61,7 +61,7 @@ namespace DT
 		std::vector<VkImageView> m_SwapchainImageViews;
 		uint32 m_CurrentImageIndex = 0u;
 
-		VkSemaphore m_ImageAvailableSemaphore = VK_NULL_HANDLE;
+		InFlight<VkSemaphore> m_ImageAvailableSemaphores;
 
 		int32 m_Width;
 		int32 m_Height;

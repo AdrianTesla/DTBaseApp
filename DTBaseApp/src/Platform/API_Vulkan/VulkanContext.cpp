@@ -97,7 +97,7 @@ namespace DT
 		CreateRenderPass();
 		CreateGraphicsPipeline();
 		CreateFramebuffers();
-		CreateCommandBuffer();
+		CreateCommandBuffers();
 		CreateSyncObjects();
 	}
 
@@ -233,7 +233,7 @@ namespace DT
 
 	void VulkanContext::CreateSwapchain()
 	{
-		m_Swapchain.Init(true);
+		m_Swapchain.Init(false);
 	}
 
 	void VulkanContext::CreateSyncObjects()
@@ -244,13 +244,15 @@ namespace DT
 		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fenceCreateInfo.pNext = nullptr;
 		fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-		vkCreateFence(device, &fenceCreateInfo, nullptr, &m_PreviousFrameFinishedFence);
+		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
+			vkCreateFence(device, &fenceCreateInfo, nullptr, &m_PreviousFrameFinishedFences[i]);
 
 		VkSemaphoreCreateInfo semaphoreCreateInfo{};
 		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 		semaphoreCreateInfo.pNext = nullptr;
 		semaphoreCreateInfo.flags = 0u;
-		VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_RenderCompleteSemaphore));
+		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
+			VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_RenderCompleteSemaphores[i]));
 	}
 
 	void VulkanContext::CreateGraphicsPipeline()
@@ -311,7 +313,7 @@ namespace DT
 		pipelineInputAssemblyStateCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		pipelineInputAssemblyStateCreateInfo.pNext                  = nullptr;
 		pipelineInputAssemblyStateCreateInfo.flags                  = 0u;
-		pipelineInputAssemblyStateCreateInfo.topology               = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+		pipelineInputAssemblyStateCreateInfo.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		pipelineInputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
 
 		VkPipelineTessellationStateCreateInfo pipelineTessellationStateCreateInfo{};
@@ -544,9 +546,17 @@ namespace DT
 		}
 	}
 
-	void VulkanContext::CreateCommandBuffer()
+	void VulkanContext::CreateCommandBuffers()
 	{
-		m_GraphicsCommandBuffer = m_Device.AllocateGraphicsCommandBuffer();
+		VkDevice device = m_Device.GetVulkanDevice();
+
+		VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
+		commandBufferAllocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		commandBufferAllocateInfo.pNext              = nullptr;
+		commandBufferAllocateInfo.commandPool        = m_Device.GetGraphicsCommandPool();
+		commandBufferAllocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		commandBufferAllocateInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
+		VK_CALL(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, m_GraphicsCommandBuffers.Data()));
 	}
 
 	void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex)
@@ -586,7 +596,7 @@ namespace DT
 			vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 			{
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
-				vkCmdDraw(commandBuffer, 4u, 1u, 0u, 0u);
+				vkCmdDraw(commandBuffer, 3u, 1u, 0u, 0u);
 			}
 			vkCmdEndRenderPass(commandBuffer);
 		}
@@ -608,8 +618,8 @@ namespace DT
 		submitInfo.commandBufferCount   = 1u;
 		submitInfo.pCommandBuffers      = &commandBuffer;
 		submitInfo.signalSemaphoreCount = 1u;
-		submitInfo.pSignalSemaphores    = &m_RenderCompleteSemaphore;
-		VK_CALL(vkQueueSubmit(queue, 1u, &submitInfo, m_PreviousFrameFinishedFence));
+		submitInfo.pSignalSemaphores    = &m_RenderCompleteSemaphores[m_CurrentFrame];
+		VK_CALL(vkQueueSubmit(queue, 1u, &submitInfo, m_PreviousFrameFinishedFences[m_CurrentFrame]));
 	}
 
 	void VulkanContext::CreateMemoryAllocator()
@@ -635,10 +645,13 @@ namespace DT
 
 		VK_CALL(vkDeviceWaitIdle(device));
 
-		vkDestroyFence(device, m_PreviousFrameFinishedFence, nullptr);
-		vkDestroySemaphore(device, m_RenderCompleteSemaphore, nullptr);
+		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			vkDestroyFence(device, m_PreviousFrameFinishedFences[i], nullptr);
+			vkDestroySemaphore(device, m_RenderCompleteSemaphores[i], nullptr);
+		}
 
-		for (size_t i = 0u; i < m_Framebuffers.size(); i++)
+		for (uint32 i = 0u; i < m_Swapchain.GetImageCount(); i++)
 			vkDestroyFramebuffer(device, m_Framebuffers[i], nullptr);
 		
 		vkDestroyPipelineLayout(device, m_PipelineLayout, nullptr);
@@ -667,14 +680,20 @@ namespace DT
 	{
 		VkDevice device = m_Device.GetVulkanDevice();
 
-		VK_CALL(vkWaitForFences(device, 1u, &m_PreviousFrameFinishedFence, VK_TRUE, UINT64_MAX));
-		VK_CALL(vkResetFences(device, 1u, &m_PreviousFrameFinishedFence));
+		Timer timer;
+		VK_CALL(vkWaitForFences(device, 1u, &m_PreviousFrameFinishedFences[m_CurrentFrame], VK_TRUE, UINT64_MAX));
+		VK_CALL(vkResetFences(device, 1u, &m_PreviousFrameFinishedFences[m_CurrentFrame]));
+		//LOG_TRACE("{} us", timer.ElapsedMicroseconds());
 
 		m_Swapchain.AquireNextImage();
 
-		RecordCommandBuffer(m_GraphicsCommandBuffer, m_Swapchain.GetCurrentImageIndex());
-		ExecuteCommandBuffer(m_GraphicsCommandBuffer, m_Device.GetGraphicsQueue());
+		RecordCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], m_Swapchain.GetCurrentImageIndex());
+		ExecuteCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], m_Device.GetGraphicsQueue());
 
-		m_Swapchain.Present(m_RenderCompleteSemaphore);
+		m_Swapchain.Present(m_RenderCompleteSemaphores[m_CurrentFrame]);
+
+		m_CurrentFrame = (m_CurrentFrame + 1u) % MAX_FRAMES_IN_FLIGHT;
+
+		//LOG_TRACE(m_CurrentFrame);
 	}
 }

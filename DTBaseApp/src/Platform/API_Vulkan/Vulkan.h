@@ -30,5 +30,17 @@
 
 namespace DT
 {
+	static constexpr uint32 MAX_FRAMES_IN_FLIGHT = 3u;
 
+	template<typename T>
+	struct InFlight
+	{
+		T& operator[](uint32 index) { return m_Instances[index]; }
+		const T& operator[](uint32 index) const { return m_Instances[index]; }
+
+		T* Data() { return m_Instances; }
+		const T* Data() const { return m_Instances; }
+	private:
+		T m_Instances[MAX_FRAMES_IN_FLIGHT];
+	};
 }

@@ -22,6 +22,11 @@ namespace DT
 		CreateSyncronizationObjects();
 	}
 
+	VkSemaphore& VulkanSwapchain::GetImageAvailableSemaphore() 
+	{ 
+		return m_ImageAvailableSemaphores[VulkanContext::GetCurrentFrame()]; 
+	}
+
 	void VulkanSwapchain::GetSupportDetails()
 	{
 		VkPhysicalDevice physicalDevice = VulkanContext::GetCurrentVulkanPhysicalDevice();
@@ -302,7 +307,8 @@ namespace DT
 		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 		semaphoreCreateInfo.pNext = nullptr;
 		semaphoreCreateInfo.flags = 0u;
-		VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_ImageAvailableSemaphore));
+		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
+			VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_ImageAvailableSemaphores[i]));
 	}
 
 	void VulkanSwapchain::Resize(int32 width, int32 height)
@@ -317,7 +323,7 @@ namespace DT
 			device, 
 			m_Swapchain, 
 			UINT64_MAX, 
-			m_ImageAvailableSemaphore, 
+			m_ImageAvailableSemaphores[VulkanContext::GetCurrentFrame()],
 			VK_NULL_HANDLE, 
 			&m_CurrentImageIndex
 		));
@@ -341,7 +347,8 @@ namespace DT
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 
-		vkDestroySemaphore(device, m_ImageAvailableSemaphore, nullptr);
+		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
+			vkDestroySemaphore(device, m_ImageAvailableSemaphores[i], nullptr);
 		
 		for (uint32 i = 0u; i < m_ImageCount; i++)
 			vkDestroyImageView(device, m_SwapchainImageViews[i], nullptr);

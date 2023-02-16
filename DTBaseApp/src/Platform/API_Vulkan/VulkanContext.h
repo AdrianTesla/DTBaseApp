@@ -19,8 +19,9 @@ namespace DT
 		bool IsInstanceExtensionSupported(const char* extensionName) const;
 		bool IsInstanceLayerSupported(const char* layerName) const;
 		
+		static uint32 GetCurrentFrame() { return s_Context->m_CurrentFrame; }
+
 		Ref<Window> GetWindow() const { return m_Window; }
-		
 		VkSurfaceKHR GetSurface() const { return m_Surface; }
 
 		static VulkanContext& Get() { return *s_Context; }
@@ -43,7 +44,7 @@ namespace DT
 		void CreateGraphicsPipeline();
 		void CreateRenderPass();
 		void CreateFramebuffers();
-		void CreateCommandBuffer();
+		void CreateCommandBuffers();
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
 		void ExecuteCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue);
 	private:
@@ -68,10 +69,13 @@ namespace DT
 		VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
 		VkRenderPass m_RenderPass = VK_NULL_HANDLE;
 		std::vector<VkFramebuffer> m_Framebuffers;
-		VkCommandBuffer m_GraphicsCommandBuffer = VK_NULL_HANDLE;
+		
+		InFlight<VkCommandBuffer> m_GraphicsCommandBuffers;
 
-		VkFence m_PreviousFrameFinishedFence = VK_NULL_HANDLE;
-		VkSemaphore m_RenderCompleteSemaphore = VK_NULL_HANDLE;
+		InFlight<VkFence> m_PreviousFrameFinishedFences;
+		InFlight<VkSemaphore> m_RenderCompleteSemaphores;
+
+		uint32 m_CurrentFrame = 0u;
 
 		std::vector<VkPhysicalDevice> m_AvailablePhysicalDevices;
 		std::vector<VkLayerProperties> m_AvailableInstanceLayers;
