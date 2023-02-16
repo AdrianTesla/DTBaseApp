@@ -51,6 +51,7 @@ namespace DT
 
 		VkDevice GetVulkanDevice() const { return m_Device; }
 
+		VkQueue GetGraphicsQueue() const { return m_GraphicsQueue; }
 		VkQueue GetPresentQueue() const { return m_PresentQueue; }
 	private:
 		void CreateDevice();

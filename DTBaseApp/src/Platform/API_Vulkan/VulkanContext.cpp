@@ -4,7 +4,7 @@
 
 namespace DT
 {
-	static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanErrorCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) 
+	static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanMessageCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) 
 	{
 		switch (messageSeverity)
 		{
@@ -98,6 +98,7 @@ namespace DT
 		CreateGraphicsPipeline();
 		CreateFramebuffers();
 		CreateCommandBuffer();
+		CreateSyncObjects();
 	}
 
 	void VulkanContext::CreateVulkanInstance()
@@ -159,7 +160,7 @@ namespace DT
 				VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT     | 
 				VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT  | 
 				VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-			debugUtilsMessengerCreateInfo.pfnUserCallback = VulkanErrorCallback;
+			debugUtilsMessengerCreateInfo.pfnUserCallback = VulkanMessageCallback;
 			debugUtilsMessengerCreateInfo.pUserData       = nullptr;
 			instanceCreateInfo.pNext = &debugUtilsMessengerCreateInfo;
 		}
@@ -232,7 +233,24 @@ namespace DT
 
 	void VulkanContext::CreateSwapchain()
 	{
-		m_Swapchain.Init(false);
+		m_Swapchain.Init(true);
+	}
+
+	void VulkanContext::CreateSyncObjects()
+	{
+		VkDevice device = m_Device.GetVulkanDevice();
+
+		VkFenceCreateInfo fenceCreateInfo{};
+		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceCreateInfo.pNext = nullptr;
+		fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+		vkCreateFence(device, &fenceCreateInfo, nullptr, &m_PreviousFrameFinishedFence);
+
+		VkSemaphoreCreateInfo semaphoreCreateInfo{};
+		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		semaphoreCreateInfo.pNext = nullptr;
+		semaphoreCreateInfo.flags = 0u;
+		VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_RenderCompleteSemaphore));
 	}
 
 	void VulkanContext::CreateGraphicsPipeline()
@@ -293,20 +311,26 @@ namespace DT
 		pipelineInputAssemblyStateCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		pipelineInputAssemblyStateCreateInfo.pNext                  = nullptr;
 		pipelineInputAssemblyStateCreateInfo.flags                  = 0u;
-		pipelineInputAssemblyStateCreateInfo.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		pipelineInputAssemblyStateCreateInfo.topology               = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
 		pipelineInputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
 
+		VkPipelineTessellationStateCreateInfo pipelineTessellationStateCreateInfo{};
+		pipelineTessellationStateCreateInfo.sType              = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+		pipelineTessellationStateCreateInfo.pNext              = nullptr;
+		pipelineTessellationStateCreateInfo.flags              = 0u;
+		pipelineTessellationStateCreateInfo.patchControlPoints = 1u;
+
 		VkViewport viewport{};
-		viewport.x        = 0u;
-		viewport.y        = 0u;
-		viewport.width    = 1280u;
-		viewport.height   = 720u;
+		viewport.x        = 0.0f;
+		viewport.y        = 0.0f;
+		viewport.width    = (float)m_Swapchain.GetWidth();
+		viewport.height   = (float)m_Swapchain.GetHeight();
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 
 		VkRect2D scissor{};
 		scissor.offset = { 0u,0u };
-		scissor.extent = { 1280u,720u };
+		scissor.extent = { m_Swapchain.GetWidth(),m_Swapchain.GetHeight() };
 
 		VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo{};
 		pipelineViewportStateCreateInfo.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -399,17 +423,16 @@ namespace DT
 		pipelineColorBlendStateCreateInfo.blendConstants[2] = 0.0f;
 		pipelineColorBlendStateCreateInfo.blendConstants[3] = 0.0f;
 
-		VkDynamicState dynamicStates[] = { 
-			VK_DYNAMIC_STATE_VIEWPORT,
-			VK_DYNAMIC_STATE_SCISSOR
-		};
+		//VkDynamicState dynamicStates[] = {
+		//	VK_DYNAMIC_STATE_LINE_WIDTH
+		//};
 
 		VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo{};
 		pipelineDynamicStateCreateInfo.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 		pipelineDynamicStateCreateInfo.pNext             = nullptr;
 		pipelineDynamicStateCreateInfo.flags             = 0u;
-		pipelineDynamicStateCreateInfo.dynamicStateCount = (uint32)std::size(dynamicStates);
-		pipelineDynamicStateCreateInfo.pDynamicStates    = dynamicStates;
+		pipelineDynamicStateCreateInfo.dynamicStateCount = 0u;
+		pipelineDynamicStateCreateInfo.pDynamicStates    = nullptr;//dynamicStates;
 
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 		pipelineLayoutCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -421,7 +444,6 @@ namespace DT
 		pipelineLayoutCreateInfo.pPushConstantRanges    = nullptr;
 		VK_CALL(vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &m_PipelineLayout));
 
-		// create the graphics pipeline
 		VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
 		graphicsPipelineCreateInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		graphicsPipelineCreateInfo.pNext               = nullptr;
@@ -430,7 +452,7 @@ namespace DT
 		graphicsPipelineCreateInfo.pStages             = pipelineShaderStageCreateInfos;
 		graphicsPipelineCreateInfo.pVertexInputState   = &pipelineVertexInputStateCreateInfo;
 		graphicsPipelineCreateInfo.pInputAssemblyState = &pipelineInputAssemblyStateCreateInfo;
-		graphicsPipelineCreateInfo.pTessellationState  = nullptr;
+		graphicsPipelineCreateInfo.pTessellationState  = &pipelineTessellationStateCreateInfo;
 		graphicsPipelineCreateInfo.pViewportState      = &pipelineViewportStateCreateInfo;
 		graphicsPipelineCreateInfo.pRasterizationState = &pipelineRasterizationStateCreateInfo;
 		graphicsPipelineCreateInfo.pMultisampleState   = &pipelineMultisampleStateCreateInfo;
@@ -441,7 +463,7 @@ namespace DT
 		graphicsPipelineCreateInfo.renderPass          = m_RenderPass;
 		graphicsPipelineCreateInfo.subpass             = 0u;
 		graphicsPipelineCreateInfo.basePipelineHandle  = VK_NULL_HANDLE;
-		graphicsPipelineCreateInfo.basePipelineIndex   = 0u;
+		graphicsPipelineCreateInfo.basePipelineIndex   = 0;
 		VK_CALL(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1u, &graphicsPipelineCreateInfo, nullptr, &m_Pipeline));
 
 		vkDestroyShaderModule(device, vertShaderModule, nullptr);
@@ -458,8 +480,8 @@ namespace DT
 		attachmentDescription.samples        = VK_SAMPLE_COUNT_1_BIT;
 		attachmentDescription.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		attachmentDescription.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
-		attachmentDescription.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+		attachmentDescription.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachmentDescription.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
 		attachmentDescription.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
@@ -479,6 +501,15 @@ namespace DT
 		subpassDescription.preserveAttachmentCount = 0u;
 		subpassDescription.pPreserveAttachments    = nullptr;
 
+		VkSubpassDependency subpassDependency{};
+		subpassDependency.srcSubpass      = VK_SUBPASS_EXTERNAL;
+		subpassDependency.dstSubpass      = 0u;
+		subpassDependency.srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		subpassDependency.dstStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		subpassDependency.srcAccessMask   = 0u;
+		subpassDependency.dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		subpassDependency.dependencyFlags = 0u;
+
 		VkRenderPassCreateInfo renderPassCreateInfo{};
 		renderPassCreateInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassCreateInfo.pNext           = nullptr;
@@ -487,8 +518,8 @@ namespace DT
 		renderPassCreateInfo.pAttachments    = &attachmentDescription;
 		renderPassCreateInfo.subpassCount    = 1u;
 		renderPassCreateInfo.pSubpasses      = &subpassDescription;
-		renderPassCreateInfo.dependencyCount = 0u;	
-		renderPassCreateInfo.pDependencies   = nullptr;
+		renderPassCreateInfo.dependencyCount = 1u;	
+		renderPassCreateInfo.pDependencies   = &subpassDependency;
 		VK_CALL(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &m_RenderPass));
 	}
 
@@ -526,7 +557,7 @@ namespace DT
 		commandBufferBeginInfo.flags            = 0u;
 		commandBufferBeginInfo.pInheritanceInfo = nullptr;
 
-		VkClearValue clearValue = {{{ 0.0f,0.0f,0.0f,1.0f }}};
+		VkClearValue clearValue = {{{ 0.25f,0.0f,0.1f,1.0f }}};
 
 		VkRenderPassBeginInfo renderPassBeginInfo{};
 		renderPassBeginInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -555,13 +586,30 @@ namespace DT
 			vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 			{
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
-				vkCmdSetViewport(commandBuffer, 0u, 1u, &viewport);
-				vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-				vkCmdDraw(commandBuffer, 3u, 1u, 0u, 0u);
+				vkCmdDraw(commandBuffer, 4u, 1u, 0u, 0u);
 			}
 			vkCmdEndRenderPass(commandBuffer);
 		}
 		VK_CALL(vkEndCommandBuffer(commandBuffer));
+	}
+
+	void VulkanContext::ExecuteCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue)
+	{
+		VkDevice device = m_Device.GetVulkanDevice();
+
+		VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.pNext                = nullptr;
+		submitInfo.waitSemaphoreCount   = 1u;
+		submitInfo.pWaitSemaphores      = &m_Swapchain.GetImageAvailableSemaphore();
+		submitInfo.pWaitDstStageMask    = &waitStage;
+		submitInfo.commandBufferCount   = 1u;
+		submitInfo.pCommandBuffers      = &commandBuffer;
+		submitInfo.signalSemaphoreCount = 1u;
+		submitInfo.pSignalSemaphores    = &m_RenderCompleteSemaphore;
+		VK_CALL(vkQueueSubmit(queue, 1u, &submitInfo, m_PreviousFrameFinishedFence));
 	}
 
 	void VulkanContext::CreateMemoryAllocator()
@@ -583,32 +631,31 @@ namespace DT
 
 	VulkanContext::~VulkanContext()
 	{
-		VK_CALL(vkDeviceWaitIdle(m_Device.GetVulkanDevice()));
-
-		// pipeline
 		VkDevice device = m_Device.GetVulkanDevice();
+
+		VK_CALL(vkDeviceWaitIdle(device));
+
+		vkDestroyFence(device, m_PreviousFrameFinishedFence, nullptr);
+		vkDestroySemaphore(device, m_RenderCompleteSemaphore, nullptr);
 
 		for (size_t i = 0u; i < m_Framebuffers.size(); i++)
 			vkDestroyFramebuffer(device, m_Framebuffers[i], nullptr);
-
+		
 		vkDestroyPipelineLayout(device, m_PipelineLayout, nullptr);
 		vkDestroyPipeline(device, m_Pipeline, nullptr);
 		vkDestroyRenderPass(device, m_RenderPass, nullptr);
-
+		
 		m_Swapchain.Shutdown();
-
 		vmaDestroyAllocator(m_MemoryAllocator);
-		m_MemoryAllocator = VK_NULL_HANDLE;
-
 		m_Device.Shutdown();
 		
 		vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
-		m_Surface = VK_NULL_HANDLE;
-
 		if (s_ValidationLayerEnabled)
 			GET_INSTANCE_FUNC(vkDestroyDebugUtilsMessengerEXT)(m_Instance, m_DebugMessenger, nullptr);
-
 		vkDestroyInstance(m_Instance, nullptr);
+		
+		m_MemoryAllocator = VK_NULL_HANDLE;
+		m_Surface = VK_NULL_HANDLE;
 		m_Instance = VK_NULL_HANDLE;
 	}
 
@@ -618,11 +665,16 @@ namespace DT
 
 	void VulkanContext::DrawFrameTest()
 	{
+		VkDevice device = m_Device.GetVulkanDevice();
+
+		VK_CALL(vkWaitForFences(device, 1u, &m_PreviousFrameFinishedFence, VK_TRUE, UINT64_MAX));
+		VK_CALL(vkResetFences(device, 1u, &m_PreviousFrameFinishedFence));
+
 		m_Swapchain.AquireNextImage();
 
-		//RecordCommandBuffer(m_GraphicsCommandBuffer, m_Swapchain.GetCurrentImageIndex());
+		RecordCommandBuffer(m_GraphicsCommandBuffer, m_Swapchain.GetCurrentImageIndex());
+		ExecuteCommandBuffer(m_GraphicsCommandBuffer, m_Device.GetGraphicsQueue());
 
-		//m_Swapchain.QueueSubmit(m_GraphicsCommandBuffer);
-		m_Swapchain.Present();
+		m_Swapchain.Present(m_RenderCompleteSemaphore);
 	}
 }
