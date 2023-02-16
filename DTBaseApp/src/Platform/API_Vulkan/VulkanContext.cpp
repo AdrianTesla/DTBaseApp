@@ -423,16 +423,17 @@ namespace DT
 		pipelineColorBlendStateCreateInfo.blendConstants[2] = 0.0f;
 		pipelineColorBlendStateCreateInfo.blendConstants[3] = 0.0f;
 
-		//VkDynamicState dynamicStates[] = {
-		//	VK_DYNAMIC_STATE_LINE_WIDTH
-		//};
+		VkDynamicState dynamicStates[] = {
+			VK_DYNAMIC_STATE_VIEWPORT,
+			VK_DYNAMIC_STATE_SCISSOR
+		};
 
 		VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo{};
 		pipelineDynamicStateCreateInfo.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 		pipelineDynamicStateCreateInfo.pNext             = nullptr;
 		pipelineDynamicStateCreateInfo.flags             = 0u;
-		pipelineDynamicStateCreateInfo.dynamicStateCount = 0u;
-		pipelineDynamicStateCreateInfo.pDynamicStates    = nullptr;//dynamicStates;
+		pipelineDynamicStateCreateInfo.dynamicStateCount = (uint32)std::size(dynamicStates);
+		pipelineDynamicStateCreateInfo.pDynamicStates    = dynamicStates;
 
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 		pipelineLayoutCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -520,6 +521,8 @@ namespace DT
 			vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 			{
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+				vkCmdSetViewport(commandBuffer, 0u, 1u, &viewport);
+				vkCmdSetScissor(commandBuffer, 0u, 1u, &scissor);
 				vkCmdDraw(commandBuffer, 3u, 1u, 0u, 0u);
 			}
 			vkCmdEndRenderPass(commandBuffer);

@@ -299,6 +299,7 @@ namespace DT
 			: m_NewWidth(newWidth), m_NewHeight(newHeight)
 		{}
 
+		bool IsValid() const { return (m_NewWidth > 0) && (m_NewHeight > 0); }
 		int32 GetWidth() const { return m_NewWidth; }
 		int32 GetHeight() const { return m_NewHeight; }
 

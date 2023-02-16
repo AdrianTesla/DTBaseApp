@@ -32,7 +32,6 @@ namespace DT
 		void Init(bool verticalSync = false);
 		void Shutdown();
 
-		void Resize(int32 width, int32 height);
 		void AquireNextImage();
 		void Present(VkSemaphore waitSemaphore);
 
@@ -49,15 +48,15 @@ namespace DT
 		VkImageView GetImageView(uint32 imageIndex) const { return m_SwapchainImageViews[imageIndex]; }
 	private:
 		void RecreateSwapchain();
-		void GetSupportDetails();
-		void SelectSurfaceFormat();
-		void SelectPresentMode();
-		void SelectSwapExtent();
-		void SelectImageCount();
-		void SelectImageUsage();
-		void SelectCompositeAlpha();
-		void SelectSurfaceTransform();
-		void CreateSwapchain();
+		void GetSupportDetails(bool log = true);
+		void SelectSurfaceFormat(bool log = true);
+		void SelectPresentMode(bool log = true);
+		void SelectSwapExtent(bool log = true);
+		void SelectImageCount(bool log = true);
+		void SelectImageUsage(bool log = true);
+		void SelectCompositeAlpha(bool log = true);
+		void SelectSurfaceTransform(bool log = true);
+		void CreateSwapchain(bool log = true);
 		void CreateSwapchainImageViews();
 		void CreateSwapchainFramebuffers();
 		void CreateSwapchainRenderPass();
@@ -68,6 +67,9 @@ namespace DT
 		VkSurfaceFormatKHR m_SurfaceFormat;
 		VkPresentModeKHR m_PresentMode;
 		VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
+
+		int32 m_Width;
+		int32 m_Height;
 
 		uint32 m_ImageCount = 0u;
 		VkImageUsageFlags m_SwapImageUsage;
@@ -84,9 +86,6 @@ namespace DT
 		VkRenderPass m_SwapchainRenderPass = VK_NULL_HANDLE;
 
 		InFlight<VkSemaphore> m_ImageAvailableSemaphores;
-
-		int32 m_Width;
-		int32 m_Height;
 
 		bool m_VerticalSync;
 	};

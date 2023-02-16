@@ -7,7 +7,7 @@ namespace DT
 {
 	void VulkanLearnLayer::OnAttach()
 	{
-		Application::Get().GetWindow().SetResizable(false);
+		//Application::Get().GetWindow().SetFixedAspectRatio(4, 3);
 	}
 
 	void VulkanLearnLayer::OnUpdate(float dt)
@@ -41,14 +41,16 @@ namespace DT
 					break;
 				case Key::C:
 					break;
-				case Key::F:
-					Application::Get().Run();
-					break;
 				case Key::Enter:
-					static float opacity = 1.0f;
-					opacity = (opacity == 1.0f ? 0.5f : 1.0f);
+					static bool windowed = false;
+					windowed = !windowed;
 					if (Input::KeyIsPressed(Key::LeftAlt))
-						Application::Get().GetWindow().SetOpacity(opacity);
+					{
+						if (windowed)
+							Application::Get().GetWindow().ToFullscreen();
+						else
+							Application::Get().GetWindow().ToWindowed();
+					}
 					break;
 			}
 			return false;

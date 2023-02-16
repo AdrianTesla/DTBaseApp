@@ -31,9 +31,31 @@ namespace DT
 
 	void VulkanSwapchain::RecreateSwapchain()
 	{
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+		VK_CALL(vkDeviceWaitIdle(device));
+
+		for (uint32 i = 0u; i < m_ImageCount; i++)
+			vkDestroyFramebuffer(device, m_SwapchainFramebuffers[i], nullptr);
+
+		for (uint32 i = 0u; i < m_ImageCount; i++)
+			vkDestroyImageView(device, m_SwapchainImageViews[i], nullptr);
+
+		GetSupportDetails(false);
+		SelectSurfaceFormat(false);
+		SelectPresentMode(false);
+		SelectSwapExtent(false);
+		SelectImageCount(false);
+		SelectImageUsage(false);
+		SelectCompositeAlpha(false);
+		SelectSurfaceTransform(false);
+		CreateSwapchain(false);
+		CreateSwapchainImageViews();
+		CreateSwapchainFramebuffers();
+
+		LOG_WARN("Recreated swapchain: ({}, {})", m_Width, m_Height);
 	}
 
-	void VulkanSwapchain::GetSupportDetails()
+	void VulkanSwapchain::GetSupportDetails(bool log)
 	{
 		VkPhysicalDevice physicalDevice = VulkanContext::GetCurrentVulkanPhysicalDevice();
 		VkSurfaceKHR surface = VulkanContext::Get().GetSurface();
@@ -52,10 +74,12 @@ namespace DT
 		VK_CALL(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &surfacePresentModesCount, m_SupportDetails.PresentModes.data()));
 		ASSERT(m_SupportDetails.PresentModes.size() > 0u);
 
-		LOG_INFO("Swapchain image count range: {} to {}", m_SupportDetails.SurfaceCapabilities.minImageCount, m_SupportDetails.SurfaceCapabilities.maxImageCount);
+		if (log) {
+			LOG_INFO("Swapchain image count range: {} to {}", m_SupportDetails.SurfaceCapabilities.minImageCount, m_SupportDetails.SurfaceCapabilities.maxImageCount);
+		}
 	}
 
-	void VulkanSwapchain::SelectSurfaceFormat()
+	void VulkanSwapchain::SelectSurfaceFormat(bool log)
 	{
 		m_SurfaceFormat.format = VK_FORMAT_UNDEFINED;
 		m_SurfaceFormat.colorSpace = VK_COLOR_SPACE_MAX_ENUM_KHR;
@@ -72,17 +96,20 @@ namespace DT
 		if (m_SurfaceFormat.format == VK_FORMAT_UNDEFINED)
 			m_SurfaceFormat = m_SupportDetails.SurfaceFormats[0];
 
-		LOG_INFO("Found {} swapchain surface formats", m_SupportDetails.SurfaceFormats.size());
-		for (VkSurfaceFormatKHR& supportedFormat : m_SupportDetails.SurfaceFormats)
+		if (log)
 		{
-			if ((m_SurfaceFormat.format == supportedFormat.format) && (m_SurfaceFormat.colorSpace == supportedFormat.colorSpace))
-				LOG_WARN("  format: {} colorspace: {}", string_VkFormat(supportedFormat.format), string_VkColorSpaceKHR(supportedFormat.colorSpace));
-			else
-				LOG_TRACE("  format: {} colorspace: {}", string_VkFormat(supportedFormat.format), string_VkColorSpaceKHR(supportedFormat.colorSpace));
+			LOG_INFO("Found {} swapchain surface formats", m_SupportDetails.SurfaceFormats.size());
+			for (VkSurfaceFormatKHR& supportedFormat : m_SupportDetails.SurfaceFormats)
+			{
+				if ((m_SurfaceFormat.format == supportedFormat.format) && (m_SurfaceFormat.colorSpace == supportedFormat.colorSpace))
+					LOG_WARN("  format: {} colorspace: {}", string_VkFormat(supportedFormat.format), string_VkColorSpaceKHR(supportedFormat.colorSpace));
+				else
+					LOG_TRACE("  format: {} colorspace: {}", string_VkFormat(supportedFormat.format), string_VkColorSpaceKHR(supportedFormat.colorSpace));
+			}
 		}
 	}
 
-	void VulkanSwapchain::SelectPresentMode()
+	void VulkanSwapchain::SelectPresentMode(bool log)
 	{
 		m_PresentMode = VK_PRESENT_MODE_FIFO_KHR;
 
@@ -101,17 +128,20 @@ namespace DT
 			}
 		}
 
-		LOG_INFO("Found {} swapchain present modes", m_SupportDetails.PresentModes.size());
-		for (VkPresentModeKHR& supportedMode : m_SupportDetails.PresentModes)
+		if (log)
 		{
-			if (m_PresentMode == supportedMode)
-				LOG_WARN("  mode: {}", string_VkPresentModeKHR(supportedMode));
-			else
-				LOG_TRACE("  mode: {}", string_VkPresentModeKHR(supportedMode));
+			LOG_INFO("Found {} swapchain present modes", m_SupportDetails.PresentModes.size());
+			for (VkPresentModeKHR& supportedMode : m_SupportDetails.PresentModes)
+			{
+				if (m_PresentMode == supportedMode)
+					LOG_WARN("  mode: {}", string_VkPresentModeKHR(supportedMode));
+				else
+					LOG_TRACE("  mode: {}", string_VkPresentModeKHR(supportedMode));
+			}
 		}
 	}
 
-	void VulkanSwapchain::SelectSwapExtent()
+	void VulkanSwapchain::SelectSwapExtent(bool log)
 	{
 		int32 minWidth  = (int32)m_SupportDetails.SurfaceCapabilities.minImageExtent.width;
 		int32 minHeight = (int32)m_SupportDetails.SurfaceCapabilities.minImageExtent.height;
@@ -125,6 +155,10 @@ namespace DT
 		{
 			m_Width = (int32)currentWidth;
 			m_Height = (int32)currentHeight;
+
+			if (log) {
+				LOG_TRACE("Swapchain size ({}, {})", m_Width, m_Height);
+			}
 		}
 		else
 		{
@@ -137,14 +171,16 @@ namespace DT
 			if (m_Height < minHeight) m_Height = minHeight;
 			if (m_Height > maxHeight) m_Height = maxHeight;
 
-			LOG_TRACE("Manually setting the swapchain's extent to ({}, {})", m_Width, m_Height);
+			if (log) {
+				LOG_TRACE("Manually setting the swapchain's extent to ({}, {})", m_Width, m_Height);
+			}
 		}
 
 		ASSERT(minWidth > 0u && minHeight > 0u && maxWidth > 0u && maxHeight > 0u);
 		ASSERT(m_Width >= minWidth && m_Height >= minHeight && m_Width <= maxWidth && m_Height <= maxHeight);
 	}
 
-	void VulkanSwapchain::SelectImageCount()
+	void VulkanSwapchain::SelectImageCount(bool log)
 	{		
 		uint32 minImageCount = m_SupportDetails.SurfaceCapabilities.minImageCount;
 		uint32 maxImageCount = m_SupportDetails.SurfaceCapabilities.maxImageCount;
@@ -154,7 +190,7 @@ namespace DT
 			m_ImageCount = maxImageCount;
 	}
 
-	void VulkanSwapchain::SelectImageUsage()
+	void VulkanSwapchain::SelectImageUsage(bool log)
 	{
 		VkImageUsageFlags supportedUsageFlags = m_SupportDetails.SurfaceCapabilities.supportedUsageFlags;
 		
@@ -162,24 +198,27 @@ namespace DT
 		if (supportedUsageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
 			m_SwapImageUsage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-		LOG_INFO("Supported swapchain image usage flags:");
-		uint32 index = 0u;
-		while (supportedUsageFlags) 
+		if (log)
 		{
-			VkImageUsageFlagBits currentFlag = (VkImageUsageFlagBits)(1u << index);
-			if (supportedUsageFlags & 1u) 
+			LOG_INFO("Supported swapchain image usage flags:");
+			uint32 index = 0u;
+			while (supportedUsageFlags)
 			{
-				if (m_SwapImageUsage & currentFlag)
-					LOG_WARN("  {}", string_VkImageUsageFlagBits(currentFlag));
-				else
-					LOG_TRACE("  {}", string_VkImageUsageFlagBits(currentFlag));
+				VkImageUsageFlagBits currentFlag = (VkImageUsageFlagBits)(1u << index);
+				if (supportedUsageFlags & 1u)
+				{
+					if (m_SwapImageUsage & currentFlag)
+						LOG_WARN("  {}", string_VkImageUsageFlagBits(currentFlag));
+					else
+						LOG_TRACE("  {}", string_VkImageUsageFlagBits(currentFlag));
+				}
+				index++;
+				supportedUsageFlags >>= 1u;
 			}
-			index++;
-			supportedUsageFlags >>= 1u;
 		}
 	}
 
-	void VulkanSwapchain::SelectCompositeAlpha()
+	void VulkanSwapchain::SelectCompositeAlpha(bool log)
 	{
 		VkCompositeAlphaFlagsKHR supportedFlags = m_SupportDetails.SurfaceCapabilities.supportedCompositeAlpha;
 
@@ -187,47 +226,53 @@ namespace DT
 		if (supportedFlags & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR)
 			m_CompositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 
-		LOG_INFO("Supported swapchain composite alpha flags:");
-		uint32 index = 0u;
-		while (supportedFlags)
+		if (log)
 		{
-			VkCompositeAlphaFlagBitsKHR currentFlag = (VkCompositeAlphaFlagBitsKHR)(1u << index);
-			if (supportedFlags & 1u)
+			LOG_INFO("Supported swapchain composite alpha flags:");
+			uint32 index = 0u;
+			while (supportedFlags)
 			{
-				if (m_CompositeAlpha & currentFlag)
-					LOG_WARN("  {}", string_VkCompositeAlphaFlagBitsKHR(currentFlag));
-				else
-					LOG_TRACE("  {}", string_VkCompositeAlphaFlagBitsKHR(currentFlag));
+				VkCompositeAlphaFlagBitsKHR currentFlag = (VkCompositeAlphaFlagBitsKHR)(1u << index);
+				if (supportedFlags & 1u)
+				{
+					if (m_CompositeAlpha & currentFlag)
+						LOG_WARN("  {}", string_VkCompositeAlphaFlagBitsKHR(currentFlag));
+					else
+						LOG_TRACE("  {}", string_VkCompositeAlphaFlagBitsKHR(currentFlag));
+				}
+				index++;
+				supportedFlags >>= 1u;
 			}
-			index++;
-			supportedFlags >>= 1u;
 		}
 	}
 
-	void VulkanSwapchain::SelectSurfaceTransform()
+	void VulkanSwapchain::SelectSurfaceTransform(bool log)
 	{
 		VkSurfaceTransformFlagsKHR supportedTransforms = m_SupportDetails.SurfaceCapabilities.supportedTransforms;
 
 		m_SurfaceTransform = m_SupportDetails.SurfaceCapabilities.currentTransform;
 
-		LOG_INFO("Supported swapchain surface transforms:");
-		uint32 index = 0u;
-		while (supportedTransforms)
+		if (log)
 		{
-			VkSurfaceTransformFlagBitsKHR currentFlag = (VkSurfaceTransformFlagBitsKHR)(1u << index);
-			if (supportedTransforms & 1u)
+			LOG_INFO("Supported swapchain surface transforms:");
+			uint32 index = 0u;
+			while (supportedTransforms)
 			{
-				if (m_SurfaceTransform & currentFlag)
-					LOG_WARN("  {}", string_VkSurfaceTransformFlagBitsKHR(currentFlag));
-				else
-					LOG_TRACE("  {}", string_VkSurfaceTransformFlagBitsKHR(currentFlag));
+				VkSurfaceTransformFlagBitsKHR currentFlag = (VkSurfaceTransformFlagBitsKHR)(1u << index);
+				if (supportedTransforms & 1u)
+				{
+					if (m_SurfaceTransform & currentFlag)
+						LOG_WARN("  {}", string_VkSurfaceTransformFlagBitsKHR(currentFlag));
+					else
+						LOG_TRACE("  {}", string_VkSurfaceTransformFlagBitsKHR(currentFlag));
+				}
+				index++;
+				supportedTransforms >>= 1u;
 			}
-			index++;
-			supportedTransforms >>= 1u;
 		}
 	}
 
-	void VulkanSwapchain::CreateSwapchain()
+	void VulkanSwapchain::CreateSwapchain(bool log)
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 		VulkanPhysicalDevice& physicalDevice = VulkanContext::GetCurrentPhysicalDevice();
@@ -246,6 +291,7 @@ namespace DT
 		else
 			imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
+		VkSwapchainKHR oldSwapchain = m_Swapchain;
 		VkSwapchainCreateInfoKHR swapchainCreateInfo{};
 		swapchainCreateInfo.sType                 = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 		swapchainCreateInfo.pNext                 = nullptr;
@@ -268,11 +314,16 @@ namespace DT
 		swapchainCreateInfo.oldSwapchain          = m_Swapchain;
 		VK_CALL(vkCreateSwapchainKHR(device, &swapchainCreateInfo, nullptr, &m_Swapchain));
 
+		if (oldSwapchain != VK_NULL_HANDLE)
+			vkDestroySwapchainKHR(device, oldSwapchain, nullptr);
+
 		// retrieve the automatically created swapchain images
 		VK_CALL(vkGetSwapchainImagesKHR(device, m_Swapchain, &m_ImageCount, m_SwapchainImages.Data));
 		m_SwapchainImages.Size = m_ImageCount;
 
-		LOG_INFO("Created swapchain with {} images", m_ImageCount);
+		if (log) {
+			LOG_INFO("Created swapchain with {} images", m_ImageCount);
+		}
 	}
 
 	void VulkanSwapchain::CreateSwapchainImageViews()
@@ -390,10 +441,6 @@ namespace DT
 			VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_ImageAvailableSemaphores[i]));
 	}
 
-	void VulkanSwapchain::Resize(int32 width, int32 height)
-	{
-	}
-
 	void VulkanSwapchain::AquireNextImage()
 	{
 		VK_CALL(vkAcquireNextImageKHR(
@@ -417,7 +464,11 @@ namespace DT
 		presentInfo.pSwapchains        = &m_Swapchain;
 		presentInfo.pImageIndices      = &m_CurrentImageIndex;
 		presentInfo.pResults           = nullptr;
-		VK_CALL(vkQueuePresentKHR(m_PresentQueue, &presentInfo));
+		VkResult result = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
+		if (result != VK_SUCCESS)
+		{
+			RecreateSwapchain();
+		}
 	}
 
 	void VulkanSwapchain::Shutdown()

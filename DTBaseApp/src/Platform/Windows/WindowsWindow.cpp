@@ -122,6 +122,7 @@ namespace DT
 	void WindowsWindow::ToWindowed()
 	{
 		glfwSetWindowMonitor(m_GLFWWindow, nullptr, 0, 0, m_Specification.Width, m_Specification.Height, GLFW_DONT_CARE);
+		CenterWindow();
 	}
 
 	void WindowsWindow::SetFixedAspectRatio(int32 numerator, int32 denominator)

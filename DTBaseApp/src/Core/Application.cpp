@@ -46,12 +46,18 @@ namespace DT
 
 	void Application::UpdatePhase(float dt)
 	{
+		if (m_AppMinimized)
+			return;
+
 		for (Layer* layer : m_Layers)
 			layer->OnUpdate(dt);
 	}
 
 	void Application::RenderPhase()
 	{
+		if (m_AppMinimized)
+			return;
+
 		for (Layer* layer : m_Layers)
 			layer->OnRender();
 
@@ -67,6 +73,11 @@ namespace DT
 		dispatcher.Dispatch<WindowClosedEvent>([&](WindowClosedEvent& e)
 		{
 			m_AppRunning = false;
+			return false;
+		});
+		dispatcher.Dispatch<WindowResizeEvent>([&](WindowResizeEvent& e) 
+		{
+			m_AppMinimized = !e.IsValid();
 			return false;
 		});
 	}

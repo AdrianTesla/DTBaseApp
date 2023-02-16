@@ -31,6 +31,7 @@ namespace DT
 		void RenderPhase();
 	private:
 		bool m_AppRunning = true;
+		bool m_AppMinimized = false;
 
 		Ref<RendererContext> m_RendererContext;
 		Ref<Window> m_Window;
