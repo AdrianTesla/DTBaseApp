@@ -12,6 +12,6 @@ namespace DT
 		virtual void OnDetach() override;
 	private:
 		uint32 m_TimeStepIndex = 0u;
-		std::array<float, 1000> m_TimeSteps;
+		std::array<float, 60> m_TimeSteps;
 	};
 }

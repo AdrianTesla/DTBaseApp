@@ -41,10 +41,14 @@ namespace DT
 	class VulkanDevice
 	{
 	public:
+		VulkanDevice& operator=(VulkanDevice&) = delete;
+	public:
 		void Init();
 		void Shutdown();
 
 		VkCommandBuffer AllocateGraphicsCommandBuffer();
+		VkCommandPool GetGraphicsCommandPool() const { return m_GraphicsCommandPool; }
+
 		VkDevice GetVulkanDevice() const { return m_Device; }
 
 		VkQueue GetPresentQueue() const { return m_PresentQueue; }

@@ -20,7 +20,7 @@ namespace DT
 			for (size_t i = 0u; i < m_TimeSteps.size(); i++)
 				fps += m_TimeSteps[i];
 			fps = (float)m_TimeSteps.size() / fps;
-			Application::Get().GetWindow().SetTitle(std::format("Dodge this! {} FPS", (uint32)fps));
+			Application::Get().GetWindow().SetTitle(std::format("Dodge this! {} FPS", std::ceilf(fps)));
 			m_TimeStepIndex = 0u;
 		}
 	}

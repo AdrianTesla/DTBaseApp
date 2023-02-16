@@ -232,7 +232,7 @@ namespace DT
 
 	void VulkanContext::CreateSwapchain()
 	{
-		m_Swapchain.Init();
+		m_Swapchain.Init(false);
 	}
 
 	void VulkanContext::CreateGraphicsPipeline()
@@ -620,9 +620,9 @@ namespace DT
 	{
 		m_Swapchain.AquireNextImage();
 
-		RecordCommandBuffer(m_GraphicsCommandBuffer, m_Swapchain.GetCurrentImageIndex());
+		//RecordCommandBuffer(m_GraphicsCommandBuffer, m_Swapchain.GetCurrentImageIndex());
 
-		m_Swapchain.QueueSubmit(m_GraphicsCommandBuffer);
+		//m_Swapchain.QueueSubmit(m_GraphicsCommandBuffer);
 		m_Swapchain.Present();
 	}
 }

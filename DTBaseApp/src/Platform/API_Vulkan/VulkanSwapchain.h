@@ -19,7 +19,6 @@ namespace DT
 
 		void Resize(int32 width, int32 height);
 		void AquireNextImage();
-		void QueueSubmit(VkCommandBuffer commandBuffer);
 		void Present();
 
 		VkFormat GetImageFormat() const { return m_SurfaceFormat.format; }
@@ -45,6 +44,8 @@ namespace DT
 		void CreateSwapchainImageViews();
 		void CreateSyncronizationObjects();
 	private:
+		void TransitionImageToPresentSrc(VkImage image);
+	private:
 		SwapchainSupportDetails m_SupportDetails;
 
 		VkSurfaceFormatKHR m_SurfaceFormat;
@@ -63,7 +64,6 @@ namespace DT
 		uint32 m_CurrentImageIndex = 0u;
 
 		VkSemaphore m_ImageAvailableSemaphore = VK_NULL_HANDLE;
-		VkSemaphore m_RenderCompleteSemaphore = VK_NULL_HANDLE;
 		VkFence m_PreviousPresentCompleteFence = VK_NULL_HANDLE;
 
 		int32 m_Width;

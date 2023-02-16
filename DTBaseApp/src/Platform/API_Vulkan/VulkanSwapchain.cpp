@@ -4,6 +4,121 @@
 
 namespace DT
 {
+	namespace Temp
+	{
+		static void TransitionImageLayout(
+			VkCommandBuffer commandBuffer,
+			VkImage image,
+			VkImageLayout oldImageLayout,
+			VkImageLayout newImageLayout,
+			VkImageSubresourceRange subresourceRange,
+			VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		)
+		{
+			// Create an image barrier object
+			VkImageMemoryBarrier imageMemoryBarrier{};
+			imageMemoryBarrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			imageMemoryBarrier.pNext               = nullptr;
+			imageMemoryBarrier.oldLayout           = oldImageLayout;
+			imageMemoryBarrier.newLayout           = newImageLayout;
+			imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			imageMemoryBarrier.image               = image;
+			imageMemoryBarrier.subresourceRange    = subresourceRange;
+
+			switch (oldImageLayout)
+			{
+				case VK_IMAGE_LAYOUT_UNDEFINED:
+					imageMemoryBarrier.srcAccessMask = 0u;
+					break;
+
+				case VK_IMAGE_LAYOUT_PREINITIALIZED:
+					imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+					break;
+
+				case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+					imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+					break;
+
+				case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+					imageMemoryBarrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+					break;
+
+				case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+					imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+					break;
+
+				case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+					imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+					break;
+
+				case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+					imageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+					break;
+				default:
+					break;
+			}
+
+			switch (newImageLayout)
+			{
+				case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+					imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+					break;
+
+				case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+					imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+					break;
+
+				case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+					imageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+					break;
+
+				case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+					imageMemoryBarrier.dstAccessMask = imageMemoryBarrier.dstAccessMask | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+					break;
+
+				case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+					if (imageMemoryBarrier.srcAccessMask == 0u)
+						imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+
+					imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+					break;
+				default:
+					break;
+			}
+
+			// put barrier inside setup command buffer
+			vkCmdPipelineBarrier(
+				commandBuffer,
+				srcStageMask,
+				dstStageMask,
+				0u,
+				0u, nullptr,
+				0u, nullptr,
+				1u, &imageMemoryBarrier
+			);
+		}
+
+		inline static void TransitionImageLayout(
+			VkCommandBuffer commandBuffer,
+			VkImage image,
+			VkImageAspectFlags aspectMask,
+			VkImageLayout oldImageLayout,
+			VkImageLayout newImageLayout,
+			VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		)
+		{
+			VkImageSubresourceRange subresourceRange = {};
+			subresourceRange.aspectMask   = aspectMask;
+			subresourceRange.baseMipLevel = 0u;
+			subresourceRange.levelCount   = 1u;
+			subresourceRange.layerCount   = 1u;
+			TransitionImageLayout(commandBuffer, image, oldImageLayout, newImageLayout, subresourceRange, srcStageMask, dstStageMask);
+		}
+	}
+
 	void VulkanSwapchain::Init(bool verticalSync)
 	{
 		m_VerticalSync = verticalSync;
@@ -262,6 +377,9 @@ namespace DT
 		m_SwapchainImages.resize(m_ImageCount);
 		VK_CALL(vkGetSwapchainImagesKHR(device, m_Swapchain, &m_ImageCount, m_SwapchainImages.data()));
 
+		//for (uint32 i = 0u; i < m_ImageCount; i++)
+		//	TransitionImageToPresentSrc(m_SwapchainImages[i]);
+
 		LOG_INFO("Created swapchain with {} images", m_ImageCount);
 	}
 
@@ -303,7 +421,6 @@ namespace DT
 		semaphoreCreateInfo.pNext = nullptr;
 		semaphoreCreateInfo.flags = 0u;
 		VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_ImageAvailableSemaphore));
-		VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_RenderCompleteSemaphore));
 
 		VkFenceCreateInfo fenceCreateInfo{};
 		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -312,19 +429,61 @@ namespace DT
 		VK_CALL(vkCreateFence(device, &fenceCreateInfo, nullptr, &m_PreviousPresentCompleteFence));
 	}
 
-	void VulkanSwapchain::Shutdown()
+	void VulkanSwapchain::TransitionImageToPresentSrc(VkImage image)
 	{
-		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
+		VkDevice device = vulkanDevice.GetVulkanDevice();
 
-		vkDestroySemaphore(device, m_ImageAvailableSemaphore, nullptr);
-		vkDestroySemaphore(device, m_RenderCompleteSemaphore, nullptr);
-		vkDestroyFence(device, m_PreviousPresentCompleteFence, nullptr);
+		VkCommandBuffer commandBuffer = vulkanDevice.AllocateGraphicsCommandBuffer();
 
-		for (uint32 i = 0u; i < m_ImageCount; i++)
-			vkDestroyImageView(device, m_SwapchainImageViews[i], nullptr);
+		VkCommandBufferBeginInfo commandBufferBeginInfo{};
+		commandBufferBeginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		commandBufferBeginInfo.pNext            = nullptr;
+		commandBufferBeginInfo.flags            = 0u;
+		commandBufferBeginInfo.pInheritanceInfo = nullptr;
+		VK_CALL(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
 
-		vkDestroySwapchainKHR(device, m_Swapchain, nullptr);
-		m_Swapchain = VK_NULL_HANDLE;
+		// transition image to Present SRC
+		VkImageSubresourceRange subresourceRange = {};
+		subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
+		subresourceRange.baseMipLevel = 0u;
+		subresourceRange.levelCount   = 1u;
+		subresourceRange.layerCount   = 1u;
+
+		Temp::TransitionImageLayout(
+            commandBuffer,
+			image,
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+            subresourceRange
+		);
+
+		VK_CALL(vkEndCommandBuffer(commandBuffer));
+
+		VkFence fence;
+		VkFenceCreateInfo fenceCreateInfo{};
+		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceCreateInfo.pNext = nullptr;
+		fenceCreateInfo.flags = 0u;
+		VK_CALL(vkCreateFence(device, &fenceCreateInfo, nullptr, &fence));
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.pNext                = nullptr;
+		submitInfo.waitSemaphoreCount   = 0u;
+		submitInfo.pWaitSemaphores      = nullptr;
+		submitInfo.pWaitDstStageMask    = nullptr;
+		submitInfo.commandBufferCount   = 1u;
+		submitInfo.pCommandBuffers      = &commandBuffer;
+		submitInfo.signalSemaphoreCount = 0u;
+		submitInfo.pSignalSemaphores    = nullptr;
+		VK_CALL(vkQueueSubmit(m_PresentQueue, 1u, &submitInfo, fence));
+		
+		VK_CALL(vkWaitForFences(device, 1u, &fence, VK_TRUE, UINT64_MAX));
+		VK_CALL(vkResetFences(device, 1u, &fence));
+		vkFreeCommandBuffers(vulkanDevice.GetVulkanDevice(), vulkanDevice.GetGraphicsCommandPool(), 1u, &commandBuffer);
+		
+		vkDestroyFence(device, fence, nullptr);
 	}
 
 	void VulkanSwapchain::Resize(int32 width, int32 height)
@@ -336,52 +495,38 @@ namespace DT
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 		
 		// wait previous presentation to be complete
-		VK_CALL(vkWaitForFences(device, 1u, &m_PreviousPresentCompleteFence, VK_TRUE, UINT64_MAX));
-		VK_CALL(vkResetFences(device, 1u, &m_PreviousPresentCompleteFence));
-
-		VkAcquireNextImageInfoKHR aquireNextImageInfo{};
-		aquireNextImageInfo.sType      = VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR;
-		aquireNextImageInfo.pNext      = nullptr;
-		aquireNextImageInfo.swapchain  = m_Swapchain;
-		aquireNextImageInfo.timeout    = UINT64_MAX;
-		aquireNextImageInfo.semaphore  = m_ImageAvailableSemaphore;
-		aquireNextImageInfo.fence      = VK_NULL_HANDLE;
-		aquireNextImageInfo.deviceMask = 0b1u;
-		VK_CALL(vkAcquireNextImage2KHR(device, &aquireNextImageInfo, &m_CurrentImageIndex));
-	}
-
-	void VulkanSwapchain::QueueSubmit(VkCommandBuffer commandBuffer)
-	{
-		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
-
-		VkPipelineStageFlags waitStages[] = {
-			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
-		};
-
-		VkSubmitInfo submitInfo{};
-		submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.pNext                = nullptr;
-		submitInfo.waitSemaphoreCount   = 1u;
-		submitInfo.pWaitSemaphores      = &m_ImageAvailableSemaphore;
-		submitInfo.pWaitDstStageMask    = waitStages;
-		submitInfo.commandBufferCount   = 1u;
-		submitInfo.pCommandBuffers      = &commandBuffer;
-		submitInfo.signalSemaphoreCount = 1u;
-		submitInfo.pSignalSemaphores    = &m_RenderCompleteSemaphore;
-		VK_CALL(vkQueueSubmit(vulkanDevice.GetPresentQueue(), 1u, &submitInfo, m_PreviousPresentCompleteFence));
+		//VK_CALL(vkWaitForFences(device, 1u, &m_PreviousPresentCompleteFence, VK_TRUE, UINT64_MAX));
+		//VK_CALL(vkResetFences(device, 1u, &m_PreviousPresentCompleteFence));
+		VK_CALL(vkAcquireNextImageKHR(device, m_Swapchain, UINT64_MAX, m_ImageAvailableSemaphore, VK_NULL_HANDLE, &m_CurrentImageIndex));
 	}
 
 	void VulkanSwapchain::Present()
 	{
+		TransitionImageToPresentSrc(m_SwapchainImages[m_CurrentImageIndex]);
+
 		VkPresentInfoKHR presentInfo{};
 		presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.pNext              = nullptr;
 		presentInfo.waitSemaphoreCount = 1u;
-		presentInfo.pWaitSemaphores    = &m_RenderCompleteSemaphore;
+		presentInfo.pWaitSemaphores    = &m_ImageAvailableSemaphore;
 		presentInfo.swapchainCount     = 1u;
 		presentInfo.pSwapchains        = &m_Swapchain;
 		presentInfo.pImageIndices      = &m_CurrentImageIndex;
 		presentInfo.pResults           = nullptr;
 		VK_CALL(vkQueuePresentKHR(m_PresentQueue, &presentInfo));
+	}
+
+	void VulkanSwapchain::Shutdown()
+	{
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+
+		vkDestroySemaphore(device, m_ImageAvailableSemaphore, nullptr);
+		vkDestroyFence(device, m_PreviousPresentCompleteFence, nullptr);
+		
+		for (uint32 i = 0u; i < m_ImageCount; i++)
+			vkDestroyImageView(device, m_SwapchainImageViews[i], nullptr);
+
+		vkDestroySwapchainKHR(device, m_Swapchain, nullptr);
+		m_Swapchain = VK_NULL_HANDLE;
 	}
 }
