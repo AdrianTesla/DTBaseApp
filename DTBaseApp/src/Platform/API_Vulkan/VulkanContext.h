@@ -42,8 +42,6 @@ namespace DT
 		void CreateSyncObjects();
 
 		void CreateGraphicsPipeline();
-		void CreateRenderPass();
-		void CreateFramebuffers();
 		void CreateCommandBuffers();
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
 		void ExecuteCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue);
@@ -67,11 +65,8 @@ namespace DT
 
 		VkPipeline m_Pipeline = VK_NULL_HANDLE;
 		VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
-		VkRenderPass m_RenderPass = VK_NULL_HANDLE;
-		std::vector<VkFramebuffer> m_Framebuffers;
 		
 		InFlight<VkCommandBuffer> m_GraphicsCommandBuffers;
-
 		InFlight<VkFence> m_PreviousFrameFinishedFences;
 		InFlight<VkSemaphore> m_RenderCompleteSemaphores;
 

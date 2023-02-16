@@ -30,7 +30,7 @@
 
 namespace DT
 {
-	static constexpr uint32 MAX_FRAMES_IN_FLIGHT = 3u;
+	static constexpr uint32 MAX_FRAMES_IN_FLIGHT = 2u;
 
 	template<typename T>
 	struct InFlight

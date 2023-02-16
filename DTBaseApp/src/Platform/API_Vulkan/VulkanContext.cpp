@@ -94,9 +94,7 @@ namespace DT
 		CreateLogicalDevice();
 		CreateMemoryAllocator();
 		CreateSwapchain();
-		CreateRenderPass();
 		CreateGraphicsPipeline();
-		CreateFramebuffers();
 		CreateCommandBuffers();
 		CreateSyncObjects();
 	}
@@ -462,7 +460,7 @@ namespace DT
 		graphicsPipelineCreateInfo.pColorBlendState    = &pipelineColorBlendStateCreateInfo;
 		graphicsPipelineCreateInfo.pDynamicState       = &pipelineDynamicStateCreateInfo;
 		graphicsPipelineCreateInfo.layout              = m_PipelineLayout;
-		graphicsPipelineCreateInfo.renderPass          = m_RenderPass;
+		graphicsPipelineCreateInfo.renderPass          = m_Swapchain.GetSwapchainRenderPass();
 		graphicsPipelineCreateInfo.subpass             = 0u;
 		graphicsPipelineCreateInfo.basePipelineHandle  = VK_NULL_HANDLE;
 		graphicsPipelineCreateInfo.basePipelineIndex   = 0;
@@ -470,80 +468,6 @@ namespace DT
 
 		vkDestroyShaderModule(device, vertShaderModule, nullptr);
 		vkDestroyShaderModule(device, fragShaderModule, nullptr);
-	}
-
-	void VulkanContext::CreateRenderPass()
-	{
-		VkDevice device = m_Device.GetVulkanDevice();
-
-		VkAttachmentDescription attachmentDescription{};
-		attachmentDescription.flags          = 0u;
-		attachmentDescription.format         = m_Swapchain.GetImageFormat();
-		attachmentDescription.samples        = VK_SAMPLE_COUNT_1_BIT;
-		attachmentDescription.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		attachmentDescription.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
-		attachmentDescription.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		attachmentDescription.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachmentDescription.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-		VkAttachmentReference colorAttachmentReference{};
-		colorAttachmentReference.attachment = 0u;
-		colorAttachmentReference.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-		VkSubpassDescription subpassDescription{};
-		subpassDescription.flags                   = 0u;
-		subpassDescription.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		subpassDescription.inputAttachmentCount    = 0u;
-		subpassDescription.pInputAttachments       = nullptr;
-		subpassDescription.colorAttachmentCount    = 1u;
-		subpassDescription.pColorAttachments       = &colorAttachmentReference;
-		subpassDescription.pResolveAttachments     = nullptr;
-		subpassDescription.pDepthStencilAttachment = nullptr;
-		subpassDescription.preserveAttachmentCount = 0u;
-		subpassDescription.pPreserveAttachments    = nullptr;
-
-		VkSubpassDependency subpassDependency{};
-		subpassDependency.srcSubpass      = VK_SUBPASS_EXTERNAL;
-		subpassDependency.dstSubpass      = 0u;
-		subpassDependency.srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		subpassDependency.dstStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		subpassDependency.srcAccessMask   = 0u;
-		subpassDependency.dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		subpassDependency.dependencyFlags = 0u;
-
-		VkRenderPassCreateInfo renderPassCreateInfo{};
-		renderPassCreateInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		renderPassCreateInfo.pNext           = nullptr;
-		renderPassCreateInfo.flags           = 0u;
-		renderPassCreateInfo.attachmentCount = 1u;
-		renderPassCreateInfo.pAttachments    = &attachmentDescription;
-		renderPassCreateInfo.subpassCount    = 1u;
-		renderPassCreateInfo.pSubpasses      = &subpassDescription;
-		renderPassCreateInfo.dependencyCount = 1u;	
-		renderPassCreateInfo.pDependencies   = &subpassDependency;
-		VK_CALL(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &m_RenderPass));
-	}
-
-	void VulkanContext::CreateFramebuffers()
-	{
-		VkDevice device = m_Device.GetVulkanDevice();
-
-		m_Framebuffers.resize(m_Swapchain.GetImageCount());
-		for (size_t i = 0u; i < m_Framebuffers.size(); i++)
-		{
-			VkFramebufferCreateInfo framebufferCreateInfo{};
-			framebufferCreateInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			framebufferCreateInfo.pNext           = nullptr;
-			framebufferCreateInfo.flags           = 0u;
-			framebufferCreateInfo.renderPass	  = m_RenderPass;
-			framebufferCreateInfo.attachmentCount = 1u;
-			framebufferCreateInfo.pAttachments    = &m_Swapchain.GetImageViews()[i];
-			framebufferCreateInfo.width           = m_Swapchain.GetWidth();
-			framebufferCreateInfo.height          = m_Swapchain.GetHeight();
-			framebufferCreateInfo.layers          = 1u;
-			VK_CALL(vkCreateFramebuffer(device, &framebufferCreateInfo, nullptr, &m_Framebuffers[i]));
-		}
 	}
 
 	void VulkanContext::CreateCommandBuffers()
@@ -572,8 +496,8 @@ namespace DT
 		VkRenderPassBeginInfo renderPassBeginInfo{};
 		renderPassBeginInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassBeginInfo.pNext             = nullptr;
-		renderPassBeginInfo.renderPass        = m_RenderPass;
-		renderPassBeginInfo.framebuffer       = m_Framebuffers[imageIndex];
+		renderPassBeginInfo.renderPass        = m_Swapchain.GetSwapchainRenderPass();
+		renderPassBeginInfo.framebuffer       = m_Swapchain.GetFramebuffer(imageIndex);
 		renderPassBeginInfo.renderArea.offset = { 0u,0u };
 		renderPassBeginInfo.renderArea.extent = { (uint32)m_Swapchain.GetWidth(),(uint32)m_Swapchain.GetHeight() };
 		renderPassBeginInfo.clearValueCount   = 1u;
@@ -650,13 +574,9 @@ namespace DT
 			vkDestroyFence(device, m_PreviousFrameFinishedFences[i], nullptr);
 			vkDestroySemaphore(device, m_RenderCompleteSemaphores[i], nullptr);
 		}
-
-		for (uint32 i = 0u; i < m_Swapchain.GetImageCount(); i++)
-			vkDestroyFramebuffer(device, m_Framebuffers[i], nullptr);
 		
 		vkDestroyPipelineLayout(device, m_PipelineLayout, nullptr);
 		vkDestroyPipeline(device, m_Pipeline, nullptr);
-		vkDestroyRenderPass(device, m_RenderPass, nullptr);
 		
 		m_Swapchain.Shutdown();
 		vmaDestroyAllocator(m_MemoryAllocator);
@@ -680,11 +600,9 @@ namespace DT
 	{
 		VkDevice device = m_Device.GetVulkanDevice();
 
-		Timer timer;
 		VK_CALL(vkWaitForFences(device, 1u, &m_PreviousFrameFinishedFences[m_CurrentFrame], VK_TRUE, UINT64_MAX));
 		VK_CALL(vkResetFences(device, 1u, &m_PreviousFrameFinishedFences[m_CurrentFrame]));
-		//LOG_TRACE("{} us", timer.ElapsedMicroseconds());
-
+		
 		m_Swapchain.AquireNextImage();
 
 		RecordCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], m_Swapchain.GetCurrentImageIndex());
@@ -692,8 +610,8 @@ namespace DT
 
 		m_Swapchain.Present(m_RenderCompleteSemaphores[m_CurrentFrame]);
 
-		m_CurrentFrame = (m_CurrentFrame + 1u) % MAX_FRAMES_IN_FLIGHT;
-
-		//LOG_TRACE(m_CurrentFrame);
+		m_CurrentFrame++;
+		if (m_CurrentFrame == MAX_FRAMES_IN_FLIGHT)
+			m_CurrentFrame = 0u;
 	}
 }

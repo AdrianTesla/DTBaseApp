@@ -19,12 +19,18 @@ namespace DT
 		SelectSurfaceTransform();
 		CreateSwapchain();
 		CreateSwapchainImageViews();
+		CreateSwapchainRenderPass();
+		CreateSwapchainFramebuffers();
 		CreateSyncronizationObjects();
 	}
 
 	VkSemaphore& VulkanSwapchain::GetImageAvailableSemaphore() 
 	{ 
 		return m_ImageAvailableSemaphores[VulkanContext::GetCurrentFrame()]; 
+	}
+
+	void VulkanSwapchain::RecreateSwapchain()
+	{
 	}
 
 	void VulkanSwapchain::GetSupportDetails()
@@ -263,9 +269,8 @@ namespace DT
 		VK_CALL(vkCreateSwapchainKHR(device, &swapchainCreateInfo, nullptr, &m_Swapchain));
 
 		// retrieve the automatically created swapchain images
-		VK_CALL(vkGetSwapchainImagesKHR(device, m_Swapchain, &m_ImageCount, nullptr));
-		m_SwapchainImages.resize(m_ImageCount);
-		VK_CALL(vkGetSwapchainImagesKHR(device, m_Swapchain, &m_ImageCount, m_SwapchainImages.data()));
+		VK_CALL(vkGetSwapchainImagesKHR(device, m_Swapchain, &m_ImageCount, m_SwapchainImages.Data));
+		m_SwapchainImages.Size = m_ImageCount;
 
 		LOG_INFO("Created swapchain with {} images", m_ImageCount);
 	}
@@ -274,7 +279,7 @@ namespace DT
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 
-		m_SwapchainImageViews.resize(m_ImageCount);
+		m_SwapchainImageViews.Size = m_ImageCount;
 		for (uint32 i = 0u; i < m_ImageCount; i++)
 		{
 			VkImageViewCreateInfo imageViewCreateInfo{};
@@ -299,6 +304,80 @@ namespace DT
 		}
 	}
 
+	void VulkanSwapchain::CreateSwapchainFramebuffers()
+	{
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+
+		m_SwapchainFramebuffers.Size = m_ImageCount;
+		for (uint32 i = 0u; i < m_ImageCount; i++)
+		{
+			VkFramebufferCreateInfo framebufferCreateInfo{};
+			framebufferCreateInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferCreateInfo.pNext           = nullptr;
+			framebufferCreateInfo.flags           = 0u;
+			framebufferCreateInfo.renderPass      = m_SwapchainRenderPass;
+			framebufferCreateInfo.attachmentCount = 1u;
+			framebufferCreateInfo.pAttachments    = &m_SwapchainImageViews[i];
+			framebufferCreateInfo.width           = (uint32)m_Width;
+			framebufferCreateInfo.height          = (uint32)m_Height;
+			framebufferCreateInfo.layers          = 1u;
+			VK_CALL(vkCreateFramebuffer(device, &framebufferCreateInfo, nullptr, &m_SwapchainFramebuffers[i]));
+		}
+	}
+
+	void VulkanSwapchain::CreateSwapchainRenderPass()
+	{
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+
+		VkAttachmentDescription attachmentDescription{};
+		attachmentDescription.flags          = 0u;
+		attachmentDescription.format         = m_SurfaceFormat.format;
+		attachmentDescription.samples        = VK_SAMPLE_COUNT_1_BIT;
+		attachmentDescription.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		attachmentDescription.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+		attachmentDescription.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachmentDescription.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+		attachmentDescription.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+		VkAttachmentReference colorAttachmentReference{};
+		colorAttachmentReference.attachment = 0u;
+		colorAttachmentReference.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		VkSubpassDescription subpassDescription{};
+		subpassDescription.flags                   = 0u;
+		subpassDescription.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpassDescription.inputAttachmentCount    = 0u;
+		subpassDescription.pInputAttachments       = nullptr;
+		subpassDescription.colorAttachmentCount    = 1u;
+		subpassDescription.pColorAttachments       = &colorAttachmentReference;
+		subpassDescription.pResolveAttachments     = nullptr;
+		subpassDescription.pDepthStencilAttachment = nullptr;
+		subpassDescription.preserveAttachmentCount = 0u;
+		subpassDescription.pPreserveAttachments    = nullptr;
+
+		VkSubpassDependency subpassDependency{};
+		subpassDependency.srcSubpass      = VK_SUBPASS_EXTERNAL;
+		subpassDependency.dstSubpass      = 0u;
+		subpassDependency.srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		subpassDependency.dstStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		subpassDependency.srcAccessMask   = 0u;
+		subpassDependency.dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		subpassDependency.dependencyFlags = 0u;
+
+		VkRenderPassCreateInfo renderPassCreateInfo{};
+		renderPassCreateInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+		renderPassCreateInfo.pNext           = nullptr;
+		renderPassCreateInfo.flags           = 0u;
+		renderPassCreateInfo.attachmentCount = 1u;
+		renderPassCreateInfo.pAttachments    = &attachmentDescription;
+		renderPassCreateInfo.subpassCount    = 1u;
+		renderPassCreateInfo.pSubpasses      = &subpassDescription;
+		renderPassCreateInfo.dependencyCount = 1u;	
+		renderPassCreateInfo.pDependencies   = &subpassDependency;
+		VK_CALL(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &m_SwapchainRenderPass));
+	}
+
 	void VulkanSwapchain::CreateSyncronizationObjects()
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
@@ -317,10 +396,8 @@ namespace DT
 
 	void VulkanSwapchain::AquireNextImage()
 	{
-		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
-
 		VK_CALL(vkAcquireNextImageKHR(
-			device, 
+			VulkanContext::GetCurrentVulkanDevice(),
 			m_Swapchain, 
 			UINT64_MAX, 
 			m_ImageAvailableSemaphores[VulkanContext::GetCurrentFrame()],
@@ -351,9 +428,16 @@ namespace DT
 			vkDestroySemaphore(device, m_ImageAvailableSemaphores[i], nullptr);
 		
 		for (uint32 i = 0u; i < m_ImageCount; i++)
+		{
 			vkDestroyImageView(device, m_SwapchainImageViews[i], nullptr);
+			vkDestroyFramebuffer(device, m_SwapchainFramebuffers[i], nullptr);
+		}
+
+		vkDestroyRenderPass(device, m_SwapchainRenderPass, nullptr);
 
 		vkDestroySwapchainKHR(device, m_Swapchain, nullptr);
+		
 		m_Swapchain = VK_NULL_HANDLE;
+		m_SwapchainRenderPass = VK_NULL_HANDLE;
 	}
 }
