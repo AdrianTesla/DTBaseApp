@@ -5,6 +5,8 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
+#include <stb_image.h>
+
 namespace DT
 {
 	static bool s_GLFWInitialized = false;
@@ -57,6 +59,8 @@ namespace DT
 
 		if (m_Specification.Opacity != 1.0f)
 			SetOpacity(m_Specification.Opacity);
+
+		SetIcon(m_Specification.IconPath);
 
 		glfwGetWindowSize(m_GLFWWindow, &m_WindowData.Width, &m_WindowData.Height);
 
@@ -202,6 +206,21 @@ namespace DT
 	void WindowsWindow::SetSizeLimits(int32 minWidth, int32 minHeight, int32 maxWidth, int32 maxHeight)
 	{
 		glfwSetWindowSizeLimits(m_GLFWWindow, minWidth, minHeight, maxWidth, maxHeight);
+	}
+
+	void WindowsWindow::SetIcon(const std::filesystem::path& iconPath)
+	{
+		if (std::filesystem::exists(iconPath))
+		{
+			GLFWimage image;
+			image.pixels = stbi_load(iconPath.string().c_str(), &image.width, &image.height, nullptr, 4);
+			glfwSetWindowIcon(m_GLFWWindow, 1, &image);
+			stbi_image_free(image.pixels);
+		}
+		else
+		{
+			LOG_WARN("Could not load window icon! {}", iconPath.string());
+		}
 	}
 
 	void WindowsWindow::ShowMessageBox(const std::string& title, const std::string& text)

@@ -13,7 +13,8 @@ project "DTBaseApp"
 	{
 		"src/**.h",
 		"src/**.cpp",
-		"%{IncludeDir.vk_mem_alloc}/vk_mem_alloc.cpp"
+		"%{IncludeDir.vk_mem_alloc}/vk_mem_alloc.cpp",
+		"%{IncludeDir.stb}/stb_build.cpp",
 	}
 
 	includedirs
@@ -22,6 +23,7 @@ project "DTBaseApp"
 		"%{IncludeDir.glfw}",
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.vk_mem_alloc}",
+		"%{IncludeDir.stb}",
 		"%{IncludeDir.VulkanSDK}"
 	}
 

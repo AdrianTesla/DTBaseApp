@@ -37,6 +37,7 @@ namespace DT
 		virtual void SetSize(int32 width, int32 height) override;
 		virtual void SetPosition(int32 x, int32 y) override;
 		virtual void SetSizeLimits(int32 minWidth, int32 minHeight, int32 maxWidth, int32 maxHeight) override;
+		virtual void SetIcon(const std::filesystem::path& iconPath) override;
 
 		virtual void ShowMessageBox(const std::string& title, const std::string& text) override;
 
