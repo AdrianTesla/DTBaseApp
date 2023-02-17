@@ -322,7 +322,7 @@ namespace DT
 		m_SwapchainImages.Size = m_ImageCount;
 
 		if (log) {
-			LOG_INFO("Created swapchain with {} images", m_ImageCount);
+			LOG_INFO("Created swapchain with {} images ({}, {})", m_ImageCount, m_Width, m_Height);
 		}
 	}
 

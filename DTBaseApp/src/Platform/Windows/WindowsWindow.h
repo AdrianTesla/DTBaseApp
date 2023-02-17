@@ -51,6 +51,8 @@ namespace DT
 		{
 			int32 Width = 0;
 			int32 Height = 0;
+			int32 PreviousWidth = 0;
+			int32 PreviousHeight = 0;
 
 			EventCallbackFn Callback;
 		};

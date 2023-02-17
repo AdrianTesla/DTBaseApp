@@ -40,7 +40,9 @@ namespace DT
 			WindowExitSize     ,
 			WindowFocus        ,
 			WindowMoved        ,
-			AppUpdate          ,
+			WindowRestoreDown  ,
+			WindowMaximize     ,
+			WindowIconify      ,
 			KeyPressed         ,
 			KeyReleased        ,
 			KeyTyped           ,
@@ -299,7 +301,7 @@ namespace DT
 			: m_NewWidth(newWidth), m_NewHeight(newHeight)
 		{}
 
-		bool IsValid() const { return (m_NewWidth > 0) && (m_NewHeight > 0); }
+		bool IsDegenerate() const { return (m_NewWidth == 0) || (m_NewHeight == 0); }
 		int32 GetWidth() const { return m_NewWidth; }
 		int32 GetHeight() const { return m_NewHeight; }
 
@@ -326,13 +328,42 @@ namespace DT
 		IMPLEMENT_CATEGORIES(CategoryApplication)
 	};
 
-	class AppUpdateEvent : public Event
+	class WindowRestoredDown : public Event
 	{
 	public:
-		AppUpdateEvent() = default;
+		WindowRestoredDown() = default;
 	public:
-		IMPLEMENT_CLASS_TYPE(AppUpdate)
+		IMPLEMENT_CLASS_TYPE(WindowRestoreDown)
 		IMPLEMENT_CATEGORIES(CategoryApplication)
+	};
+
+	class WindowMaximized : public Event
+	{
+	public:
+		WindowMaximized() = default;
+	public:
+		IMPLEMENT_CLASS_TYPE(WindowMaximize)
+		IMPLEMENT_CATEGORIES(CategoryApplication)
+	};
+
+	class WindowIconified : public Event
+	{
+	public:
+		WindowIconified(bool iconified)
+			: m_Iconified(iconified)
+		{}
+		bool Minimized() const { return m_Iconified; }
+		bool Maximized() const { return !m_Iconified; }
+
+		virtual std::string ToString() const override
+		{
+			return std::format("WindowIconified: {0}", m_Iconified);
+		}
+	public:
+		IMPLEMENT_CLASS_TYPE(WindowIconify)
+		IMPLEMENT_CATEGORIES(CategoryApplication)
+	private:
+		bool m_Iconified;
 	};
 
 	class WindowFocusEvent : public Event

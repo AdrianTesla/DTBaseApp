@@ -75,9 +75,15 @@ namespace DT
 			m_AppRunning = false;
 			return false;
 		});
-		dispatcher.Dispatch<WindowResizeEvent>([&](WindowResizeEvent& e) 
+		dispatcher.Dispatch<WindowIconified>([&](WindowIconified& e)
 		{
-			m_AppMinimized = !e.IsValid();
+			m_AppMinimized = e.Minimized();
+			LOG_TRACE(m_AppMinimized ? "App minimized" : "App restored");
+			return false;
+		});
+		dispatcher.Dispatch<WindowResizeEvent>([&](WindowResizeEvent& e)
+		{
+			m_AppMinimized = e.IsDegenerate();
 			return false;
 		});
 	}

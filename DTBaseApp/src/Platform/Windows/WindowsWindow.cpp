@@ -114,6 +114,9 @@ namespace DT
 
 	void WindowsWindow::ToFullscreen()
 	{
+		m_WindowData.PreviousWidth = m_WindowData.Width;
+		m_WindowData.PreviousHeight = m_WindowData.Height;
+
 		GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
 		const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
 		glfwSetWindowMonitor(m_GLFWWindow, primaryMonitor, 0, 0, videoMode->width, videoMode->height, videoMode->refreshRate);
@@ -121,7 +124,7 @@ namespace DT
 
 	void WindowsWindow::ToWindowed()
 	{
-		glfwSetWindowMonitor(m_GLFWWindow, nullptr, 0, 0, m_Specification.Width, m_Specification.Height, GLFW_DONT_CARE);
+		glfwSetWindowMonitor(m_GLFWWindow, nullptr, 0, 0, m_WindowData.PreviousWidth, m_WindowData.PreviousHeight, GLFW_DONT_CARE);
 		CenterWindow();
 	}
 
@@ -295,6 +298,29 @@ namespace DT
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
 			KeyTypedEvent e(key);
+			data.Callback(e);
+		});
+
+		// window maximized callback
+		glfwSetWindowMaximizeCallback(m_GLFWWindow, [](GLFWwindow* window, int maximized)
+		{
+			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			
+			if (maximized == GLFW_TRUE) {
+				WindowMaximized e;
+				data.Callback(e);
+			} else {
+				WindowRestoredDown e;
+				data.Callback(e);
+			}
+		});
+
+		// window maximized callback
+		glfwSetWindowIconifyCallback(m_GLFWWindow, [](GLFWwindow* window, int iconified)
+		{
+			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			
+			WindowIconified e((bool)iconified);
 			data.Callback(e);
 		});
 
