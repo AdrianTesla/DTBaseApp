@@ -39,8 +39,6 @@ namespace DT
 		virtual void SetSizeLimits(int32 minWidth, int32 minHeight, int32 maxWidth, int32 maxHeight) override;
 		virtual void SetIcon(const std::filesystem::path& iconPath) override;
 
-		virtual void ShowMessageBox(const std::string& title, const std::string& text) override;
-
 		bool KeyIsPressed(KeyCode key) const;
 		bool MouseIsPressed(MouseCode button) const;
 	private:

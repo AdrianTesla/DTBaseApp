@@ -14,6 +14,7 @@ namespace DT
 
 		virtual void Init() override;
 		virtual void Present() override;
+
 		virtual void DrawFrameTest() override;
 		
 		bool IsInstanceExtensionSupported(const char* extensionName) const;

@@ -43,6 +43,8 @@ namespace DT
 			WindowRestoreDown  ,
 			WindowMaximize     ,
 			WindowIconify      ,
+			WindowToFullscreen ,
+			WindowToWindowed   ,
 			KeyPressed         ,
 			KeyReleased        ,
 			KeyTyped           ,
@@ -328,28 +330,46 @@ namespace DT
 		IMPLEMENT_CATEGORIES(CategoryApplication)
 	};
 
-	class WindowRestoredDown : public Event
+	class WindowRestoredDownEvent : public Event
 	{
 	public:
-		WindowRestoredDown() = default;
+		WindowRestoredDownEvent() = default;
 	public:
 		IMPLEMENT_CLASS_TYPE(WindowRestoreDown)
 		IMPLEMENT_CATEGORIES(CategoryApplication)
 	};
 
-	class WindowMaximized : public Event
+	class WindowMaximizedEvent : public Event
 	{
 	public:
-		WindowMaximized() = default;
+		WindowMaximizedEvent() = default;
 	public:
 		IMPLEMENT_CLASS_TYPE(WindowMaximize)
 		IMPLEMENT_CATEGORIES(CategoryApplication)
 	};
 
-	class WindowIconified : public Event
+	class WindowToFullscreenEvent : public Event
 	{
 	public:
-		WindowIconified(bool iconified)
+		WindowToFullscreenEvent() = default;
+	public:
+		IMPLEMENT_CLASS_TYPE(WindowToFullscreen)
+		IMPLEMENT_CATEGORIES(CategoryApplication)
+	};
+
+	class WindowToWindowedEvent : public Event
+	{
+	public:
+		WindowToWindowedEvent() = default;
+	public:
+		IMPLEMENT_CLASS_TYPE(WindowToWindowed)
+		IMPLEMENT_CATEGORIES(CategoryApplication)
+	};
+
+	class WindowIconifiedEvent : public Event
+	{
+	public:
+		WindowIconifiedEvent(bool iconified)
 			: m_Iconified(iconified)
 		{}
 		bool Minimized() const { return m_Iconified; }

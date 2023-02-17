@@ -53,7 +53,5 @@ namespace DT
 		virtual void SetPosition(int32 x, int32 y) = 0;
 		virtual void SetSizeLimits(int32 minWidth, int32 minHeight, int32 maxWidth, int32 maxHeight) = 0;
 		virtual void SetIcon(const std::filesystem::path& iconPath) = 0;
-
-		virtual void ShowMessageBox(const std::string& title, const std::string& text) = 0;
 	};
 }

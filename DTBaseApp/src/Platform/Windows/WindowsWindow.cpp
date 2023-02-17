@@ -118,18 +118,32 @@ namespace DT
 
 	void WindowsWindow::ToFullscreen()
 	{
-		m_WindowData.PreviousWidth = m_WindowData.Width;
-		m_WindowData.PreviousHeight = m_WindowData.Height;
+		if ((m_WindowData.Width == 0) || (m_WindowData.Height == 0))
+		{
+			m_WindowData.PreviousWidth = m_Specification.Width;
+			m_WindowData.PreviousHeight = m_Specification.Height;
+		}
+		else
+		{
+			m_WindowData.PreviousWidth = m_WindowData.Width;
+			m_WindowData.PreviousHeight = m_WindowData.Height;
+		}
 
 		GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
 		const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
 		glfwSetWindowMonitor(m_GLFWWindow, primaryMonitor, 0, 0, videoMode->width, videoMode->height, videoMode->refreshRate);
+	
+		WindowToFullscreenEvent e;
+		m_WindowData.Callback(e);
 	}
 
 	void WindowsWindow::ToWindowed()
 	{
 		glfwSetWindowMonitor(m_GLFWWindow, nullptr, 0, 0, m_WindowData.PreviousWidth, m_WindowData.PreviousHeight, GLFW_DONT_CARE);
 		CenterWindow();
+
+		WindowToWindowedEvent e;
+		m_WindowData.Callback(e);
 	}
 
 	void WindowsWindow::SetFixedAspectRatio(int32 numerator, int32 denominator)
@@ -221,11 +235,6 @@ namespace DT
 		{
 			LOG_WARN("Could not load window icon! {}", iconPath.string());
 		}
-	}
-
-	void WindowsWindow::ShowMessageBox(const std::string& title, const std::string& text)
-	{
-		MessageBoxA(nullptr, text.c_str(), title.c_str(), MB_OK | MB_ICONASTERISK);
 	}
 
 	Extent WindowsWindow::GetDisplayResolution() const
@@ -326,10 +335,10 @@ namespace DT
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 			
 			if (maximized == GLFW_TRUE) {
-				WindowMaximized e;
+				WindowMaximizedEvent e;
 				data.Callback(e);
 			} else {
-				WindowRestoredDown e;
+				WindowRestoredDownEvent e;
 				data.Callback(e);
 			}
 		});
@@ -339,7 +348,7 @@ namespace DT
 		{
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 			
-			WindowIconified e((bool)iconified);
+			WindowIconifiedEvent e((bool)iconified);
 			data.Callback(e);
 		});
 

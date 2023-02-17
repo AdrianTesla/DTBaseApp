@@ -492,7 +492,7 @@ namespace DT
 		commandBufferBeginInfo.flags            = 0u;
 		commandBufferBeginInfo.pInheritanceInfo = nullptr;
 
-		VkClearValue clearValue = {{{ 0.25f,0.0f,0.1f,1.0f }}};
+		VkClearValue clearValue = {{{ 0.0f,0.0f,0.0f,1.0f }}};
 
 		VkRenderPassBeginInfo renderPassBeginInfo{};
 		renderPassBeginInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -604,9 +604,8 @@ namespace DT
 		VkDevice device = m_Device.GetVulkanDevice();
 
 		VK_CALL(vkWaitForFences(device, 1u, &m_PreviousFrameFinishedFences[m_CurrentFrame], VK_TRUE, UINT64_MAX));
-		VK_CALL(vkResetFences(device, 1u, &m_PreviousFrameFinishedFences[m_CurrentFrame]));
-		
 		m_Swapchain.AquireNextImage();
+		VK_CALL(vkResetFences(device, 1u, &m_PreviousFrameFinishedFences[m_CurrentFrame]));
 
 		RecordCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], m_Swapchain.GetCurrentImageIndex());
 		ExecuteCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], m_Device.GetGraphicsQueue());

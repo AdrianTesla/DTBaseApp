@@ -75,7 +75,7 @@ namespace DT
 			m_AppRunning = false;
 			return false;
 		});
-		dispatcher.Dispatch<WindowIconified>([&](WindowIconified& e)
+		dispatcher.Dispatch<WindowIconifiedEvent>([&](WindowIconifiedEvent& e)
 		{
 			m_AppMinimized = e.Minimized();
 			LOG_TRACE(m_AppMinimized ? "App minimized" : "App restored");
@@ -84,6 +84,16 @@ namespace DT
 		dispatcher.Dispatch<WindowResizeEvent>([&](WindowResizeEvent& e)
 		{
 			m_AppMinimized = e.IsDegenerate();
+			return false;
+		});
+		dispatcher.Dispatch<WindowToFullscreenEvent>([&](WindowToFullscreenEvent& e)
+		{
+			LOG_INFO("ToFullscreen transition");
+			return false;
+		});
+		dispatcher.Dispatch<WindowToWindowedEvent>([&](WindowToWindowedEvent& e)
+		{
+			LOG_INFO("ToWindowed transition");
 			return false;
 		});
 	}
