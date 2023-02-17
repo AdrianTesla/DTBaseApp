@@ -32,7 +32,7 @@ namespace DT
 		void Init(bool verticalSync = false);
 		void Shutdown();
 
-		bool AquireNextImage();
+		void AquireNextImage();
 		void Present(VkSemaphore waitSemaphore);
 
 		uint32 GetImageCount() const { return m_ImageCount; }
