@@ -455,12 +455,8 @@ namespace DT
 			VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_ImageAvailableSemaphores[i]));
 	}
 
-	static uint32 m_FrameCount = 0u;
-
-	void VulkanSwapchain::AquireNextImage()
+	bool VulkanSwapchain::AquireNextImage()
 	{
-		m_FrameCount++;
-
 		VkResult aquireResult = vkAcquireNextImageKHR(
 			VulkanContext::GetCurrentVulkanDevice(),
 			m_Swapchain, 
@@ -470,13 +466,16 @@ namespace DT
 			&m_CurrentImageIndex
 		);
 
-		if ((aquireResult != VK_SUCCESS) && (aquireResult != VK_SUBOPTIMAL_KHR))
+		if ((aquireResult == VK_SUCCESS) || (aquireResult == VK_SUBOPTIMAL_KHR))
+			return true;
+
+		if (aquireResult == VK_ERROR_OUT_OF_DATE_KHR)
 		{
-			if (aquireResult == VK_ERROR_OUT_OF_DATE_KHR)
-				RecreateSwapchain();
-			else
-				VK_CALL(aquireResult);
+			RecreateSwapchain();
+			return false;
 		}
+		VK_CALL(aquireResult);
+		return false;
 	}
 
 	void VulkanSwapchain::Present(VkSemaphore waitSemaphore)
@@ -493,8 +492,10 @@ namespace DT
 		VkResult presentResult = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
 		if (presentResult != VK_SUCCESS)
 		{
-			if ((presentResult == VK_ERROR_OUT_OF_DATE_KHR) || (presentResult == VK_SUBOPTIMAL_KHR))
+			if (m_SurfaceResized || (presentResult == VK_ERROR_OUT_OF_DATE_KHR) || (presentResult == VK_SUBOPTIMAL_KHR)) {
 				RecreateSwapchain();
+				m_SurfaceResized = false;
+			}
 			else
 				VK_CALL(presentResult);
 		}
@@ -523,5 +524,10 @@ namespace DT
 		
 		m_Swapchain = VK_NULL_HANDLE;
 		m_SwapchainRenderPass = VK_NULL_HANDLE;
+	}
+
+	void VulkanSwapchain::OnWindowResize()
+	{
+		m_SurfaceResized = true;
 	}
 }

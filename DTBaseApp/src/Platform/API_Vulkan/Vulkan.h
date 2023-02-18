@@ -35,6 +35,8 @@ namespace DT
 	template<typename T>
 	struct InFlight
 	{
+		InFlight() = default;
+
 		T& operator[](uint32 index) { return m_Instances[index]; }
 		const T& operator[](uint32 index) const { return m_Instances[index]; }
 

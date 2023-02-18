@@ -32,7 +32,9 @@ namespace DT
 		void Init(bool verticalSync = false);
 		void Shutdown();
 
-		void AquireNextImage();
+		void OnWindowResize();
+
+		bool AquireNextImage();
 		void Present(VkSemaphore waitSemaphore);
 
 		uint32 GetImageCount() const { return m_ImageCount; }
@@ -89,5 +91,6 @@ namespace DT
 
 		bool m_VerticalSync;
 		bool m_LogCreation = true;
+		bool m_SurfaceResized = false;
 	};
 }

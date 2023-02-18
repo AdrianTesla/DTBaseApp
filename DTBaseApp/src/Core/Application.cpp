@@ -84,6 +84,7 @@ namespace DT
 		dispatcher.Dispatch<WindowResizeEvent>([&](WindowResizeEvent& e)
 		{
 			m_AppMinimized = e.IsDegenerate();
+			m_RendererContext->OnWindowResize();
 			return false;
 		});
 		dispatcher.Dispatch<WindowToFullscreenEvent>([&](WindowToFullscreenEvent& e)

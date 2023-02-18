@@ -4,6 +4,12 @@
 
 namespace DT
 {
+	struct PushConstant
+	{
+		float AspectRatio;
+		float Time;
+	};
+
 	static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanMessageCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) 
 	{
 		switch (messageSeverity)
@@ -435,14 +441,19 @@ namespace DT
 		pipelineDynamicStateCreateInfo.dynamicStateCount = (uint32)std::size(dynamicStates);
 		pipelineDynamicStateCreateInfo.pDynamicStates    = dynamicStates;
 
+		VkPushConstantRange pushConstantRange{};
+		pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		pushConstantRange.offset     = 0u;
+		pushConstantRange.size       = sizeof(PushConstant);
+
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 		pipelineLayoutCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutCreateInfo.pNext                  = nullptr;
 		pipelineLayoutCreateInfo.flags                  = 0u;
 		pipelineLayoutCreateInfo.setLayoutCount         = 0u;
 		pipelineLayoutCreateInfo.pSetLayouts            = nullptr;
-		pipelineLayoutCreateInfo.pushConstantRangeCount = 0u;
-		pipelineLayoutCreateInfo.pPushConstantRanges    = nullptr;
+		pipelineLayoutCreateInfo.pushConstantRangeCount = 1u;
+		pipelineLayoutCreateInfo.pPushConstantRanges    = &pushConstantRange;
 		VK_CALL(vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &m_PipelineLayout));
 
 		VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
@@ -516,6 +527,10 @@ namespace DT
 		scissor.offset = { 0u,0u };
 		scissor.extent = { (uint32)m_Swapchain.GetWidth(),(uint32)m_Swapchain.GetHeight() };
 
+		PushConstant pushConstant;
+		pushConstant.AspectRatio = viewport.width / viewport.height;
+		pushConstant.Time = (float)glfwGetTime();
+
 		VK_CALL(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
 		{
 			vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -523,6 +538,7 @@ namespace DT
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
 				vkCmdSetViewport(commandBuffer, 0u, 1u, &viewport);
 				vkCmdSetScissor(commandBuffer, 0u, 1u, &scissor);
+				vkCmdPushConstants(commandBuffer, m_PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(PushConstant), &pushConstant);
 				vkCmdDraw(commandBuffer, 3u, 1u, 0u, 0u);
 			}
 			vkCmdEndRenderPass(commandBuffer);
@@ -599,14 +615,23 @@ namespace DT
 	{
 	}
 
+	void VulkanContext::OnWindowResize()
+	{
+		m_Swapchain.OnWindowResize();
+	}
+
 	void VulkanContext::DrawFrameTest()
 	{
 		VkDevice device = m_Device.GetVulkanDevice();
 
-		m_Swapchain.AquireNextImage();
 		VK_CALL(vkWaitForFences(device, 1u, &m_PreviousFrameFinishedFences[m_CurrentFrame], VK_TRUE, UINT64_MAX));
+
+		if (!m_Swapchain.AquireNextImage())
+			return;
+
 		VK_CALL(vkResetFences(device, 1u, &m_PreviousFrameFinishedFences[m_CurrentFrame]));
 
+		vkResetCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], 0u);
 		RecordCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], m_Swapchain.GetCurrentImageIndex());
 		ExecuteCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], m_Device.GetGraphicsQueue());
 

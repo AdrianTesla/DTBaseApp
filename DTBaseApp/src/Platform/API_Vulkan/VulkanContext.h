@@ -14,6 +14,7 @@ namespace DT
 
 		virtual void Init() override;
 		virtual void Present() override;
+		virtual void OnWindowResize() override;
 
 		virtual void DrawFrameTest() override;
 		
