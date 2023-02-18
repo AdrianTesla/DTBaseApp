@@ -46,7 +46,7 @@ namespace DT
 		glfwWindowHint(GLFW_MAXIMIZED, (int)m_Specification.StartMaximized);
 		glfwWindowHint(GLFW_RESIZABLE, (int)m_Specification.IsResizable);
 		glfwWindowHint(GLFW_FLOATING, (int)m_Specification.AlwaysOnTop);
-		glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_FALSE);
+		glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_TRUE);
 
 		if (m_Specification.StartFullscreen)
 			m_GLFWWindow = glfwCreateWindow(videoMode->width, videoMode->height, m_Specification.Title.c_str(), monitor, nullptr);

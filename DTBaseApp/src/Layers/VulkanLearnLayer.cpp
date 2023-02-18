@@ -35,12 +35,19 @@ namespace DT
 				case Key::A:
 					break;
 				case Key::Q:
-					Application::Get().CloseApplication();
 					break;
 				case Key::M:
 					Application::Get().GetWindow().Minimize();
 					break;
+				case Key::T:
+				{
+					static bool aot = true;
+					aot = !aot;
+					Application::Get().GetWindow().SetAlwaysOnTop(aot);
+					break;
+				}
 				case Key::C:
+					Application::Get().GetWindow().CenterWindow();
 					break;
 				case Key::Enter:
 					static bool windowed = false;

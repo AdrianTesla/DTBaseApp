@@ -8,7 +8,7 @@ namespace DT
 	{
 		s_Instance = this;
 
-		m_Specification.Window.AlwaysOnTop = false;
+		m_Specification.Window.AlwaysOnTop = true;
 		m_Window = Window::Create(m_Specification.Window);
 		m_Window->SetEventCallBack(BIND_FUNC(OnEvent));
 
@@ -39,26 +39,23 @@ namespace DT
 		while (m_AppRunning)
 		{
 			m_Window->ProcessEvents();
-			UpdatePhase(timer.Mark());
-			RenderPhase();
-			m_FrameCount++;
+			if (!m_AppMinimized) 
+			{
+				UpdatePhase(timer.Mark());
+				RenderPhase();
+				m_FrameCount++;
+			}
 		}
 	}
 
 	void Application::UpdatePhase(float dt)
 	{
-		if (m_AppMinimized)
-			return;
-
 		for (Layer* layer : m_Layers)
 			layer->OnUpdate(dt);
 	}
 
 	void Application::RenderPhase()
 	{
-		if (m_AppMinimized)
-			return;
-
 		for (Layer* layer : m_Layers)
 			layer->OnRender();
 
@@ -79,31 +76,13 @@ namespace DT
 		dispatcher.Dispatch<WindowIconifiedEvent>([&](WindowIconifiedEvent& e)
 		{
 			m_AppMinimized = e.Minimized();
-			LOG_TRACE(m_AppMinimized ? "App minimized" : "App restored");
+			LOG_TRACE(e.Minimized() ? "App minimized" : "App restored");
 			return false;
 		});
 		dispatcher.Dispatch<WindowResizeEvent>([&](WindowResizeEvent& e)
 		{
 			m_AppMinimized = e.IsDegenerate();
 			m_RendererContext->OnWindowResize();
-			return false;
-		});
-		dispatcher.Dispatch<WindowToFullscreenEvent>([&](WindowToFullscreenEvent& e)
-		{
-			LOG_INFO("ToFullscreen transition");
-			return false;
-		});
-		dispatcher.Dispatch<WindowToWindowedEvent>([&](WindowToWindowedEvent& e)
-		{
-			LOG_INFO("ToWindowed transition");
-			return false;
-		});
-		dispatcher.Dispatch<WindowFocusEvent>([&](WindowFocusEvent& e)
-		{
-			LOG_INFO("Lost Focus: {}", !e.IsFocused());
-			if (!e.IsFocused() && m_Window->IsFullscreen())
-				m_Window->Minimize();
-
 			return false;
 		});
 	}

@@ -64,7 +64,6 @@ namespace DT
 		};
 		WindowData m_WindowData;
 		GLFWwindow* m_GLFWWindow;
-
 		WindowSpecification m_Specification;
 	};
 }

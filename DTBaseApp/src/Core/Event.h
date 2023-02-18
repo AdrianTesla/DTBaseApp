@@ -393,6 +393,7 @@ namespace DT
 			: m_Focused(focused)
 		{}
 		bool IsFocused() const { return m_Focused; }
+		bool LostFocus() const { return !m_Focused; }
 	public:
 		IMPLEMENT_CLASS_TYPE(WindowFocus)
 		IMPLEMENT_CATEGORIES(CategoryApplication)

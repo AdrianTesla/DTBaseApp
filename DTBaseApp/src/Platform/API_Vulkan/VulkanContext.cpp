@@ -534,13 +534,11 @@ namespace DT
 		VK_CALL(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
 		{
 			vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-			{
-				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
-				vkCmdSetViewport(commandBuffer, 0u, 1u, &viewport);
-				vkCmdSetScissor(commandBuffer, 0u, 1u, &scissor);
-				vkCmdPushConstants(commandBuffer, m_PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(PushConstant), &pushConstant);
-				vkCmdDraw(commandBuffer, 3u, 1u, 0u, 0u);
-			}
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+			vkCmdSetViewport(commandBuffer, 0u, 1u, &viewport);
+			vkCmdSetScissor(commandBuffer, 0u, 1u, &scissor);
+			vkCmdPushConstants(commandBuffer, m_PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(PushConstant), &pushConstant);
+			vkCmdDraw(commandBuffer, 3u, 1u, 0u, 0u);
 			vkCmdEndRenderPass(commandBuffer);
 		}
 		VK_CALL(vkEndCommandBuffer(commandBuffer));
