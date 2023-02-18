@@ -36,6 +36,7 @@ namespace DT
 		virtual void SetTitle(const std::string& title) override;
 		virtual void SetDecorated(bool isDecorated) override;
 		virtual void SetResizable(bool isResizable) override;
+		virtual void SetAlwaysOnTop(bool alwaysOnTop) override;
 		virtual void SetSize(int32 width, int32 height) override;
 		virtual void SetPosition(int32 x, int32 y) override;
 		virtual void SetSizeLimits(int32 minWidth, int32 minHeight, int32 maxWidth, int32 maxHeight) override;
@@ -54,6 +55,9 @@ namespace DT
 			int32 Height = 0;
 			int32 PreviousWidth = 0;
 			int32 PreviousHeight = 0;
+			int32 PreviousPosX = 0;
+			int32 PreviousPosY = 0;
+
 			bool Fullscreen = false;
 
 			EventCallbackFn Callback;

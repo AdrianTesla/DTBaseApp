@@ -12,6 +12,7 @@ namespace DT
 		bool StartCentered   = true;
 		bool StartFullscreen = false;
 		bool IsResizable     = true;
+		bool AlwaysOnTop     = false;
 		bool IsDecorated     = true;
 		float Opacity        = 1.0f;
 		std::string IconPath = "ApplicationIcon.png";
@@ -51,6 +52,7 @@ namespace DT
 		virtual void SetTitle(const std::string& title) = 0;
 		virtual void SetDecorated(bool isDecorated) = 0;
 		virtual void SetResizable(bool isResizable) = 0;
+		virtual void SetAlwaysOnTop(bool alwaysOnTop) = 0;
 		virtual void SetSize(int32 width, int32 height) = 0;
 		virtual void SetPosition(int32 x, int32 y) = 0;
 		virtual void SetSizeLimits(int32 minWidth, int32 minHeight, int32 maxWidth, int32 maxHeight) = 0;

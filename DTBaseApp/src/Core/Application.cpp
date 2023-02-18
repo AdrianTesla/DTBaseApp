@@ -8,7 +8,8 @@ namespace DT
 	{
 		s_Instance = this;
 
-		m_Window = Window::Create(m_Specification.WindowSpecification);
+		m_Specification.Window.AlwaysOnTop = false;
+		m_Window = Window::Create(m_Specification.Window);
 		m_Window->SetEventCallBack(BIND_FUNC(OnEvent));
 
 		m_RendererContext = RendererContext::Create(m_Window);

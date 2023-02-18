@@ -7,7 +7,7 @@ namespace DT
 {
 	struct ApplicationSpecification
 	{
-		WindowSpecification WindowSpecification;
+		WindowSpecification Window;
 	};
 
 	class Application

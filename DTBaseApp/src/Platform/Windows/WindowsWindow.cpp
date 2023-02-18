@@ -45,7 +45,8 @@ namespace DT
 		glfwWindowHint(GLFW_REFRESH_RATE, videoMode->refreshRate);
 		glfwWindowHint(GLFW_MAXIMIZED, (int)m_Specification.StartMaximized);
 		glfwWindowHint(GLFW_RESIZABLE, (int)m_Specification.IsResizable);
-		glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_TRUE);
+		glfwWindowHint(GLFW_FLOATING, (int)m_Specification.AlwaysOnTop);
+		glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_FALSE);
 
 		if (m_Specification.StartFullscreen)
 			m_GLFWWindow = glfwCreateWindow(videoMode->width, videoMode->height, m_Specification.Title.c_str(), monitor, nullptr);
@@ -130,9 +131,15 @@ namespace DT
 			m_WindowData.PreviousHeight = m_WindowData.Height;
 		}
 
+		int32 posX, posY;
+		glfwGetWindowPos(m_GLFWWindow, &posX, &posY);
+		m_WindowData.PreviousPosX = posX;
+		m_WindowData.PreviousPosY = posY;
+
 		GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
 		const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
 		glfwSetWindowMonitor(m_GLFWWindow, primaryMonitor, 0, 0, videoMode->width, videoMode->height, videoMode->refreshRate);
+		glfwSetWindowAttrib(m_GLFWWindow, GLFW_DECORATED, GLFW_FALSE);
 	
 		WindowToFullscreenEvent e;
 		m_WindowData.Callback(e);
@@ -142,7 +149,8 @@ namespace DT
 	void WindowsWindow::ToWindowed()
 	{
 		glfwSetWindowMonitor(m_GLFWWindow, nullptr, 0, 0, m_WindowData.PreviousWidth, m_WindowData.PreviousHeight, GLFW_DONT_CARE);
-		CenterWindow();
+		glfwSetWindowAttrib(m_GLFWWindow, GLFW_DECORATED, (int)m_Specification.IsDecorated);
+		glfwSetWindowPos(m_GLFWWindow, m_WindowData.PreviousPosX, m_WindowData.PreviousPosY);
 
 		WindowToWindowedEvent e;
 		m_WindowData.Callback(e);
@@ -198,6 +206,11 @@ namespace DT
 		glfwSetWindowAttrib(m_GLFWWindow, GLFW_RESIZABLE, isResizable ? GLFW_TRUE : GLFW_FALSE);
 	}
 
+	void WindowsWindow::SetAlwaysOnTop(bool alwaysOnTop)
+	{
+		glfwSetWindowAttrib(m_GLFWWindow, GLFW_FLOATING, (int)alwaysOnTop);
+	}
+
 	void WindowsWindow::SetSize(int32 width, int32 height)
 	{
 		glfwSetWindowSize(m_GLFWWindow, width, height);
@@ -218,6 +231,8 @@ namespace DT
 		int32 x = (videoMode->width - windowWidth) / 2;
 		int32 y = (videoMode->height - windowHeight) / 2;
 		glfwSetWindowPos(m_GLFWWindow, x, y);
+
+		LOG_TRACE("Window centered");
 	}
 
 	void WindowsWindow::SetSizeLimits(int32 minWidth, int32 minHeight, int32 maxWidth, int32 maxHeight)
