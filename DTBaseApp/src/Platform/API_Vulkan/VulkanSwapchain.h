@@ -46,6 +46,7 @@ namespace DT
 		VkRenderPass GetSwapchainRenderPass() const { return m_SwapchainRenderPass; }
 		VkSemaphore& GetImageAvailableSemaphore();
 
+		VkRenderPass GetRenderPass() const { return m_SwapchainRenderPass; }
 		VkFramebuffer GetFramebuffer(uint32 imageIndex) const { return m_SwapchainFramebuffers[imageIndex]; }
 		VkImageView GetImageView(uint32 imageIndex) const { return m_SwapchainImageViews[imageIndex]; }
 	private:

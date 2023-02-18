@@ -3,6 +3,7 @@
 #include "Renderer/RendererContext.h"
 #include "VulkanDevice.h"
 #include "VulkanSwapchain.h"
+#include "VulkanPipeline.h"
 
 namespace DT
 {
@@ -25,6 +26,7 @@ namespace DT
 
 		Ref<Window> GetWindow() const { return m_Window; }
 		VkSurfaceKHR GetSurface() const { return m_Surface; }
+		VulkanSwapchain& GetSwapchain() { return m_Swapchain; }
 
 		static VulkanContext& Get() { return *s_Context; }
 		static VkInstance GetVulkanInstance() { return s_Context->m_Instance; }
@@ -64,13 +66,13 @@ namespace DT
 		VulkanPhysicalDevice m_PhysicalDevice;
 		VulkanDevice m_Device;
 		VulkanSwapchain m_Swapchain;
-
-		VkPipeline m_Pipeline = VK_NULL_HANDLE;
-		VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
 		
 		InFlight<VkCommandBuffer> m_GraphicsCommandBuffers;
 		InFlight<VkFence> m_PreviousFrameFinishedFences;
 		InFlight<VkSemaphore> m_RenderCompleteSemaphores;
+
+		Ref<VulkanPipeline> m_PipelineFill;
+		Ref<VulkanPipeline> m_PipelineWireframe;
 
 		uint32 m_CurrentFrame = 0u;
 

@@ -228,6 +228,7 @@ namespace DT
 	void VulkanDevice::BuildEnabledFeatures(VkPhysicalDeviceFeatures* features)
 	{
 		features->wideLines = VK_TRUE;
+		features->fillModeNonSolid = VK_TRUE;
 
 		VulkanPhysicalDevice& physicalDevice = VulkanContext::GetCurrentPhysicalDevice();
 		const VkPhysicalDeviceFeatures& supportedFeatures = physicalDevice.GetSupportedFeatures();

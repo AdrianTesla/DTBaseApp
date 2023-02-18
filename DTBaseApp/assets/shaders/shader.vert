@@ -2,12 +2,6 @@
 
 layout(location = 0) out vec3 fragColor;
 
-layout (push_constant) uniform ScreenData
-{
-    float AspectRatio;
-    float Time;
-} u_Data;
-
 vec3 hsv(float hue, float s, float v)
 {
 	while (hue > 1.0)
@@ -43,12 +37,11 @@ void main()
     float pi = 3.14159265358979;
     float angle = float(gl_VertexIndex) * 2 * pi / 3;
     
-    float x = cos(angle + 0.1 * u_Data.Time);
-    float y = sin(angle + 0.1 * u_Data.Time);
+    float x = cos(angle);
+    float y = sin(angle);
 
-    x /= u_Data.AspectRatio;
     gl_Position = vec4(x, y, 0.0, 1.0);
 
 	float hue = float(gl_VertexIndex) / 3.0;
-    fragColor = hsv(hue + u_Data.Time * 0.1, 1.0, 1.0);
+    fragColor = hsv(hue, 1.0, 1.0);
 }
