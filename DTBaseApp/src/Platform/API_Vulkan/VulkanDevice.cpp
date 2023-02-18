@@ -84,7 +84,6 @@ namespace DT
 			m_QueueFamilyIndices.ComputeIndex = m_QueueFamilyIndices.GraphicsIndex;
 		}
 
-		// if no present queue found, we are done
 		if (!m_QueueFamilyIndices.PresentIndex.has_value())
 			MessageBoxes::ShowError("No GPU queue with present capabilities found!");
 
@@ -93,19 +92,21 @@ namespace DT
 			VkBool32 presentSupported;
 			VK_CALL(vkGetPhysicalDeviceSurfaceSupportKHR(m_PhysicalDevice, i, surface, &presentSupported));
 
-			const char* currentFamilyName;
+			std::string currentFamilyNames;
+
 			if (i == m_QueueFamilyIndices.GraphicsIndex.value())
-				currentFamilyName = "GraphicsIndex";
-			else if (i == m_QueueFamilyIndices.TransferIndex.value())
-				currentFamilyName = "TransferIndex";
-			else if (i == m_QueueFamilyIndices.ComputeIndex.value())
-				currentFamilyName = "ComputeIndex";
+				currentFamilyNames += "[GraphicsIndex]";
+
+			if (i == m_QueueFamilyIndices.TransferIndex.value())
+				currentFamilyNames += "[TransferIndex]";
+
+			if (i == m_QueueFamilyIndices.ComputeIndex.value())
+				currentFamilyNames += "[ComputeIndex]";
 
 			if (i == m_QueueFamilyIndices.PresentIndex.value())
-				LOG_WARN("  index {} ({} && PresentIndex):", i, currentFamilyName);
-			else
-				LOG_WARN("  index {} ({}):", i, currentFamilyName);
+				currentFamilyNames += "[PresentIndex]";
 
+			LOG_WARN("  index {} {}:", i, currentFamilyNames);
 			LOG_TRACE("    flags: {}", string_VkQueueFlags(m_SupportDetails.QueueFamilyProperties[i].queueFlags));
 			LOG_TRACE("    presentSupport: {}", (bool)presentSupported);
 		}
