@@ -18,6 +18,7 @@ namespace DT
 		virtual void* GetNativeWindow() const override;
 		virtual void ProcessEvents() override;
 		virtual void Maximize() override;
+		virtual void Minimize() override;
 		virtual void CenterWindow() override;
 		virtual void ToFullscreen() override;
 		virtual void ToWindowed() override;
@@ -27,6 +28,7 @@ namespace DT
 		virtual int32 GetMouseY() const override;
 		virtual std::string GetClipboardString() const override;
 		virtual Extent GetDisplayResolution() const override;
+		virtual bool IsFullscreen() const override;
 
 		virtual void SetFixedAspectRatio(int32 numerator, int32 denominator) override;
 		virtual void SetMousePosition(int32 x, int32 y) override;
@@ -52,6 +54,7 @@ namespace DT
 			int32 Height = 0;
 			int32 PreviousWidth = 0;
 			int32 PreviousHeight = 0;
+			bool Fullscreen = false;
 
 			EventCallbackFn Callback;
 		};

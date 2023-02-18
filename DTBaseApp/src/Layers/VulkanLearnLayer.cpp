@@ -37,7 +37,8 @@ namespace DT
 				case Key::Q:
 					Application::Get().CloseApplication();
 					break;
-				case Key::G:
+				case Key::M:
+					Application::Get().GetWindow().Minimize();
 					break;
 				case Key::C:
 					break;

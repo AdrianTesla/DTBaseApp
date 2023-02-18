@@ -33,6 +33,7 @@ namespace DT
 		virtual void* GetNativeWindow() const = 0;
 		virtual void ProcessEvents() = 0;
 		virtual void Maximize() = 0;
+		virtual void Minimize() = 0;
 		virtual void CenterWindow() = 0;
 		virtual void ToFullscreen() = 0;
 		virtual void ToWindowed() = 0;
@@ -42,6 +43,7 @@ namespace DT
 		virtual int32 GetMouseY() const = 0;
 		virtual std::string GetClipboardString() const = 0;
 		virtual Extent GetDisplayResolution() const = 0;
+		virtual bool IsFullscreen() const = 0;
 
 		virtual void SetFixedAspectRatio(int32 numerator, int32 denominator) = 0;
 		virtual void SetMousePosition(int32 x, int32 y) = 0;

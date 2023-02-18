@@ -135,6 +135,7 @@ namespace DT
 	
 		WindowToFullscreenEvent e;
 		m_WindowData.Callback(e);
+		m_WindowData.Fullscreen = true;
 	}
 
 	void WindowsWindow::ToWindowed()
@@ -144,6 +145,7 @@ namespace DT
 
 		WindowToWindowedEvent e;
 		m_WindowData.Callback(e);
+		m_WindowData.Fullscreen = false;
 	}
 
 	void WindowsWindow::SetFixedAspectRatio(int32 numerator, int32 denominator)
@@ -237,10 +239,20 @@ namespace DT
 		}
 	}
 
+	void WindowsWindow::Minimize()
+	{
+		glfwIconifyWindow(m_GLFWWindow);
+	}
+
 	Extent WindowsWindow::GetDisplayResolution() const
 	{
 		const GLFWvidmode* videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 		return { videoMode->width,videoMode->height };
+	}
+
+	bool WindowsWindow::IsFullscreen() const
+	{
+		return m_WindowData.Fullscreen;
 	}
 
 	void WindowsWindow::EnumerateDisplayModes()

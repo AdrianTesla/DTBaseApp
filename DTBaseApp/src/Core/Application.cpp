@@ -97,5 +97,13 @@ namespace DT
 			LOG_INFO("ToWindowed transition");
 			return false;
 		});
+		dispatcher.Dispatch<WindowFocusEvent>([&](WindowFocusEvent& e)
+		{
+			LOG_INFO("Lost Focus: {}", !e.IsFocused());
+			if (!e.IsFocused() && m_Window->IsFullscreen())
+				m_Window->Minimize();
+
+			return false;
+		});
 	}
 }
