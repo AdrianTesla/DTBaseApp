@@ -33,27 +33,13 @@ namespace DT
 			switch (key.GetKeyCode())
 			{
 				case Key::A:
-					break;
-				case Key::Q:
-					break;
-				case Key::M:
-					Application::Get().GetWindow().Minimize();
-					break;
-				case Key::T:
-				{
-					static bool aot = true;
-					aot = !aot;
-					Application::Get().GetWindow().SetAlwaysOnTop(aot);
-					break;
-				}
-				case Key::C:
-					Application::Get().GetWindow().CenterWindow();
+					Application::Get().GetWindow().ToFullscreen();
 					break;
 				case Key::Enter:
 					static bool windowed = false;
-					windowed = !windowed;
 					if (Input::KeyIsPressed(Key::LeftAlt))
 					{
+						windowed = !windowed;
 						if (windowed)
 							Application::Get().GetWindow().ToFullscreen();
 						else

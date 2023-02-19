@@ -120,6 +120,9 @@ namespace DT
 
 	void WindowsWindow::ToFullscreen()
 	{
+		if (m_WindowData.Fullscreen)
+			return;
+
 		if ((m_WindowData.Width == 0) || (m_WindowData.Height == 0))
 		{
 			m_WindowData.PreviousWidth = m_Specification.Width;
@@ -148,6 +151,9 @@ namespace DT
 
 	void WindowsWindow::ToWindowed()
 	{
+		if (!m_WindowData.Fullscreen)
+			return;
+
 		glfwSetWindowMonitor(m_GLFWWindow, nullptr, 0, 0, m_WindowData.PreviousWidth, m_WindowData.PreviousHeight, GLFW_DONT_CARE);
 		glfwSetWindowAttrib(m_GLFWWindow, GLFW_DECORATED, (int)m_Specification.IsDecorated);
 		glfwSetWindowPos(m_GLFWWindow, m_WindowData.PreviousPosX, m_WindowData.PreviousPosY);
