@@ -32,16 +32,23 @@ vec3 hsv(float hue, float s, float v)
 	}
 }
 
+layout (push_constant) uniform PushConstant
+{
+	float u_AspectRatio;
+	float u_Time;
+};
+
 void main() 
 {
     float pi = 3.14159265358979;
     float angle = float(gl_VertexIndex) * 2 * pi / 3;
     
-    float x = cos(angle);
-    float y = sin(angle);
+    float x = cos(angle + 0.1 * u_Time);
+    float y = sin(angle + 0.1 * u_Time);
 
+	x /= u_AspectRatio;
     gl_Position = vec4(x, y, 0.0, 1.0);
 
 	float hue = float(gl_VertexIndex) / 3.0;
-    fragColor = hsv(hue, 1.0, 1.0);
+    fragColor = hsv(hue + 0.1 * u_Time, 1.0, 1.0);
 }

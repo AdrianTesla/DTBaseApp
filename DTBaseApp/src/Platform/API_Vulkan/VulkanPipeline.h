@@ -34,4 +34,22 @@ namespace DT
 		VkPipeline m_Pipeline = VK_NULL_HANDLE;
 		VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
 	};
+
+	class VulkanComputePipeline : public RefCounted
+	{
+	public:
+		VulkanComputePipeline();
+		~VulkanComputePipeline();
+	private:
+		VkPipeline m_Pipeline;
+	};
+
+	class VulkanRayTracingPipeline : public RefCounted
+	{
+	public:
+		VulkanRayTracingPipeline();
+		~VulkanRayTracingPipeline();
+	private:
+		VkPipeline m_Pipeline;
+	};
 }

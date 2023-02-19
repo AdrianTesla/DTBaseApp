@@ -167,14 +167,19 @@ namespace DT
 		pipelineDynamicStateCreateInfo.dynamicStateCount = (uint32)std::size(dynamicStates);
 		pipelineDynamicStateCreateInfo.pDynamicStates    = dynamicStates;
 
+		VkPushConstantRange pushConstantRange{};
+		pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		pushConstantRange.offset     = 0u;
+		pushConstantRange.size       = 8u;
+
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 		pipelineLayoutCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutCreateInfo.pNext                  = nullptr;
 		pipelineLayoutCreateInfo.flags                  = 0u;
 		pipelineLayoutCreateInfo.setLayoutCount         = 0u;
 		pipelineLayoutCreateInfo.pSetLayouts            = nullptr;
-		pipelineLayoutCreateInfo.pushConstantRangeCount = 0u;
-		pipelineLayoutCreateInfo.pPushConstantRanges    = nullptr;
+		pipelineLayoutCreateInfo.pushConstantRangeCount = 1u;
+		pipelineLayoutCreateInfo.pPushConstantRanges    = &pushConstantRange;
 		VK_CALL(vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &m_PipelineLayout));
 
 		VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};

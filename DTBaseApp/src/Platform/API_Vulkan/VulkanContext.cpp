@@ -315,7 +315,7 @@ namespace DT
 		scissor.offset = { 0u,0u };
 		scissor.extent = { (uint32)m_Swapchain.GetWidth(),(uint32)m_Swapchain.GetHeight() };
 
-		uint32 seconds = (uint32)glfwGetTime();
+		uint32 seconds = (uint32)glfwGetTime() / 2;
 
 		Ref<VulkanPipeline> dancingPipeline;
 		if (seconds % 2 == 0)
@@ -323,12 +323,23 @@ namespace DT
 		else
 			dancingPipeline = m_PipelineWireframe;
 
+		struct PushConstant
+		{
+			float u_AspectRatio;
+			float u_Time;
+		};
+
+		PushConstant pushConstant;
+		pushConstant.u_AspectRatio = viewport.width / viewport.height;
+		pushConstant.u_Time = (float)glfwGetTime();
+
 		VK_CALL(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
 		{
 			vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dancingPipeline->GetVulkanPipeline());
 			vkCmdSetViewport(commandBuffer, 0u, 1u, &viewport);
 			vkCmdSetScissor(commandBuffer, 0u, 1u, &scissor);
+			vkCmdPushConstants(commandBuffer, dancingPipeline->GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, &pushConstant);
 			vkCmdDraw(commandBuffer, 3u, 1u, 0u, 0u);
 			vkCmdEndRenderPass(commandBuffer);
 		}
