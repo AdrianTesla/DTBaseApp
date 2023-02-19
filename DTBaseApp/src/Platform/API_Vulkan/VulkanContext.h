@@ -71,6 +71,7 @@ namespace DT
 		InFlight<VkFence> m_PreviousFrameFinishedFences;
 		InFlight<VkSemaphore> m_RenderCompleteSemaphores;
 
+		Ref<VulkanShader> m_Shader;
 		Ref<VulkanPipeline> m_PipelineFill;
 		Ref<VulkanPipeline> m_PipelineWireframe;
 

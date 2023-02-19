@@ -1,12 +1,21 @@
 #pragma once
 #include "Core/Ref.h"
 #include "Vulkan.h"
+#include "VulkanShader.h"
 
 namespace DT
 {
+	enum class PolygonMode
+	{
+		Fill,
+		Wireframe,
+		Point
+	};
+
 	struct PipelineSpecification
 	{
-		bool Wireframe = false;
+		Ref<VulkanShader> Shader;
+		PolygonMode PolygonMode = PolygonMode::Fill;
 	};
 
 	class VulkanPipeline : public RefCounted
@@ -16,6 +25,7 @@ namespace DT
 		~VulkanPipeline();
 
 		void Invalidate();
+		void Destroy();
 
 		VkPipeline GetVulkanPipeline() const { return m_Pipeline; }
 		VkPipelineLayout GetPipelineLayout() const { return m_PipelineLayout; }

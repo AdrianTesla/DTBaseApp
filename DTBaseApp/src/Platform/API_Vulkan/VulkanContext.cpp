@@ -255,14 +255,17 @@ namespace DT
 
 	void VulkanContext::CreateGraphicsPipeline()
 	{
+		m_Shader = Ref<VulkanShader>::Create();
 		{
 			PipelineSpecification specification;
-			specification.Wireframe = false;
+			specification.Shader = m_Shader;
+			specification.PolygonMode = PolygonMode::Fill;
 			m_PipelineFill = Ref<VulkanPipeline>::Create(specification);
 		}
 		{
 			PipelineSpecification specification;
-			specification.Wireframe = true;
+			specification.Shader = m_Shader;
+			specification.PolygonMode = PolygonMode::Wireframe;
 			m_PipelineWireframe = Ref<VulkanPipeline>::Create(specification);
 		}
 	}
@@ -316,13 +319,9 @@ namespace DT
 
 		Ref<VulkanPipeline> dancingPipeline;
 		if (seconds % 2 == 0)
-		{
 			dancingPipeline = m_PipelineFill;
-		}
 		else
-		{
 			dancingPipeline = m_PipelineWireframe;
-		}
 
 		VK_CALL(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
 		{
@@ -378,11 +377,11 @@ namespace DT
 
 		VK_CALL(vkDeviceWaitIdle(device));
 
+		m_Shader.Reset();
 		m_PipelineFill.Reset();
 		m_PipelineWireframe.Reset();
 
-		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
-		{
+		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			vkDestroyFence(device, m_PreviousFrameFinishedFences[i], nullptr);
 			vkDestroySemaphore(device, m_RenderCompleteSemaphores[i], nullptr);
 		}

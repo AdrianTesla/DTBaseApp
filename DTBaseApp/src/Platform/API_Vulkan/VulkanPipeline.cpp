@@ -3,11 +3,20 @@
 
 namespace DT
 {
-	struct PushConstant
+	namespace Utils
 	{
-		float AspectRatio;
-		float Time;
-	};
+		VkPolygonMode GetVulkanPolygonMode(PolygonMode polygonMode)
+		{
+			switch (polygonMode)
+			{
+				case PolygonMode::Fill:      return VK_POLYGON_MODE_FILL;
+				case PolygonMode::Wireframe: return VK_POLYGON_MODE_LINE;
+				case PolygonMode::Point:     return VK_POLYGON_MODE_POINT;
+			}
+			ASSERT(false);
+			return VK_POLYGON_MODE_MAX_ENUM;
+		}
+	}
 
 	VulkanPipeline::VulkanPipeline(const PipelineSpecification& specification)
 		: m_Specification(specification)
@@ -17,48 +26,9 @@ namespace DT
 
 	void VulkanPipeline::Invalidate()
 	{
+		Destroy();
+
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
-
-		Buffer vertSPIRV = FileSystem::ReadFileBinary("assets/shaders/vert.spv");
-		Buffer fragSPIRV = FileSystem::ReadFileBinary("assets/shaders/frag.spv");
-
-		// vertex shader
-		VkShaderModule vertShaderModule = VK_NULL_HANDLE;
-		VkShaderModuleCreateInfo vertShaderModuleCreateInfo{};
-		vertShaderModuleCreateInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		vertShaderModuleCreateInfo.pNext    = nullptr;
-		vertShaderModuleCreateInfo.flags    = 0u;
-		vertShaderModuleCreateInfo.codeSize = vertSPIRV.Size;
-		vertShaderModuleCreateInfo.pCode    = (uint32*)vertSPIRV.Data;
-		VK_CALL(vkCreateShaderModule(device, &vertShaderModuleCreateInfo, nullptr, &vertShaderModule));
-
-		// fragment shader
-		VkShaderModule fragShaderModule = VK_NULL_HANDLE;
-		VkShaderModuleCreateInfo fragShaderModuleCreateInfo{};
-		fragShaderModuleCreateInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		fragShaderModuleCreateInfo.pNext    = nullptr;
-		fragShaderModuleCreateInfo.flags    = 0u;
-		fragShaderModuleCreateInfo.codeSize = fragSPIRV.Size;
-		fragShaderModuleCreateInfo.pCode    = (uint32*)fragSPIRV.Data;
-		VK_CALL(vkCreateShaderModule(device, &fragShaderModuleCreateInfo, nullptr, &fragShaderModule));
-
-		VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfos[2];
-
-		pipelineShaderStageCreateInfos[0].sType               = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		pipelineShaderStageCreateInfos[0].pNext               = nullptr;
-		pipelineShaderStageCreateInfos[0].flags               = 0u;
-		pipelineShaderStageCreateInfos[0].stage               = VK_SHADER_STAGE_VERTEX_BIT;
-		pipelineShaderStageCreateInfos[0].module              = vertShaderModule;
-		pipelineShaderStageCreateInfos[0].pName               = "main";
-		pipelineShaderStageCreateInfos[0].pSpecializationInfo = nullptr;
-
-		pipelineShaderStageCreateInfos[1].sType               = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		pipelineShaderStageCreateInfos[1].pNext               = nullptr;
-		pipelineShaderStageCreateInfos[1].flags               = 0u;
-		pipelineShaderStageCreateInfos[1].stage               = VK_SHADER_STAGE_FRAGMENT_BIT;
-		pipelineShaderStageCreateInfos[1].module              = fragShaderModule;
-		pipelineShaderStageCreateInfos[1].pName               = "main";
-		pipelineShaderStageCreateInfos[1].pSpecializationInfo = nullptr;
 
 		VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo{};
 		pipelineVertexInputStateCreateInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -109,7 +79,7 @@ namespace DT
 		pipelineRasterizationStateCreateInfo.flags                   = 0u;
 		pipelineRasterizationStateCreateInfo.depthClampEnable        = VK_FALSE;
 		pipelineRasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
-		pipelineRasterizationStateCreateInfo.polygonMode             = m_Specification.Wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
+		pipelineRasterizationStateCreateInfo.polygonMode             = Utils::GetVulkanPolygonMode(m_Specification.PolygonMode);
 		pipelineRasterizationStateCreateInfo.cullMode                = VK_CULL_MODE_NONE;
 		pipelineRasterizationStateCreateInfo.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		pipelineRasterizationStateCreateInfo.depthBiasEnable         = VK_FALSE;
@@ -197,27 +167,22 @@ namespace DT
 		pipelineDynamicStateCreateInfo.dynamicStateCount = (uint32)std::size(dynamicStates);
 		pipelineDynamicStateCreateInfo.pDynamicStates    = dynamicStates;
 
-		VkPushConstantRange pushConstantRange{};
-		pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-		pushConstantRange.offset     = 0u;
-		pushConstantRange.size       = sizeof(PushConstant);
-
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 		pipelineLayoutCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutCreateInfo.pNext                  = nullptr;
 		pipelineLayoutCreateInfo.flags                  = 0u;
 		pipelineLayoutCreateInfo.setLayoutCount         = 0u;
 		pipelineLayoutCreateInfo.pSetLayouts            = nullptr;
-		pipelineLayoutCreateInfo.pushConstantRangeCount = 1u;
-		pipelineLayoutCreateInfo.pPushConstantRanges    = &pushConstantRange;
+		pipelineLayoutCreateInfo.pushConstantRangeCount = 0u;
+		pipelineLayoutCreateInfo.pPushConstantRanges    = nullptr;
 		VK_CALL(vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &m_PipelineLayout));
 
 		VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
 		graphicsPipelineCreateInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		graphicsPipelineCreateInfo.pNext               = nullptr;
 		graphicsPipelineCreateInfo.flags               = 0u;
-		graphicsPipelineCreateInfo.stageCount          = (uint32)std::size(pipelineShaderStageCreateInfos);
-		graphicsPipelineCreateInfo.pStages             = pipelineShaderStageCreateInfos;
+		graphicsPipelineCreateInfo.stageCount          = (uint32)m_Specification.Shader->GetPipelineShaderStageCreateInfos().size();
+		graphicsPipelineCreateInfo.pStages             = m_Specification.Shader->GetPipelineShaderStageCreateInfos().data();
 		graphicsPipelineCreateInfo.pVertexInputState   = &pipelineVertexInputStateCreateInfo;
 		graphicsPipelineCreateInfo.pInputAssemblyState = &pipelineInputAssemblyStateCreateInfo;
 		graphicsPipelineCreateInfo.pTessellationState  = &pipelineTessellationStateCreateInfo;
@@ -233,15 +198,19 @@ namespace DT
 		graphicsPipelineCreateInfo.basePipelineHandle  = VK_NULL_HANDLE;
 		graphicsPipelineCreateInfo.basePipelineIndex   = 0;
 		VK_CALL(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1u, &graphicsPipelineCreateInfo, nullptr, &m_Pipeline));
-
-		vkDestroyShaderModule(device, vertShaderModule, nullptr);
-		vkDestroyShaderModule(device, fragShaderModule, nullptr);
 	}
 
-	VulkanPipeline::~VulkanPipeline()
+	void VulkanPipeline::Destroy()
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 		vkDestroyPipelineLayout(device, m_PipelineLayout, nullptr);
 		vkDestroyPipeline(device, m_Pipeline, nullptr);
+		m_PipelineLayout = VK_NULL_HANDLE;
+		m_Pipeline = VK_NULL_HANDLE;
+	}
+
+	VulkanPipeline::~VulkanPipeline()
+	{
+		Destroy();
 	}
 }
