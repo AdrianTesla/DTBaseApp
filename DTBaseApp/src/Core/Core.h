@@ -16,18 +16,18 @@ using int16 = int16_t;
 using int32 = int32_t;
 using int64 = int64_t;
 
+#ifdef DT_DEBUG
+	#define ASSERT(condition) { if(!(condition)) { LOG_ERROR(#condition); __debugbreak(); } }
+#else
+	#define ASSERT(condition) {}
+#endif
+
 #include "Log.h"
 #include "Timer.h"
 #include "Utils.h"
 #include "Ref.h"
 #include "FileSystem.h"
 #include "Buffer.h"
-
-#ifdef DT_DEBUG
-	#define ASSERT(condition) { if(!(condition)) { LOG_ERROR(#condition); __debugbreak(); } }
-#else
-	#define ASSERT(condition) {}
-#endif
 
 #define BIND_FUNC(x)                                        \
 [this](auto&&... args) -> decltype(auto) 					\

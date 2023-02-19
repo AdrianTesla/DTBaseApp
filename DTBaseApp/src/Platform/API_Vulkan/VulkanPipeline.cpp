@@ -26,6 +26,8 @@ namespace DT
 
 	void VulkanPipeline::Invalidate()
 	{
+		Timer timer;
+
 		Destroy();
 
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
@@ -86,7 +88,7 @@ namespace DT
 		pipelineRasterizationStateCreateInfo.depthBiasConstantFactor = 0.0f;
 		pipelineRasterizationStateCreateInfo.depthBiasClamp          = 0.0f;
 		pipelineRasterizationStateCreateInfo.depthBiasSlopeFactor    = 0.0f;
-		pipelineRasterizationStateCreateInfo.lineWidth               = 1.0f;
+		pipelineRasterizationStateCreateInfo.lineWidth               = 3.0f;
 
 		VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo{};
 		pipelineMultisampleStateCreateInfo.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -203,6 +205,8 @@ namespace DT
 		graphicsPipelineCreateInfo.basePipelineHandle  = VK_NULL_HANDLE;
 		graphicsPipelineCreateInfo.basePipelineIndex   = 0;
 		VK_CALL(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1u, &graphicsPipelineCreateInfo, nullptr, &m_Pipeline));
+	
+		LOG_TRACE("Created GraphicsPipeline: {} ms", timer.ElapsedMilliseconds());
 	}
 
 	void VulkanPipeline::Destroy()

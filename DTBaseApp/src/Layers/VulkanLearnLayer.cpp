@@ -33,7 +33,6 @@ namespace DT
 			switch (key.GetKeyCode())
 			{
 				case Key::A:
-					Application::Get().GetWindow().ToFullscreen();
 					break;
 				case Key::Enter:
 					static bool windowed = false;

@@ -7,7 +7,7 @@ namespace DT
 	{
 		spdlog::set_pattern("%^[%T] %v%$");
 
-		s_DefaultLogger = spdlog::stdout_color_st("DTCoreApp");
+		s_DefaultLogger = spdlog::stdout_color_mt("DTCoreApp");
 		s_DefaultLogger->set_level(spdlog::level::trace);
 	}
 

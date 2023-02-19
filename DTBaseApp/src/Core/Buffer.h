@@ -11,6 +11,8 @@ namespace DT
 
 		Buffer() = default;
 
+		~Buffer() = default;
+
 		Buffer(const Buffer& other) = default;
 
 		Buffer(uint64 size)
