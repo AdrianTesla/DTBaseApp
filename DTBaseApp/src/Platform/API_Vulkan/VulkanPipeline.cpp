@@ -32,14 +32,45 @@ namespace DT
 
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 
+		struct Vertex
+		{
+			struct
+			{
+				float x;
+				float y;
+			} Position;
+			struct
+			{
+				float r;
+				float g;
+				float b;
+			} Color;
+		};
+
+		VkVertexInputBindingDescription vertexInputBindingDescription{};
+		vertexInputBindingDescription.binding   = 0u;
+		vertexInputBindingDescription.stride    = sizeof(Vertex);
+		vertexInputBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+		VkVertexInputAttributeDescription vertexInputAttributeDescriptions[2];
+		vertexInputAttributeDescriptions[0].location = 0u;
+		vertexInputAttributeDescriptions[0].binding  = 0u;
+		vertexInputAttributeDescriptions[0].format   = VK_FORMAT_R32G32_SFLOAT;
+		vertexInputAttributeDescriptions[0].offset   = offsetof(Vertex, Position);
+
+		vertexInputAttributeDescriptions[1].location = 1u;
+		vertexInputAttributeDescriptions[1].binding  = 0u;
+		vertexInputAttributeDescriptions[1].format   = VK_FORMAT_R32G32B32_SFLOAT;
+		vertexInputAttributeDescriptions[1].offset   = offsetof(Vertex, Color);
+
 		VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo{};
 		pipelineVertexInputStateCreateInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		pipelineVertexInputStateCreateInfo.pNext                           = nullptr;
 		pipelineVertexInputStateCreateInfo.flags                           = 0u;
-		pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount   = 0u;
-		pipelineVertexInputStateCreateInfo.pVertexBindingDescriptions      = nullptr;
-		pipelineVertexInputStateCreateInfo.vertexAttributeDescriptionCount = 0u;
-		pipelineVertexInputStateCreateInfo.pVertexAttributeDescriptions    = nullptr;
+		pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount   = 1u;
+		pipelineVertexInputStateCreateInfo.pVertexBindingDescriptions      = &vertexInputBindingDescription;
+		pipelineVertexInputStateCreateInfo.vertexAttributeDescriptionCount = (uint32)std::size(vertexInputAttributeDescriptions);
+		pipelineVertexInputStateCreateInfo.pVertexAttributeDescriptions    = vertexInputAttributeDescriptions;
 
 		VkPipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo{};
 		pipelineInputAssemblyStateCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -54,26 +85,14 @@ namespace DT
 		pipelineTessellationStateCreateInfo.flags              = 0u;
 		pipelineTessellationStateCreateInfo.patchControlPoints = 1u;
 
-		VkViewport viewport{};
-		viewport.x        = 0.0f;
-		viewport.y        = 0.0f;
-		viewport.width    = 0.0f;
-		viewport.height   = 0.0f;
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
-
-		VkRect2D scissor{};
-		scissor.offset = { 0u,0u };
-		scissor.extent = { 0u,0u };
-
 		VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo{};
 		pipelineViewportStateCreateInfo.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 		pipelineViewportStateCreateInfo.pNext         = nullptr;
 		pipelineViewportStateCreateInfo.flags         = 0u;
 		pipelineViewportStateCreateInfo.viewportCount = 1u;
-		pipelineViewportStateCreateInfo.pViewports    = &viewport;
+		pipelineViewportStateCreateInfo.pViewports    = nullptr;
 		pipelineViewportStateCreateInfo.scissorCount  = 1u;
-		pipelineViewportStateCreateInfo.pScissors     = &scissor;
+		pipelineViewportStateCreateInfo.pScissors     = nullptr;
 
 		VkPipelineRasterizationStateCreateInfo pipelineRasterizationStateCreateInfo{};
 		pipelineRasterizationStateCreateInfo.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -200,7 +219,7 @@ namespace DT
 		graphicsPipelineCreateInfo.pColorBlendState    = &pipelineColorBlendStateCreateInfo;
 		graphicsPipelineCreateInfo.pDynamicState       = &pipelineDynamicStateCreateInfo;
 		graphicsPipelineCreateInfo.layout              = m_PipelineLayout;
-		graphicsPipelineCreateInfo.renderPass          = VulkanContext::Get().GetSwapchain().GetRenderPass();
+		graphicsPipelineCreateInfo.renderPass          = VulkanContext::GetSwapchain().GetRenderPass();
 		graphicsPipelineCreateInfo.subpass             = 0u;
 		graphicsPipelineCreateInfo.basePipelineHandle  = VK_NULL_HANDLE;
 		graphicsPipelineCreateInfo.basePipelineIndex   = 0;

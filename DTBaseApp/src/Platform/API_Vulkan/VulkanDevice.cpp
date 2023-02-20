@@ -35,7 +35,7 @@ namespace DT
 		uint32 queueFamilyPropertyCount = (uint32)m_SupportDetails.QueueFamilyProperties.size();
 
 		LOG_INFO("Found {} queue families:", queueFamilyPropertyCount);
-		VkSurfaceKHR surface = VulkanContext::Get().GetSurface();
+		VkSurfaceKHR surface = VulkanContext::GetSurface();
 		for (uint32 i = 0u; i < queueFamilyPropertyCount; i++)
 		{
 			VkBool32 presentSupported;
@@ -54,14 +54,14 @@ namespace DT
 				m_QueueFamilyIndices.TransferIndex = i;
 
 			// try find a (compute + transfer) only queue
-			if (!hasGraphics && hasTransfer && hasCompute)
+			if (!hasGraphics && hasCompute && hasTransfer)
 				m_QueueFamilyIndices.ComputeIndex = i;
 
 			// try use the present queue that supports graphics
 			if (hasGraphics && (bool)presentSupported)
 				m_QueueFamilyIndices.PresentIndex = i;
 
-			// otherwise, if not present use queue that supports (compute + transfer)
+			// otherwise, if not present use any queue that supports present (compute or transfer)
 			if (!hasGraphics && (bool)presentSupported && !m_QueueFamilyIndices.PresentIndex.has_value())
 				m_QueueFamilyIndices.PresentIndex = i;
 		}
@@ -106,6 +106,7 @@ namespace DT
 			if (i == m_QueueFamilyIndices.PresentIndex.value())
 				currentFamilyNames += "[PresentIndex]";
 
+			ASSERT(!currentFamilyNames.empty());
 			LOG_WARN("  index {} {}:", i, currentFamilyNames);
 			LOG_TRACE("    flags: {}", string_VkQueueFlags(m_SupportDetails.QueueFamilyProperties[i].queueFlags));
 			LOG_TRACE("    presentSupport: {}", (bool)presentSupported);
@@ -187,34 +188,75 @@ namespace DT
 	void VulkanDevice::CreateCommandPools()
 	{
 		VulkanPhysicalDevice& physicalDevice = VulkanContext::GetCurrentPhysicalDevice();
+		const QueueFamilyIndices& queueFamilyIndices = physicalDevice.GetQueueFamilyIndices();
 
 		VkCommandPoolCreateInfo commandPoolCreateInfo{};
 		commandPoolCreateInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		commandPoolCreateInfo.pNext            = nullptr;
+
 		commandPoolCreateInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-		commandPoolCreateInfo.queueFamilyIndex = physicalDevice.GetQueueFamilyIndices().GraphicsIndex.value();
+		commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices.GraphicsIndex.value();
 		VK_CALL(vkCreateCommandPool(m_Device, &commandPoolCreateInfo, nullptr, &m_GraphicsCommandPool));
+		commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices.TransferIndex.value();
+		VK_CALL(vkCreateCommandPool(m_Device, &commandPoolCreateInfo, nullptr, &m_TransferCommandPool));
+		commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices.ComputeIndex.value();
+		VK_CALL(vkCreateCommandPool(m_Device, &commandPoolCreateInfo, nullptr, &m_ComputeCommandPool));
+
+		commandPoolCreateInfo.flags            = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+		commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices.GraphicsIndex.value();
+		VK_CALL(vkCreateCommandPool(m_Device, &commandPoolCreateInfo, nullptr, &m_StagingGraphicsCommandPool));
+		commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices.TransferIndex.value();
+		VK_CALL(vkCreateCommandPool(m_Device, &commandPoolCreateInfo, nullptr, &m_StagingTransferCommandPool));
+		commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices.ComputeIndex.value();
+		VK_CALL(vkCreateCommandPool(m_Device, &commandPoolCreateInfo, nullptr, &m_StagingComputeCommandPool));
 	}
 
-	VkCommandBuffer VulkanDevice::AllocateGraphicsCommandBuffer()
+	VkCommandBuffer VulkanDevice::AllocateCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel commandBufferLevel)
 	{
-		VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-
 		VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
 		commandBufferAllocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		commandBufferAllocateInfo.pNext              = nullptr;
-		commandBufferAllocateInfo.commandPool        = m_GraphicsCommandPool;
-		commandBufferAllocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		commandBufferAllocateInfo.commandPool        = commandPool;
+		commandBufferAllocateInfo.level              = commandBufferLevel;
 		commandBufferAllocateInfo.commandBufferCount = 1u;
+
+		VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
 		VK_CALL(vkAllocateCommandBuffers(m_Device, &commandBufferAllocateInfo, &commandBuffer));
 
-		return commandBuffer;
+		return commandBuffer;	
+	}
+
+	VkCommandBuffer VulkanDevice::AllocateGraphicsCommandBuffer(bool useStagingPool, VkCommandBufferLevel commandBufferLevel)
+	{
+		return AllocateCommandBuffer(useStagingPool ? m_StagingGraphicsCommandPool : m_GraphicsCommandPool, commandBufferLevel);
+	}
+
+	VkCommandBuffer VulkanDevice::AllocateTransferCommandBuffer(bool useStagingPool, VkCommandBufferLevel commandBufferLevel)
+	{
+		return AllocateCommandBuffer(useStagingPool ? m_StagingTransferCommandPool : m_TransferCommandPool, commandBufferLevel);
+	}
+
+	VkCommandBuffer VulkanDevice::AllocateComputeCommandBuffer(bool useStagingPool, VkCommandBufferLevel commandBufferLevel)
+	{
+		return AllocateCommandBuffer(useStagingPool ? m_StagingComputeCommandPool : m_ComputeCommandPool, commandBufferLevel);
 	}
 
 	void VulkanDevice::Shutdown()
 	{
 		vkDestroyCommandPool(m_Device, m_GraphicsCommandPool, nullptr);
+		vkDestroyCommandPool(m_Device, m_TransferCommandPool, nullptr);
+		vkDestroyCommandPool(m_Device, m_ComputeCommandPool, nullptr);
+		vkDestroyCommandPool(m_Device, m_StagingGraphicsCommandPool, nullptr);
+		vkDestroyCommandPool(m_Device, m_StagingTransferCommandPool, nullptr);
+		vkDestroyCommandPool(m_Device, m_StagingComputeCommandPool, nullptr);
 		vkDestroyDevice(m_Device, nullptr);
+
+		m_GraphicsCommandPool = VK_NULL_HANDLE;
+		m_TransferCommandPool = VK_NULL_HANDLE;
+		m_ComputeCommandPool = VK_NULL_HANDLE;
+		m_StagingGraphicsCommandPool = VK_NULL_HANDLE;
+		m_StagingTransferCommandPool = VK_NULL_HANDLE;
+		m_StagingComputeCommandPool = VK_NULL_HANDLE;
 		m_Device = VK_NULL_HANDLE;
 	}
 	

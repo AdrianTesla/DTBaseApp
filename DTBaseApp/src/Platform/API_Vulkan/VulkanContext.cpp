@@ -17,7 +17,6 @@ namespace DT
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
 				LOG_WARN(pCallbackData->pMessage);
 				MessageBoxes::ShowWarning(pCallbackData->pMessage, "Vulkan Validation Warning!");
-				__debugbreak();
 				break;
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
 				LOG_ERROR(pCallbackData->pMessage);
@@ -57,9 +56,9 @@ namespace DT
 		return instanceLayers;
 	}
 
-	bool VulkanContext::IsInstanceExtensionSupported(const char* extensionName) const
+	bool VulkanContext::IsInstanceExtensionSupported(const char* extensionName)
 	{
-		for (const VkExtensionProperties& extension : m_AvailableInstanceExtensions)
+		for (const VkExtensionProperties& extension : s_Context->m_AvailableInstanceExtensions)
 		{
 			if (strcmp(extension.extensionName, extensionName) == 0)
 				return true;
@@ -67,7 +66,7 @@ namespace DT
 		return false;
 	}
 
-	bool VulkanContext::IsInstanceLayerSupported(const char* layerName) const
+	bool VulkanContext::IsInstanceLayerSupported(const char* layerName)
 	{
 		for (const VkLayerProperties& layer : s_Context->m_AvailableInstanceLayers)
 		{
@@ -94,7 +93,9 @@ namespace DT
 		CreateLogicalDevice();
 		CreateMemoryAllocator();
 		CreateSwapchain();
+
 		CreateGraphicsPipeline();
+		CreateVertexBuffers();
 		CreateCommandBuffers();
 		CreateSyncObjects();
 	}
@@ -270,6 +271,36 @@ namespace DT
 		}
 	}
 
+	void VulkanContext::CreateVertexBuffers()
+	{
+		struct Vertex
+		{
+			struct
+			{
+				float x;
+				float y;
+			} Position;
+			struct
+			{
+				float r;
+				float g;
+				float b;
+			} Color;
+		};
+
+		Vertex vertices[3];
+		for (size_t i = 0u; i < 3u; i++) {
+			float t = (2.0f * 3.1415926535f / 3.0f) * i;
+			vertices[i].Position = { std::cos(t),std::sin(t) };
+			vertices[i].Color = { 0.1f,1.0f,0.4f };
+		}
+
+		uint32 indices[3] = { 0u,1u,2u };
+
+		m_VertexBuffer = Ref<VulkanVertexBuffer>::Create(vertices, sizeof(vertices));
+		m_IndexBuffer = Ref<VulkanIndexBuffer>::Create(indices, sizeof(indices));
+	}
+
 	void VulkanContext::CreateCommandBuffers()
 	{
 		VkDevice device = m_Device.GetVulkanDevice();
@@ -333,14 +364,18 @@ namespace DT
 		pushConstant.u_AspectRatio = viewport.width / viewport.height;
 		pushConstant.u_Time = (float)glfwGetTime();
 
+		VkDeviceSize offsets = 0u;
+
 		VK_CALL(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
 		{
 			vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dancingPipeline->GetVulkanPipeline());
+			vkCmdBindVertexBuffers(commandBuffer, 0u, 1u, &m_VertexBuffer->GetVulkanBuffer(), &offsets);
+			vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->GetVulkanBuffer(), 0u, VK_INDEX_TYPE_UINT32);
 			vkCmdSetViewport(commandBuffer, 0u, 1u, &viewport);
 			vkCmdSetScissor(commandBuffer, 0u, 1u, &scissor);
 			vkCmdPushConstants(commandBuffer, dancingPipeline->GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, &pushConstant);
-			vkCmdDraw(commandBuffer, 3u, 1u, 0u, 0u);
+			vkCmdDrawIndexed(commandBuffer, 3u, 1u, 0u, 0u, 0u);
 			vkCmdEndRenderPass(commandBuffer);
 		}
 		VK_CALL(vkEndCommandBuffer(commandBuffer));
@@ -379,7 +414,7 @@ namespace DT
 		allocatorCreateInfo.instance                       = m_Instance;
 		allocatorCreateInfo.vulkanApiVersion               = VK_API_VERSION_1_3;
 		allocatorCreateInfo.pTypeExternalMemoryHandleTypes = VK_NULL_HANDLE;
-		VK_CALL(vmaCreateAllocator(&allocatorCreateInfo, &m_MemoryAllocator));
+		VK_CALL(vmaCreateAllocator(&allocatorCreateInfo, &m_VulkanMemoryAllocator));
 	}
 
 	VulkanContext::~VulkanContext()
@@ -389,6 +424,8 @@ namespace DT
 		VK_CALL(vkDeviceWaitIdle(device));
 
 		m_Shader.Reset();
+		m_VertexBuffer.Reset();
+		m_IndexBuffer.Reset();
 		m_PipelineFill.Reset();
 		m_PipelineWireframe.Reset();
 
@@ -398,7 +435,7 @@ namespace DT
 		}
 		
 		m_Swapchain.Shutdown();
-		vmaDestroyAllocator(m_MemoryAllocator);
+		vmaDestroyAllocator(m_VulkanMemoryAllocator);
 		m_Device.Shutdown();
 		
 		vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
@@ -406,7 +443,7 @@ namespace DT
 			GET_INSTANCE_FUNC(vkDestroyDebugUtilsMessengerEXT)(m_Instance, m_DebugMessenger, nullptr);
 		vkDestroyInstance(m_Instance, nullptr);
 		
-		m_MemoryAllocator = VK_NULL_HANDLE;
+		m_VulkanMemoryAllocator = VK_NULL_HANDLE;
 		m_Surface = VK_NULL_HANDLE;
 		m_Instance = VK_NULL_HANDLE;
 	}
@@ -431,7 +468,7 @@ namespace DT
 
 		VK_CALL(vkResetFences(device, 1u, &m_PreviousFrameFinishedFences[m_CurrentFrame]));
 
-		vkResetCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], 0u);
+		VK_CALL(vkResetCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], 0u));
 		RecordCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], m_Swapchain.GetCurrentImageIndex());
 		ExecuteCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], m_Device.GetGraphicsQueue());
 

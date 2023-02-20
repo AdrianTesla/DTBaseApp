@@ -4,6 +4,7 @@
 #include "VulkanDevice.h"
 #include "VulkanSwapchain.h"
 #include "VulkanPipeline.h"
+#include "VulkanBuffers.h"
 
 namespace DT
 {
@@ -19,23 +20,25 @@ namespace DT
 
 		virtual void DrawFrameTest() override;
 		
-		bool IsInstanceExtensionSupported(const char* extensionName) const;
-		bool IsInstanceLayerSupported(const char* layerName) const;
-		
-		static uint32 GetCurrentFrame() { return s_Context->m_CurrentFrame; }
+		static bool IsInstanceExtensionSupported(const char* extensionName);
+		static bool IsInstanceLayerSupported(const char* layerName);
 
 		Ref<Window> GetWindow() const { return m_Window; }
-		VkSurfaceKHR GetSurface() const { return m_Surface; }
-		VulkanSwapchain& GetSwapchain() { return m_Swapchain; }
 
 		static VulkanContext& Get() { return *s_Context; }
 		static VkInstance GetVulkanInstance() { return s_Context->m_Instance; }
 		
 		static VulkanDevice& GetCurrentDevice() { return s_Context->m_Device; }
 		static VulkanPhysicalDevice& GetCurrentPhysicalDevice() { return s_Context->m_PhysicalDevice; }
-
+		
 		static VkDevice GetCurrentVulkanDevice() { return s_Context->m_Device.GetVulkanDevice(); }
 		static VkPhysicalDevice GetCurrentVulkanPhysicalDevice() { return s_Context->m_PhysicalDevice.GetVulkanPhysicalDevice(); }
+		
+		static VkSurfaceKHR GetSurface() { return s_Context->m_Surface; }
+		static VulkanSwapchain& GetSwapchain() { return s_Context->m_Swapchain; }
+		
+		static VmaAllocator GetVulkanMemoryAllocator() { return s_Context->m_VulkanMemoryAllocator; }
+		static uint32 GetCurrentFrame() { return s_Context->m_CurrentFrame; }
 	private:
 		void CreateVulkanInstance();
 		void CreateWindowSurface();
@@ -46,6 +49,7 @@ namespace DT
 		void CreateSyncObjects();
 
 		void CreateGraphicsPipeline();
+		void CreateVertexBuffers();
 		void CreateCommandBuffers();
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
 		void ExecuteCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue);
@@ -58,7 +62,7 @@ namespace DT
 		Ref<Window> m_Window;
 
 		VkInstance m_Instance = VK_NULL_HANDLE;
-		VmaAllocator m_MemoryAllocator = VK_NULL_HANDLE;
+		VmaAllocator m_VulkanMemoryAllocator = VK_NULL_HANDLE;
 
 		VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
 		VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
@@ -74,6 +78,9 @@ namespace DT
 		Ref<VulkanShader> m_Shader;
 		Ref<VulkanPipeline> m_PipelineFill;
 		Ref<VulkanPipeline> m_PipelineWireframe;
+
+		Ref<VulkanVertexBuffer> m_VertexBuffer;
+		Ref<VulkanIndexBuffer> m_IndexBuffer;
 
 		uint32 m_CurrentFrame = 0u;
 

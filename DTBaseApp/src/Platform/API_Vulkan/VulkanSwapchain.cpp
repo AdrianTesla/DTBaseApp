@@ -62,7 +62,7 @@ namespace DT
 	void VulkanSwapchain::GetSupportDetails()
 	{
 		VkPhysicalDevice physicalDevice = VulkanContext::GetCurrentVulkanPhysicalDevice();
-		VkSurfaceKHR surface = VulkanContext::Get().GetSurface();
+		VkSurfaceKHR surface = VulkanContext::GetSurface();
 
 		VK_CALL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &m_SupportDetails.SurfaceCapabilities));
 		
@@ -310,7 +310,7 @@ namespace DT
 		swapchainCreateInfo.sType                 = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 		swapchainCreateInfo.pNext                 = nullptr;
 		swapchainCreateInfo.flags                 = 0u;
-		swapchainCreateInfo.surface               = VulkanContext::Get().GetSurface();
+		swapchainCreateInfo.surface               = VulkanContext::GetSurface();
 		swapchainCreateInfo.minImageCount         = m_ImageCount;
 		swapchainCreateInfo.imageFormat           = m_SurfaceFormat.format;
 		swapchainCreateInfo.imageColorSpace       = m_SurfaceFormat.colorSpace;
