@@ -288,14 +288,18 @@ namespace DT
 			} Color;
 		};
 
-		Vertex vertices[3];
-		for (size_t i = 0u; i < 3u; i++) {
-			float t = (2.0f * 3.1415926535f / 3.0f) * i;
-			vertices[i].Position = { std::cos(t),std::sin(t) };
-			vertices[i].Color = { 0.1f,1.0f,0.4f };
-		}
+		Vertex vertices[4];
+		vertices[0].Position = { -0.5f,-0.5f };
+		vertices[1].Position = { -0.5f,+0.5f };
+		vertices[2].Position = { +0.5f,+0.5f };
+		vertices[3].Position = { +0.5f,-0.5f };
 
-		uint32 indices[3] = { 0u,1u,2u };
+		vertices[0].Color = { 1.0f,1.0f,0.0f };
+		vertices[1].Color = { 1.0f,0.4f,0.0f };
+		vertices[2].Color = { 1.0f,1.0f,0.0f };
+		vertices[3].Color = { 1.0f,0.4f,0.0f };
+
+		uint32 indices[6] = { 0u,1u,2u, 0u,2u,3u };
 
 		m_VertexBuffer = Ref<VulkanVertexBuffer>::Create(vertices, sizeof(vertices));
 		m_IndexBuffer = Ref<VulkanIndexBuffer>::Create(indices, sizeof(indices));
@@ -371,11 +375,11 @@ namespace DT
 			vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dancingPipeline->GetVulkanPipeline());
 			vkCmdBindVertexBuffers(commandBuffer, 0u, 1u, &m_VertexBuffer->GetVulkanBuffer(), &offsets);
-			vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->GetVulkanBuffer(), 0u, VK_INDEX_TYPE_UINT32);
+			vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->GetVulkanBuffer(), 0u, m_IndexBuffer->GetVulkanIndexType());
 			vkCmdSetViewport(commandBuffer, 0u, 1u, &viewport);
 			vkCmdSetScissor(commandBuffer, 0u, 1u, &scissor);
 			vkCmdPushConstants(commandBuffer, dancingPipeline->GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, &pushConstant);
-			vkCmdDrawIndexed(commandBuffer, 3u, 1u, 0u, 0u, 0u);
+			vkCmdDrawIndexed(commandBuffer, m_IndexBuffer->GetIndexCount(), 1u, 0u, 0u, 0u);
 			vkCmdEndRenderPass(commandBuffer);
 		}
 		VK_CALL(vkEndCommandBuffer(commandBuffer));
