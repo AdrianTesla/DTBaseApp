@@ -5,17 +5,19 @@ layout (location = 1) in vec3 a_Color;
 
 layout (location = 0) out vec3 fragColor;
 
-layout (push_constant) uniform PushConstant
+layout (set = 0, binding = 0) uniform UniformBuffer
 {
-	float u_AspectRatio;
-	float u_Time;
-};
+    float ScreenWidth;
+    float ScreenHeight;
+    float AspectRatio;
+    float Time;
+} u_UniformBuffer;
 
 void main() 
 {
     const float pi = 3.14159265358979;
     const float frequency = 0.01;
-    float angle = 2.0 * pi * frequency * u_Time;
+    float angle = 2.0 * pi * frequency * u_UniformBuffer.Time;
     
     mat2 rotation = mat2(
         cos(angle), -sin(angle),
@@ -24,7 +26,7 @@ void main()
 
     vec2 position = rotation * a_Position;
 
-	position.x /= u_AspectRatio;
+	position.x /= u_UniformBuffer.AspectRatio;
     gl_Position = vec4(position.x, position.y, 0.0, 1.0);
 
     fragColor = a_Color;

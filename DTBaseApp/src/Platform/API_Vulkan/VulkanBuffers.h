@@ -18,16 +18,32 @@ namespace DT
 	class VulkanIndexBuffer : public RefCounted
 	{
 	public:
-		VulkanIndexBuffer(const void* data, uint64 size, VkIndexType indexType = VK_INDEX_TYPE_UINT32);
+		VulkanIndexBuffer(const void* data, uint64 size);
 		~VulkanIndexBuffer();
 		
-		VkIndexType GetVulkanIndexType() const { return m_IndexType; }
 		uint32 GetIndexCount() const { return m_IndexCount; }
 		VkBuffer& GetVulkanBuffer() { return m_Buffer; }
 	private:
 		VkBuffer m_Buffer = VK_NULL_HANDLE;
 		VmaAllocation m_Allocation = VK_NULL_HANDLE;
 		uint32 m_IndexCount = 0u;
-		VkIndexType m_IndexType;
+	};
+
+	class VulkanUniformBuffer : public RefCounted
+	{
+	public:
+		VulkanUniformBuffer(uint64 size);
+		~VulkanUniformBuffer();
+
+		void SetData(const void* data, uint64 size);
+		VkBuffer& GetVulkanBuffer() { return m_Buffer; }
+		const VkDescriptorBufferInfo& GetDescriptorBufferInfo() const { return m_DescriptorBufferInfo; }
+	private:
+		VkBuffer m_Buffer = VK_NULL_HANDLE;
+		VmaAllocation m_Allocation = VK_NULL_HANDLE;
+		VmaAllocationInfo m_AllocationInfo;
+		uint64 m_Size = 0u;
+
+		VkDescriptorBufferInfo m_DescriptorBufferInfo{};
 	};
 }

@@ -95,8 +95,10 @@ namespace DT
 		CreateSwapchain();
 
 		CreateGraphicsPipeline();
-		CreateVertexBuffers();
+		CreateBuffers();
 		CreateCommandBuffers();
+		CreateDescriptorPools();
+		CreateDescriptorSets();
 		CreateSyncObjects();
 	}
 
@@ -271,7 +273,7 @@ namespace DT
 		}
 	}
 
-	void VulkanContext::CreateVertexBuffers()
+	void VulkanContext::CreateBuffers()
 	{
 		struct Vertex
 		{
@@ -298,11 +300,20 @@ namespace DT
 		vertices[1].Color = { 1.0f,0.4f,0.0f };
 		vertices[2].Color = { 1.0f,1.0f,0.0f };
 		vertices[3].Color = { 1.0f,0.4f,0.0f };
-		VK_FILTER_CUBIC_EXT;
+
 		uint32 indices[6] = { 0u,1u,2u, 0u,2u,3u };
 
 		m_VertexBuffer = Ref<VulkanVertexBuffer>::Create(vertices, sizeof(vertices));
 		m_IndexBuffer = Ref<VulkanIndexBuffer>::Create(indices, sizeof(indices));
+
+		UniformBufferData uniformBufferData;
+		uniformBufferData.ScreenWidth = (float)m_Swapchain.GetWidth();
+		uniformBufferData.ScreenHeight = (float)m_Swapchain.GetHeight();
+		uniformBufferData.AspectRatio = uniformBufferData.ScreenWidth / uniformBufferData.ScreenHeight;
+		uniformBufferData.Time = 69.0f;
+
+		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
+			m_UniformBuffers[i] = Ref<VulkanUniformBuffer>::Create(sizeof(UniformBufferData));
 	}
 
 	void VulkanContext::CreateCommandBuffers()
@@ -316,6 +327,58 @@ namespace DT
 		commandBufferAllocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		commandBufferAllocateInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 		VK_CALL(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, m_GraphicsCommandBuffers.Data()));
+	}
+
+	void VulkanContext::CreateDescriptorPools()
+	{
+		VkDevice device = m_Device.GetVulkanDevice();
+
+		VkDescriptorPoolSize descriptorPoolSize{};
+		descriptorPoolSize.type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorPoolSize.descriptorCount = 1u;
+
+		VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
+		descriptorPoolCreateInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		descriptorPoolCreateInfo.pNext         = nullptr;
+		descriptorPoolCreateInfo.flags         = 0u;
+		descriptorPoolCreateInfo.maxSets       = MAX_FRAMES_IN_FLIGHT;
+		descriptorPoolCreateInfo.poolSizeCount = 1u;
+		descriptorPoolCreateInfo.pPoolSizes    = &descriptorPoolSize;
+		VK_CALL(vkCreateDescriptorPool(device, &descriptorPoolCreateInfo, nullptr, &m_DescriptorPool));
+	}
+
+	void VulkanContext::CreateDescriptorSets()
+	{
+		VkDevice device = m_Device.GetVulkanDevice();
+
+		VkDescriptorSetLayout descriptorSetLayout = m_PipelineFill->GetDescriptorSetLayout();
+		VkDescriptorSetLayout descriptorSetLayouts[MAX_FRAMES_IN_FLIGHT];
+		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
+			descriptorSetLayouts[i] = descriptorSetLayout;
+
+		VkDescriptorSetAllocateInfo descriptorSetAllocateInfo{};
+		descriptorSetAllocateInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		descriptorSetAllocateInfo.pNext              = nullptr;
+		descriptorSetAllocateInfo.descriptorPool     = m_DescriptorPool;
+		descriptorSetAllocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
+		descriptorSetAllocateInfo.pSetLayouts        = descriptorSetLayouts;
+		VK_CALL(vkAllocateDescriptorSets(device, &descriptorSetAllocateInfo, m_DescriptorSets.Data()));
+
+		VkWriteDescriptorSet writeDescriptorSets[MAX_FRAMES_IN_FLIGHT];
+		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			writeDescriptorSets[i].sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			writeDescriptorSets[i].pNext            = nullptr;
+			writeDescriptorSets[i].dstSet           = m_DescriptorSets[i];
+			writeDescriptorSets[i].dstBinding       = 0u;
+			writeDescriptorSets[i].dstArrayElement  = 0u;
+			writeDescriptorSets[i].descriptorCount  = 1u;
+			writeDescriptorSets[i].descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			writeDescriptorSets[i].pImageInfo       = nullptr;
+			writeDescriptorSets[i].pBufferInfo      = &m_UniformBuffers[i]->GetDescriptorBufferInfo();
+			writeDescriptorSets[i].pTexelBufferView = nullptr;
+		}
+		vkUpdateDescriptorSets(device, (uint32)std::size(writeDescriptorSets), writeDescriptorSets, 0u, nullptr);
 	}
 
 	void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex)
@@ -358,15 +421,11 @@ namespace DT
 		else
 			dancingPipeline = m_PipelineWireframe;
 
-		struct PushConstant
-		{
-			float u_AspectRatio;
-			float u_Time;
-		};
-
-		PushConstant pushConstant;
-		pushConstant.u_AspectRatio = viewport.width / viewport.height;
-		pushConstant.u_Time = (float)glfwGetTime();
+		m_UniformBufferData.ScreenWidth  = viewport.width;
+		m_UniformBufferData.ScreenHeight = viewport.height;
+		m_UniformBufferData.AspectRatio  = viewport.width / viewport.height;
+		m_UniformBufferData.Time         = (float)glfwGetTime();
+		m_UniformBuffers[m_CurrentFrame]->SetData(&m_UniformBufferData, sizeof(m_UniformBufferData));
 
 		VkDeviceSize offsets = 0u;
 
@@ -375,10 +434,10 @@ namespace DT
 			vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dancingPipeline->GetVulkanPipeline());
 			vkCmdBindVertexBuffers(commandBuffer, 0u, 1u, &m_VertexBuffer->GetVulkanBuffer(), &offsets);
-			vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->GetVulkanBuffer(), 0u, m_IndexBuffer->GetVulkanIndexType());
+			vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->GetVulkanBuffer(), 0u, VK_INDEX_TYPE_UINT32);
 			vkCmdSetViewport(commandBuffer, 0u, 1u, &viewport);
 			vkCmdSetScissor(commandBuffer, 0u, 1u, &scissor);
-			vkCmdPushConstants(commandBuffer, dancingPipeline->GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, &pushConstant);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dancingPipeline->GetPipelineLayout(), 0u, 1u, &m_DescriptorSets[m_CurrentFrame], 0u, nullptr);
 			vkCmdDrawIndexed(commandBuffer, m_IndexBuffer->GetIndexCount(), 1u, 0u, 0u, 0u);
 			vkCmdEndRenderPass(commandBuffer);
 		}
@@ -427,9 +486,13 @@ namespace DT
 
 		VK_CALL(vkDeviceWaitIdle(device));
 
+		vkDestroyDescriptorPool(device, m_DescriptorPool, nullptr);
+
 		m_Shader.Reset();
 		m_VertexBuffer.Reset();
 		m_IndexBuffer.Reset();
+		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
+			m_UniformBuffers[i].Reset();
 		m_PipelineFill.Reset();
 		m_PipelineWireframe.Reset();
 
@@ -472,7 +535,6 @@ namespace DT
 
 		VK_CALL(vkResetFences(device, 1u, &m_PreviousFrameFinishedFences[m_CurrentFrame]));
 
-		VK_CALL(vkResetCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], 0u));
 		RecordCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], m_Swapchain.GetCurrentImageIndex());
 		ExecuteCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], m_Device.GetGraphicsQueue());
 

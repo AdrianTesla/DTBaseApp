@@ -49,8 +49,10 @@ namespace DT
 		void CreateSyncObjects();
 
 		void CreateGraphicsPipeline();
-		void CreateVertexBuffers();
+		void CreateBuffers();
 		void CreateCommandBuffers();
+		void CreateDescriptorPools();
+		void CreateDescriptorSets();
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
 		void ExecuteCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue);
 	private:
@@ -81,6 +83,19 @@ namespace DT
 
 		Ref<VulkanVertexBuffer> m_VertexBuffer;
 		Ref<VulkanIndexBuffer> m_IndexBuffer;
+
+		struct UniformBufferData
+		{
+			float ScreenWidth;
+			float ScreenHeight;
+			float AspectRatio;
+			float Time;
+		} m_UniformBufferData;
+
+		InFlight<Ref<VulkanUniformBuffer>> m_UniformBuffers;
+
+		VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
+		InFlight<VkDescriptorSet> m_DescriptorSets;
 
 		uint32 m_CurrentFrame = 0u;
 

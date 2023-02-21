@@ -188,19 +188,29 @@ namespace DT
 		pipelineDynamicStateCreateInfo.dynamicStateCount = (uint32)std::size(dynamicStates);
 		pipelineDynamicStateCreateInfo.pDynamicStates    = dynamicStates;
 
-		VkPushConstantRange pushConstantRange{};
-		pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-		pushConstantRange.offset     = 0u;
-		pushConstantRange.size       = 8u;
+		VkDescriptorSetLayoutBinding descriptorSetLayoutBinding{};
+		descriptorSetLayoutBinding.binding            = 0u;
+		descriptorSetLayoutBinding.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorSetLayoutBinding.descriptorCount    = 1u;
+		descriptorSetLayoutBinding.stageFlags         = VK_SHADER_STAGE_VERTEX_BIT;
+		descriptorSetLayoutBinding.pImmutableSamplers = nullptr;
+
+		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{};
+		descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		descriptorSetLayoutCreateInfo.pNext        = nullptr;
+		descriptorSetLayoutCreateInfo.flags        = 0u;
+		descriptorSetLayoutCreateInfo.bindingCount = 1u;
+		descriptorSetLayoutCreateInfo.pBindings    = &descriptorSetLayoutBinding;
+		VK_CALL(vkCreateDescriptorSetLayout(device, &descriptorSetLayoutCreateInfo, nullptr, &m_DescriptorSetLayout));
 
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 		pipelineLayoutCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutCreateInfo.pNext                  = nullptr;
 		pipelineLayoutCreateInfo.flags                  = 0u;
-		pipelineLayoutCreateInfo.setLayoutCount         = 0u;
-		pipelineLayoutCreateInfo.pSetLayouts            = nullptr;
-		pipelineLayoutCreateInfo.pushConstantRangeCount = 1u;
-		pipelineLayoutCreateInfo.pPushConstantRanges    = &pushConstantRange;
+		pipelineLayoutCreateInfo.setLayoutCount         = 1u;
+		pipelineLayoutCreateInfo.pSetLayouts            = &m_DescriptorSetLayout;
+		pipelineLayoutCreateInfo.pushConstantRangeCount = 0u;
+		pipelineLayoutCreateInfo.pPushConstantRanges    = nullptr;
 		VK_CALL(vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &m_PipelineLayout));
 
 		VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
@@ -232,7 +242,9 @@ namespace DT
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 		vkDestroyPipelineLayout(device, m_PipelineLayout, nullptr);
+		vkDestroyDescriptorSetLayout(device, m_DescriptorSetLayout, nullptr);
 		vkDestroyPipeline(device, m_Pipeline, nullptr);
+		m_DescriptorSetLayout = VK_NULL_HANDLE;
 		m_PipelineLayout = VK_NULL_HANDLE;
 		m_Pipeline = VK_NULL_HANDLE;
 	}
