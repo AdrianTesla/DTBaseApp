@@ -4,6 +4,14 @@
 
 namespace DT
 {
+	static struct UniformBufferData
+	{
+		float ScreenWidth;
+		float ScreenHeight;
+		float AspectRatio;
+		float Time;
+	} s_UniformBufferData;
+
 	static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanMessageCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) 
 	{
 		switch (messageSeverity)
@@ -306,12 +314,6 @@ namespace DT
 		m_VertexBuffer = Ref<VulkanVertexBuffer>::Create(vertices, sizeof(vertices));
 		m_IndexBuffer = Ref<VulkanIndexBuffer>::Create(indices, sizeof(indices));
 
-		UniformBufferData uniformBufferData;
-		uniformBufferData.ScreenWidth = (float)m_Swapchain.GetWidth();
-		uniformBufferData.ScreenHeight = (float)m_Swapchain.GetHeight();
-		uniformBufferData.AspectRatio = uniformBufferData.ScreenWidth / uniformBufferData.ScreenHeight;
-		uniformBufferData.Time = 69.0f;
-
 		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
 			m_UniformBuffers[i] = Ref<VulkanUniformBuffer>::Create(sizeof(UniformBufferData));
 	}
@@ -381,6 +383,19 @@ namespace DT
 		vkUpdateDescriptorSets(device, (uint32)std::size(writeDescriptorSets), writeDescriptorSets, 0u, nullptr);
 	}
 
+	void VulkanContext::UpdateUniformBuffers()
+	{
+		float width = (float)m_Swapchain.GetWidth();
+		float height = (float)m_Swapchain.GetHeight();
+
+		s_UniformBufferData.ScreenWidth  = width;
+		s_UniformBufferData.ScreenHeight = height;
+		s_UniformBufferData.AspectRatio  = width / height;
+		s_UniformBufferData.Time         = (float)glfwGetTime();
+		
+		m_UniformBuffers[m_CurrentFrame]->SetData(&s_UniformBufferData, sizeof(s_UniformBufferData));
+	}
+
 	void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex)
 	{
 		VkCommandBufferBeginInfo commandBufferBeginInfo{};
@@ -420,12 +435,6 @@ namespace DT
 			dancingPipeline = m_PipelineFill;
 		else
 			dancingPipeline = m_PipelineWireframe;
-
-		m_UniformBufferData.ScreenWidth  = viewport.width;
-		m_UniformBufferData.ScreenHeight = viewport.height;
-		m_UniformBufferData.AspectRatio  = viewport.width / viewport.height;
-		m_UniformBufferData.Time         = (float)glfwGetTime();
-		m_UniformBuffers[m_CurrentFrame]->SetData(&m_UniformBufferData, sizeof(m_UniformBufferData));
 
 		VkDeviceSize offsets = 0u;
 
@@ -534,6 +543,8 @@ namespace DT
 			return;
 
 		VK_CALL(vkResetFences(device, 1u, &m_PreviousFrameFinishedFences[m_CurrentFrame]));
+
+		UpdateUniformBuffers();
 
 		RecordCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], m_Swapchain.GetCurrentImageIndex());
 		ExecuteCommandBuffer(m_GraphicsCommandBuffers[m_CurrentFrame], m_Device.GetGraphicsQueue());
