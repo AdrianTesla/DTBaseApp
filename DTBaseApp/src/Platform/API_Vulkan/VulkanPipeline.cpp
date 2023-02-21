@@ -225,7 +225,7 @@ namespace DT
 		graphicsPipelineCreateInfo.basePipelineIndex   = 0;
 		VK_CALL(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1u, &graphicsPipelineCreateInfo, nullptr, &m_Pipeline));
 	
-		LOG_TRACE("Created GraphicsPipeline: {} ms", timer.ElapsedMilliseconds());
+		LOG_TRACE("Created graphics pipeline: {} ms", timer.ElapsedMilliseconds());
 	}
 
 	void VulkanPipeline::Destroy()

@@ -298,7 +298,7 @@ namespace DT
 		vertices[1].Color = { 1.0f,0.4f,0.0f };
 		vertices[2].Color = { 1.0f,1.0f,0.0f };
 		vertices[3].Color = { 1.0f,0.4f,0.0f };
-
+		VK_FILTER_CUBIC_EXT;
 		uint32 indices[6] = { 0u,1u,2u, 0u,2u,3u };
 
 		m_VertexBuffer = Ref<VulkanVertexBuffer>::Create(vertices, sizeof(vertices));
@@ -348,9 +348,9 @@ namespace DT
 
 		VkRect2D scissor{};
 		scissor.offset = { 0u,0u };
-		scissor.extent = { (uint32)m_Swapchain.GetWidth(),(uint32)m_Swapchain.GetHeight() };
+		scissor.extent = { (uint32)viewport.width,(uint32)viewport.height };
 
-		uint32 seconds = (uint32)glfwGetTime() / 2;
+		uint32 seconds = (uint32)glfwGetTime();
 
 		Ref<VulkanPipeline> dancingPipeline;
 		if (seconds % 2 == 0)
