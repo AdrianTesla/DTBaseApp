@@ -165,7 +165,7 @@ namespace DT
 		}
 		VkPhysicalDeviceFeatures enabledFeatures{};
 		BuildEnabledFeatures(&enabledFeatures);
-		
+
 		VkDeviceCreateInfo deviceCreateInfo{};
 		deviceCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		deviceCreateInfo.pNext                   = nullptr;

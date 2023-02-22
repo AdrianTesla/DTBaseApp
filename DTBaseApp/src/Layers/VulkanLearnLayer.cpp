@@ -196,7 +196,7 @@ namespace DT
 		imageCreateInfo.flags				  = 0u;
 		imageCreateInfo.imageType			  = VK_IMAGE_TYPE_2D;
 		imageCreateInfo.format				  = VK_FORMAT_R8G8B8A8_UNORM;
-		imageCreateInfo.extent				  = { 64u,64u,1u };
+		imageCreateInfo.extent				  = { 16u,16u,1u };
 		imageCreateInfo.mipLevels			  = 1u;
 		imageCreateInfo.arrayLayers			  = 1u;
 		imageCreateInfo.samples				  = VK_SAMPLE_COUNT_1_BIT;
@@ -344,17 +344,27 @@ namespace DT
 
 	void VulkanLearnLayer::OnUpdate(float dt)
 	{
-		for (uint32 y = 0u; y < 64u; y++)
+		for (uint32 y = 0u; y < 16u; y++) 
 		{
-			for (uint32 x = 0u; x < 64u; x++)
+			for (uint32 x = 0u; x < 16u; x++) 
 			{
-				if ((y == x) || (y == 64u - x))
-				{
-					uint8 b = uint8(255.0f * 0.5f + 255.0f * 0.5f * std::sin(5 * Application::Get().GetTime()));
-					m_ImageData[x + y * 64u] = Pixel{ 255u,uint8(255u * x / 64u),b,255u };
-				}
+				Pixel pixel1 = { uint8(x*255/16),59,uint8(255 - x * 255 / 16),255u };
+				Pixel pixel2 = { 25u,0u,25u,255u };
+
+				if (x == y || x == 16u - y - 1u)
+					m_ImageData[x + y * 16u] = pixel1;
+				else
+					m_ImageData[x + y * 16u] = pixel2;
 			}
 		}
+
+		// Supponiamo di avere un moto su traiettoria arbitraria in cui a(t) è esplicitamente nota.
+		// Supponiamo che la velocità iniziare sia v(0) = v0, e supponiamo che dopo un tempo T
+		// la velocità scende a v(T) = 0 avendo percorso uno spazio D.
+		// Dimostrare che D = integrale da 0 a T di ta(t) dt
+
+		// D = int da 0 a T v(t) dt = 
+		// = - int da 0 a T t a(t) dt
 	}
 
 	void VulkanLearnLayer::OnRender()
