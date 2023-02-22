@@ -114,10 +114,10 @@ namespace DT
 
 		VkDescriptorPoolSize descriptorPoolSizes[2];
 		descriptorPoolSizes[0].type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorPoolSizes[0].descriptorCount = 1u;
+		descriptorPoolSizes[0].descriptorCount = MAX_FRAMES_IN_FLIGHT;
 
 		descriptorPoolSizes[1].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorPoolSizes[1].descriptorCount = 1u;
+		descriptorPoolSizes[1].descriptorCount = MAX_FRAMES_IN_FLIGHT;
 
 		VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
 		descriptorPoolCreateInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
