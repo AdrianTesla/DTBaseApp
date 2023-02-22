@@ -214,7 +214,21 @@ namespace DT
 		allocationCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 		VK_CALL(vmaCreateImage(allocator, &imageCreateInfo, &allocationCreateInfo, &m_Image, &m_ImageAllocation, &allocationInfo));
 
+		VkImageSubresource imageSubresource{};
+		imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageSubresource.mipLevel   = 0u;
+		imageSubresource.arrayLayer = 0u;
+		VkSubresourceLayout subresourceLayout;
+		vkGetImageSubresourceLayout(device, m_Image, &imageSubresource, &subresourceLayout);
+
 		m_ImageData = (Pixel*)allocationInfo.pMappedData;
+		m_ImageRowPitch = subresourceLayout.rowPitch;
+
+		LOG_INFO("Image size: {} bytes", subresourceLayout.size);
+		LOG_INFO("Image offset: {} bytes", subresourceLayout.offset);
+		LOG_INFO("Image row pitch: {} bytes", subresourceLayout.rowPitch);
+		LOG_INFO("Image depth pitch: {} bytes", subresourceLayout.depthPitch);
+		LOG_INFO("Image array pitch: {} bytes", subresourceLayout.arrayPitch);
 
 		VkImageViewCreateInfo imageViewCreateInfo{};
 		imageViewCreateInfo.sType        = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -344,18 +358,17 @@ namespace DT
 
 	void VulkanLearnLayer::OnUpdate(float dt)
 	{
+		float time = Application::Get().GetTime();
+
+		Pixel* imageData = m_ImageData;
 		for (uint32 y = 0u; y < 16u; y++) 
 		{
 			for (uint32 x = 0u; x < 16u; x++) 
 			{
-				Pixel pixel1 = { uint8(x*255/16),59,uint8(255 - x * 255 / 16),255u };
-				Pixel pixel2 = { 25u,0u,25u,255u };
-
-				if (x == y || x == 16u - y - 1u)
-					m_ImageData[x + y * 16u] = pixel1;
-				else
-					m_ImageData[x + y * 16u] = pixel2;
+				float r = 255.0f * (0.5f + 0.5f * std::sin(3 * time));
+				imageData[x] = Pixel{ uint8(r),uint8(y * 16u),uint8(x * 16u),255u};
 			}
+			imageData += m_ImageRowPitch / sizeof(Pixel);
 		}
 
 		// Supponiamo di avere un moto su traiettoria arbitraria in cui a(t) è esplicitamente nota.

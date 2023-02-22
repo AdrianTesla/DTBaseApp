@@ -53,5 +53,6 @@ namespace DT
 		VkSampler m_Sampler = VK_NULL_HANDLE;
 
 		Pixel* m_ImageData = nullptr;
+		uint32 m_ImageRowPitch = 0u;
 	};
 }
