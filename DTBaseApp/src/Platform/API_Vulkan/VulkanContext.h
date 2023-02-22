@@ -15,11 +15,11 @@ namespace DT
 		virtual ~VulkanContext();
 
 		virtual void Init() override;
-		virtual void Present() override;
 		virtual void OnWindowResize() override;
 
-		virtual void DrawFrameTest() override;
-		
+		virtual void BeginFrame() override;
+		virtual void EndFrame() override;
+
 		static bool IsInstanceExtensionSupported(const char* extensionName);
 		static bool IsInstanceLayerSupported(const char* layerName);
 
@@ -38,7 +38,10 @@ namespace DT
 		static VulkanSwapchain& GetSwapchain() { return s_Context->m_Swapchain; }
 		
 		static VmaAllocator GetVulkanMemoryAllocator() { return s_Context->m_VulkanMemoryAllocator; }
-		static uint32 GetCurrentFrame() { return s_Context->m_CurrentFrame; }
+		static uint32 CurrentFrame() { return s_Context->m_CurrentFrame; }
+
+		static VkSemaphore& GetActiveRenderCompleteSemaphore() { return s_Context->m_RenderCompleteSemaphores[s_Context->m_CurrentFrame]; }
+		static VkFence& GetActivePreviousFrameFence() { return s_Context->m_PreviousFrameFinishedFences[s_Context->m_CurrentFrame]; }
 	private:
 		void CreateVulkanInstance();
 		void CreateWindowSurface();
@@ -47,15 +50,6 @@ namespace DT
 		void CreateLogicalDevice();
 		void CreateSwapchain();
 		void CreateSyncObjects();
-
-		void CreateGraphicsPipeline();
-		void CreateBuffers();
-		void CreateCommandBuffers();
-		void CreateDescriptorPools();
-		void CreateDescriptorSets();
-		void UpdateUniformBuffers();
-		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
-		void ExecuteCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue);
 	private:
 		std::vector<const char*> BuildRequestedInstanceExtensions();
 		std::vector<const char*> BuildRequestedInstanceLayers();
@@ -73,22 +67,10 @@ namespace DT
 		VulkanPhysicalDevice m_PhysicalDevice;
 		VulkanDevice m_Device;
 		VulkanSwapchain m_Swapchain;
+		bool m_AquireNextImageFailed = false;
 		
-		InFlight<VkCommandBuffer> m_GraphicsCommandBuffers;
-		InFlight<VkFence> m_PreviousFrameFinishedFences;
-		InFlight<VkSemaphore> m_RenderCompleteSemaphores;
-
-		Ref<VulkanShader> m_Shader;
-		Ref<VulkanPipeline> m_PipelineFill;
-		Ref<VulkanPipeline> m_PipelineWireframe;
-
-		Ref<VulkanVertexBuffer> m_VertexBuffer;
-		Ref<VulkanIndexBuffer> m_IndexBuffer;
-
-		InFlight<Ref<VulkanUniformBuffer>> m_UniformBuffers;
-
-		VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
-		InFlight<VkDescriptorSet> m_DescriptorSets;
+		InFlight<VkFence> m_PreviousFrameFinishedFences{};
+		InFlight<VkSemaphore> m_RenderCompleteSemaphores{};
 
 		uint32 m_CurrentFrame = 0u;
 

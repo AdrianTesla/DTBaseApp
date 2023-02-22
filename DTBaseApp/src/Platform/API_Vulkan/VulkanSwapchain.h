@@ -43,12 +43,11 @@ namespace DT
 		uint32 GetWidth() const { return (uint32)m_Width; }
 		uint32 GetHeight() const { return (uint32)m_Height; }
 
-		VkRenderPass GetSwapchainRenderPass() const { return m_SwapchainRenderPass; }
-		VkSemaphore& GetImageAvailableSemaphore();
+		VkSemaphore& GetImageAvailableSemaphore(uint32 frameIndex);
 
-		VkRenderPass GetRenderPass() const { return m_SwapchainRenderPass; }
-		VkFramebuffer GetFramebuffer(uint32 imageIndex) const { return m_SwapchainFramebuffers[imageIndex]; }
-		VkImageView GetImageView(uint32 imageIndex) const { return m_SwapchainImageViews[imageIndex]; }
+		VkRenderPass GetSwapchainRenderPass() const { return m_SwapchainRenderPass; }
+		VkFramebuffer GetActiveFramebuffer() const { return m_SwapchainFramebuffers[m_CurrentImageIndex]; }
+		VkImageView GetActiveImageView() const { return m_SwapchainImageViews[m_CurrentImageIndex]; }
 	private:
 		void RecreateSwapchain();
 		void GetSupportDetails();

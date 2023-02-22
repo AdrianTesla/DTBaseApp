@@ -45,6 +45,11 @@ namespace DT
 				float g;
 				float b;
 			} Color;
+			struct
+			{
+				float u;
+				float v;
+			} TexCoord;
 		};
 
 		VkVertexInputBindingDescription vertexInputBindingDescription{};
@@ -52,7 +57,7 @@ namespace DT
 		vertexInputBindingDescription.stride    = sizeof(Vertex);
 		vertexInputBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-		VkVertexInputAttributeDescription vertexInputAttributeDescriptions[2];
+		VkVertexInputAttributeDescription vertexInputAttributeDescriptions[3];
 		vertexInputAttributeDescriptions[0].location = 0u;
 		vertexInputAttributeDescriptions[0].binding  = 0u;
 		vertexInputAttributeDescriptions[0].format   = VK_FORMAT_R32G32_SFLOAT;
@@ -62,6 +67,11 @@ namespace DT
 		vertexInputAttributeDescriptions[1].binding  = 0u;
 		vertexInputAttributeDescriptions[1].format   = VK_FORMAT_R32G32B32_SFLOAT;
 		vertexInputAttributeDescriptions[1].offset   = offsetof(Vertex, Color);
+
+		vertexInputAttributeDescriptions[2].location = 2u;
+		vertexInputAttributeDescriptions[2].binding  = 0u;
+		vertexInputAttributeDescriptions[2].format   = VK_FORMAT_R32G32_SFLOAT;
+		vertexInputAttributeDescriptions[2].offset   = offsetof(Vertex, TexCoord);
 
 		VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo{};
 		pipelineVertexInputStateCreateInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -188,19 +198,25 @@ namespace DT
 		pipelineDynamicStateCreateInfo.dynamicStateCount = (uint32)std::size(dynamicStates);
 		pipelineDynamicStateCreateInfo.pDynamicStates    = dynamicStates;
 
-		VkDescriptorSetLayoutBinding descriptorSetLayoutBinding{};
-		descriptorSetLayoutBinding.binding            = 0u;
-		descriptorSetLayoutBinding.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorSetLayoutBinding.descriptorCount    = 1u;
-		descriptorSetLayoutBinding.stageFlags         = VK_SHADER_STAGE_VERTEX_BIT;
-		descriptorSetLayoutBinding.pImmutableSamplers = nullptr;
+		VkDescriptorSetLayoutBinding descriptorSetLayoutBindings[2];
+		descriptorSetLayoutBindings[0].binding            = 0u;
+		descriptorSetLayoutBindings[0].descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorSetLayoutBindings[0].descriptorCount    = 1u;
+		descriptorSetLayoutBindings[0].stageFlags         = VK_SHADER_STAGE_VERTEX_BIT;
+		descriptorSetLayoutBindings[0].pImmutableSamplers = nullptr;
+
+		descriptorSetLayoutBindings[1].binding            = 1u;
+		descriptorSetLayoutBindings[1].descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorSetLayoutBindings[1].descriptorCount    = 1u;
+		descriptorSetLayoutBindings[1].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
+		descriptorSetLayoutBindings[1].pImmutableSamplers = nullptr;
 
 		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{};
 		descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		descriptorSetLayoutCreateInfo.pNext        = nullptr;
 		descriptorSetLayoutCreateInfo.flags        = 0u;
-		descriptorSetLayoutCreateInfo.bindingCount = 1u;
-		descriptorSetLayoutCreateInfo.pBindings    = &descriptorSetLayoutBinding;
+		descriptorSetLayoutCreateInfo.bindingCount = (uint32)std::size(descriptorSetLayoutBindings);
+		descriptorSetLayoutCreateInfo.pBindings    = descriptorSetLayoutBindings;
 		VK_CALL(vkCreateDescriptorSetLayout(device, &descriptorSetLayoutCreateInfo, nullptr, &m_DescriptorSetLayout));
 
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
@@ -229,7 +245,7 @@ namespace DT
 		graphicsPipelineCreateInfo.pColorBlendState    = &pipelineColorBlendStateCreateInfo;
 		graphicsPipelineCreateInfo.pDynamicState       = &pipelineDynamicStateCreateInfo;
 		graphicsPipelineCreateInfo.layout              = m_PipelineLayout;
-		graphicsPipelineCreateInfo.renderPass          = VulkanContext::GetSwapchain().GetRenderPass();
+		graphicsPipelineCreateInfo.renderPass          = VulkanContext::GetSwapchain().GetSwapchainRenderPass();
 		graphicsPipelineCreateInfo.subpass             = 0u;
 		graphicsPipelineCreateInfo.basePipelineHandle  = VK_NULL_HANDLE;
 		graphicsPipelineCreateInfo.basePipelineIndex   = 0;

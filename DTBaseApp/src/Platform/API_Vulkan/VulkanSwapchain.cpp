@@ -24,9 +24,9 @@ namespace DT
 		CreateSyncronizationObjects();
 	}
 
-	VkSemaphore& VulkanSwapchain::GetImageAvailableSemaphore() 
+	VkSemaphore& VulkanSwapchain::GetImageAvailableSemaphore(uint32 frameIndex) 
 	{ 
-		return m_ImageAvailableSemaphores[VulkanContext::GetCurrentFrame()]; 
+		return m_ImageAvailableSemaphores[frameIndex];
 	}
 
 	void VulkanSwapchain::RecreateSwapchain()
@@ -457,11 +457,13 @@ namespace DT
 
 	bool VulkanSwapchain::AquireNextImage()
 	{
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+
 		VkResult aquireResult = vkAcquireNextImageKHR(
-			VulkanContext::GetCurrentVulkanDevice(),
+			device,
 			m_Swapchain, 
 			UINT64_MAX, 
-			m_ImageAvailableSemaphores[VulkanContext::GetCurrentFrame()],
+			m_ImageAvailableSemaphores[VulkanContext::CurrentFrame()],
 			VK_NULL_HANDLE, 
 			&m_CurrentImageIndex
 		);
@@ -489,6 +491,7 @@ namespace DT
 		presentInfo.pSwapchains        = &m_Swapchain;
 		presentInfo.pImageIndices      = &m_CurrentImageIndex;
 		presentInfo.pResults           = nullptr;
+		
 		VkResult presentResult = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
 		if (presentResult != VK_SUCCESS)
 		{

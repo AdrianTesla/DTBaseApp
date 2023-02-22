@@ -109,4 +109,186 @@ namespace DT::Vulkan
 		// destroy staging buffer and free staging allocation
 		vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
 	}
+
+	static void TransitionImageLayout(
+			VkCommandBuffer commandBuffer,
+			VkImage image,
+			VkImageLayout oldImageLayout,
+			VkImageLayout newImageLayout,
+			VkImageSubresourceRange subresourceRange,
+			VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		)
+	{
+		// Create an image barrier object
+		VkImageMemoryBarrier imageMemoryBarrier{};
+		imageMemoryBarrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		imageMemoryBarrier.pNext               = nullptr;
+		imageMemoryBarrier.oldLayout           = oldImageLayout;
+		imageMemoryBarrier.newLayout           = newImageLayout;
+		imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		imageMemoryBarrier.image               = image;
+		imageMemoryBarrier.subresourceRange    = subresourceRange;
+
+		switch (oldImageLayout)
+		{
+			case VK_IMAGE_LAYOUT_UNDEFINED:
+				imageMemoryBarrier.srcAccessMask = 0u;
+				break;
+
+			case VK_IMAGE_LAYOUT_PREINITIALIZED:
+				imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+				break;
+
+			case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+				imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+				break;
+
+			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+				imageMemoryBarrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+				break;
+
+			case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+				imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+				break;
+
+			case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+				imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+				break;
+
+			case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+				imageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+				break;
+			default:
+				break;
+		}
+
+		switch (newImageLayout)
+		{
+			case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+				imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+				break;
+
+			case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+				imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+				break;
+
+			case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+				imageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+				break;
+
+			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+				imageMemoryBarrier.dstAccessMask = imageMemoryBarrier.dstAccessMask | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+				break;
+
+			case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+				if (imageMemoryBarrier.srcAccessMask == 0u)
+					imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+
+				imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+				break;
+			default:
+				break;
+		}
+
+		// put barrier inside setup command buffer
+		vkCmdPipelineBarrier(
+			commandBuffer,
+			srcStageMask,
+			dstStageMask,
+			0u,
+			0u, nullptr,
+			0u, nullptr,
+			1u, &imageMemoryBarrier
+		);
+	}
+
+	static void TransitionImageLayout(
+		VkCommandBuffer commandBuffer,
+		VkImage image,
+		VkImageAspectFlags aspectMask,
+		VkImageLayout oldImageLayout,
+		VkImageLayout newImageLayout,
+		VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+		VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+	)
+	{
+		VkImageSubresourceRange subresourceRange = {};
+		subresourceRange.aspectMask   = aspectMask;
+		subresourceRange.baseMipLevel = 0u;
+		subresourceRange.levelCount   = 1u;
+		subresourceRange.layerCount   = 1u;
+		TransitionImageLayout(commandBuffer, image, oldImageLayout, newImageLayout, subresourceRange, srcStageMask, dstStageMask);
+	}
+		
+	static void InsertImageMemoryBarrier(
+		VkCommandBuffer cmdbuffer,
+		VkImage image,
+		VkAccessFlags srcAccessMask,
+		VkAccessFlags dstAccessMask,
+		VkImageLayout oldImageLayout,
+		VkImageLayout newImageLayout,
+		VkPipelineStageFlags srcStageMask,
+		VkPipelineStageFlags dstStageMask,
+		VkImageSubresourceRange subresourceRange
+	)
+	{
+		VkImageMemoryBarrier imageMemoryBarrier{};
+		imageMemoryBarrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		imageMemoryBarrier.pNext               = nullptr;
+		imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		imageMemoryBarrier.srcAccessMask       = srcAccessMask;
+		imageMemoryBarrier.dstAccessMask       = dstAccessMask;
+		imageMemoryBarrier.oldLayout           = oldImageLayout;
+		imageMemoryBarrier.newLayout           = newImageLayout;
+		imageMemoryBarrier.image               = image;
+		imageMemoryBarrier.subresourceRange    = subresourceRange;
+
+		vkCmdPipelineBarrier(
+			cmdbuffer,
+			srcStageMask,
+			dstStageMask,
+			0u,
+			0u, nullptr,
+			0u, nullptr,
+			1u, &imageMemoryBarrier
+		);
+	}
+
+	void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout)
+	{
+		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
+
+		// transition the image layout from undefined to general
+		VkCommandBuffer commandBuffer = vulkanDevice.AllocateTransferCommandBuffer();
+		
+		VkCommandBufferBeginInfo commandBufferBeginInfo{};
+		commandBufferBeginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		commandBufferBeginInfo.pNext            = nullptr;
+		commandBufferBeginInfo.flags            = 0u;
+		commandBufferBeginInfo.pInheritanceInfo = nullptr;
+		VK_CALL(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
+
+		// transition all faces and all mips from undefined to general
+		VkImageSubresourceRange subresourceRange = {};
+		subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
+		subresourceRange.baseMipLevel = 0u;
+		subresourceRange.levelCount   = 1u;
+		subresourceRange.layerCount   = 1u;
+
+		TransitionImageLayout(
+			commandBuffer,
+			image,
+			oldLayout,
+			newLayout,
+			subresourceRange
+		);
+
+		VK_CALL(vkEndCommandBuffer(commandBuffer));
+
+		QueueSubmit(vulkanDevice.GetTransferQueue(), commandBuffer);
+		VK_CALL(vkQueueWaitIdle(vulkanDevice.GetTransferQueue()));
+	}
 }

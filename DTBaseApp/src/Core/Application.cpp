@@ -1,5 +1,7 @@
 #include "Application.h"
 #include "Layers/VulkanLearnLayer.h"
+#include "Input.h"
+#include <GLFW/glfw3.h>
 
 namespace DT
 {
@@ -49,16 +51,29 @@ namespace DT
 
 	void Application::UpdatePhase(float dt)
 	{
+		m_TimeSteps[m_TimeStepIndex++] = dt;
+		if (m_TimeStepIndex >= m_TimeSteps.size())
+		{
+			float fps = 0.0f;
+			for (size_t i = 0u; i < m_TimeSteps.size(); i++)
+				fps += m_TimeSteps[i];
+			fps = std::ceilf((float)m_TimeSteps.size() / fps);
+			m_Window->SetTitle(std::format("Dodge This! Vulkan {} FPS", fps));
+			m_TimeStepIndex = 0u;
+		}
+
 		for (Layer* layer : m_Layers)
 			layer->OnUpdate(dt);
 	}
 
 	void Application::RenderPhase()
 	{
+		m_RendererContext->BeginFrame();
+
 		for (Layer* layer : m_Layers)
 			layer->OnRender();
 
-		m_RendererContext->DrawFrameTest();
+		m_RendererContext->EndFrame();
 	}
 
 	void Application::OnEvent(Event& event)
@@ -84,5 +99,28 @@ namespace DT
 			m_RendererContext->OnWindowResize();
 			return false;
 		});
+		dispatcher.Dispatch<KeyPressedEvent>([](KeyPressedEvent& key)
+		{
+			switch (key.GetKeyCode())
+			{
+				case Key::Enter:
+					static bool windowed = false;
+					if (Input::KeyIsPressed(Key::LeftAlt))
+					{
+						windowed = !windowed;
+						if (windowed)
+							Application::Get().GetWindow().ToFullscreen();
+						else
+							Application::Get().GetWindow().ToWindowed();
+					}
+					break;
+			}
+			return false;
+		});
+	}
+
+	float Application::GetTime() const
+	{
+		return (float)glfwGetTime();
 	}
 }

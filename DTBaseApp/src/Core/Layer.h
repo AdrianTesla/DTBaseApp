@@ -10,10 +10,10 @@ namespace DT
 		Layer() = default;
 		virtual ~Layer() = default;
 
-		virtual void OnAttach() {}
-		virtual void OnDetach() {}
-		virtual void OnUpdate(float dt) {}
-		virtual void OnRender() {}
-		virtual void OnEvent(Event& event) {}
+		virtual void OnAttach() = 0;
+		virtual void OnDetach() = 0;
+		virtual void OnUpdate(float dt) = 0;
+		virtual void OnRender() = 0;
+		virtual void OnEvent(Event& event) = 0;
 	};
 }

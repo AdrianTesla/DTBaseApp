@@ -2,6 +2,7 @@
 #include "Layer.h"
 #include "Window.h"
 #include "Renderer/RendererContext.h"
+#include "Renderer/Renderer.h"
 
 namespace DT
 {
@@ -24,6 +25,7 @@ namespace DT
 		void OnEvent(Event& event);
 
 		Window& GetWindow() { return *m_Window; }
+		float GetTime() const;
 
 		static Application& Get() { return *s_Instance; }
 	private:
@@ -39,7 +41,9 @@ namespace DT
 
 		ApplicationSpecification m_Specification;
 		inline static Application* s_Instance = nullptr;
-
+	private:
 		uint32 m_FrameCount = 0u;
+		uint32 m_TimeStepIndex = 0u;
+		std::array<float, 60u> m_TimeSteps{};
 	};
 }
