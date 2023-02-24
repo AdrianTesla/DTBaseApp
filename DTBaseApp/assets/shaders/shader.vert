@@ -4,7 +4,7 @@ layout (location = 0) in vec2 a_Position;
 layout (location = 1) in vec3 a_Color;
 layout (location = 2) in vec2 a_TexCoord;
 
-layout (location = 0) out vec3 v_FragColor;
+layout (location = 0) out vec3 v_VertexColor;
 layout (location = 1) out vec2 v_TexCoord;
 
 layout (set = 0, binding = 0) uniform UniformBuffer
@@ -31,6 +31,6 @@ void main()
 	position.x /= u_UniformBuffer.AspectRatio;
     gl_Position = vec4(position.x, position.y, 0.0, 1.0);
 
-    v_FragColor = a_Color;
+    v_VertexColor = a_Color;
     v_TexCoord = a_TexCoord;
 }

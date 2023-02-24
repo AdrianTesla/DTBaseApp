@@ -3,6 +3,7 @@
 #include "Core/Input.h"
 #include "Platform/PlatformUtils.h"
 #include "Platform/API_Vulkan/VulkanContext.h"
+#include <stb_image.h>
 
 namespace DT
 {
@@ -76,10 +77,10 @@ namespace DT
 		vertices[2].Position = { +s,+s };
 		vertices[3].Position = { +s,-s };
 
-		vertices[0].Color = { 1.0f,1.0f,1.0f };
-		vertices[1].Color = { 0.0f,0.0f,1.0f };
-		vertices[2].Color = { 0.0f,0.0f,0.0f };
-		vertices[3].Color = { 0.0f,1.0f,1.0f };
+		vertices[0].Color = { 0.5f,0.0f,0.0f };
+		vertices[1].Color = { 1.0f,0.5f,0.0f };
+		vertices[2].Color = { 1.0f,1.0f,0.0f };
+		vertices[3].Color = { 0.0f,0.0f,1.0f };
 
 		vertices[0].TexCoord = { 0.0f,0.0f };
 		vertices[1].TexCoord = { 0.0f,1.0f };
@@ -196,7 +197,7 @@ namespace DT
 		imageCreateInfo.flags				  = 0u;
 		imageCreateInfo.imageType			  = VK_IMAGE_TYPE_2D;
 		imageCreateInfo.format				  = VK_FORMAT_R8G8B8A8_UNORM;
-		imageCreateInfo.extent				  = { 16u,16u,1u };
+		imageCreateInfo.extent				  = { 64u,64u,1u };
 		imageCreateInfo.mipLevels			  = 1u;
 		imageCreateInfo.arrayLayers			  = 1u;
 		imageCreateInfo.samples				  = VK_SAMPLE_COUNT_1_BIT;
@@ -207,12 +208,10 @@ namespace DT
 		imageCreateInfo.pQueueFamilyIndices	  = nullptr;
 		imageCreateInfo.initialLayout		  = VK_IMAGE_LAYOUT_UNDEFINED;
 
-		VmaAllocationInfo allocationInfo;
-
 		VmaAllocationCreateInfo allocationCreateInfo{};
 		allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
 		allocationCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-		VK_CALL(vmaCreateImage(allocator, &imageCreateInfo, &allocationCreateInfo, &m_Image, &m_ImageAllocation, &allocationInfo));
+		VK_CALL(vmaCreateImage(allocator, &imageCreateInfo, &allocationCreateInfo, &m_Image, &m_ImageAllocation, &m_ImageAllocationInfo));
 
 		VkImageSubresource imageSubresource{};
 		imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -221,15 +220,17 @@ namespace DT
 		VkSubresourceLayout subresourceLayout;
 		vkGetImageSubresourceLayout(device, m_Image, &imageSubresource, &subresourceLayout);
 
-		m_ImageData = (Pixel*)allocationInfo.pMappedData;
+		m_ImageData = (Pixel*)m_ImageAllocationInfo.pMappedData;
 		m_ImageRowPitch = subresourceLayout.rowPitch;
 
-		LOG_INFO("Image size: {} bytes", subresourceLayout.size);
-		LOG_INFO("Image offset: {} bytes", subresourceLayout.offset);
-		LOG_INFO("Image row pitch: {} bytes", subresourceLayout.rowPitch);
-		LOG_INFO("Image depth pitch: {} bytes", subresourceLayout.depthPitch);
-		LOG_INFO("Image array pitch: {} bytes", subresourceLayout.arrayPitch);
+		int32 width, height, channels;
+		Pixel* tr3pixels = (Pixel*)stbi_load("assets/textures/3-12.bmp", &width, &height, &channels, STBI_rgb_alpha);
 
+		for (uint32 i = 0u; i < 4096u; i++)
+		{
+			m_ImageData[i] = tr3pixels[i];
+		}
+		
 		VkImageViewCreateInfo imageViewCreateInfo{};
 		imageViewCreateInfo.sType        = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		imageViewCreateInfo.pNext        = nullptr;
@@ -249,6 +250,8 @@ namespace DT
 		VK_CALL(vkCreateImageView(device, &imageViewCreateInfo, nullptr, &m_ImageView));
 
 		Vulkan::TransitionImageLayout(m_Image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	
+		stbi_image_free(tr3pixels);
 	}
 
 	void VulkanLearnLayer::CreateSampler()
@@ -259,12 +262,12 @@ namespace DT
 		samplerCreateInfo.sType					  = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 		samplerCreateInfo.pNext					  = nullptr;
 		samplerCreateInfo.flags					  = 0u;
-		samplerCreateInfo.magFilter				  = VK_FILTER_NEAREST;
-		samplerCreateInfo.minFilter				  = VK_FILTER_NEAREST;
+		samplerCreateInfo.magFilter				  = VK_FILTER_LINEAR;
+		samplerCreateInfo.minFilter				  = VK_FILTER_LINEAR;
 		samplerCreateInfo.mipmapMode			  = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-		samplerCreateInfo.addressModeU			  = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		samplerCreateInfo.addressModeV			  = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		samplerCreateInfo.addressModeW			  = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		samplerCreateInfo.addressModeU			  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerCreateInfo.addressModeV			  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerCreateInfo.addressModeW			  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerCreateInfo.mipLodBias			  = 0.0f;
 		samplerCreateInfo.anisotropyEnable		  = VK_FALSE;
 		samplerCreateInfo.maxAnisotropy			  = 1.0f;
@@ -272,7 +275,7 @@ namespace DT
 		samplerCreateInfo.compareOp				  = VK_COMPARE_OP_LESS;
 		samplerCreateInfo.minLod				  = 0.0f;
 		samplerCreateInfo.maxLod				  = 0.0f;
-		samplerCreateInfo.borderColor			  = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+		samplerCreateInfo.borderColor			  = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 		samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
 		VK_CALL(vkCreateSampler(device, &samplerCreateInfo, nullptr, &m_Sampler));
 
@@ -358,18 +361,6 @@ namespace DT
 
 	void VulkanLearnLayer::OnUpdate(float dt)
 	{
-		float time = Application::Get().GetTime();
-
-		Pixel* imageData = m_ImageData;
-		for (uint32 y = 0u; y < 16u; y++) 
-		{
-			for (uint32 x = 0u; x < 16u; x++) 
-			{
-				float r = 255.0f * (0.5f + 0.5f * std::sin(3 * time));
-				imageData[x] = Pixel{ uint8(r),uint8(y * 16u),uint8(x * 16u),255u};
-			}
-			imageData += m_ImageRowPitch / sizeof(Pixel);
-		}
 
 		// Supponiamo di avere un moto su traiettoria arbitraria in cui a(t) è esplicitamente nota.
 		// Supponiamo che la velocità iniziare sia v(0) = v0, e supponiamo che dopo un tempo T

@@ -2,6 +2,7 @@
 #include "Core/Layer.h"
 #include "Platform/API_Vulkan/VulkanPipeline.h"
 #include "Platform/API_Vulkan/VulkanBuffers.h"
+#include "Platform/API_Vulkan/VulkanImage.h"
 
 namespace DT
 {
@@ -48,6 +49,8 @@ namespace DT
 
 		VkImage m_Image = VK_NULL_HANDLE;
 		VmaAllocation m_ImageAllocation = VK_NULL_HANDLE;
+		VmaAllocationInfo m_ImageAllocationInfo{};
+
 		VkImageView m_ImageView = VK_NULL_HANDLE;
 		VkDescriptorImageInfo m_DescriptorImageInfo;
 		VkSampler m_Sampler = VK_NULL_HANDLE;
