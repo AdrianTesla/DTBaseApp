@@ -47,15 +47,10 @@ namespace DT
 		VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
 		InFlight<VkDescriptorSet> m_DescriptorSets;
 
-		VkImage m_Image = VK_NULL_HANDLE;
-		VmaAllocation m_ImageAllocation = VK_NULL_HANDLE;
-		VmaAllocationInfo m_ImageAllocationInfo{};
-
+		Ref<VulkanDynamicImage> m_Image;
 		VkImageView m_ImageView = VK_NULL_HANDLE;
+
 		VkDescriptorImageInfo m_DescriptorImageInfo;
 		VkSampler m_Sampler = VK_NULL_HANDLE;
-
-		Pixel* m_ImageData = nullptr;
-		uint32 m_ImageRowPitch = 0u;
 	};
 }

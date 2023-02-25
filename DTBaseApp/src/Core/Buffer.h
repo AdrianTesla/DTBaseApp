@@ -20,7 +20,7 @@ namespace DT
 			Allocate(size);
 		}
 
-		Buffer(uint64 size, void* data)
+		Buffer(void* data, uint64 size)
 			: Size(size), Data(data)
 		{}
 

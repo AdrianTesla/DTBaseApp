@@ -77,10 +77,10 @@ namespace DT
 		vertices[2].Position = { +s,+s };
 		vertices[3].Position = { +s,-s };
 
-		vertices[0].Color = { 0.5f,0.0f,0.0f };
-		vertices[1].Color = { 1.0f,0.5f,0.0f };
-		vertices[2].Color = { 1.0f,1.0f,0.0f };
-		vertices[3].Color = { 0.0f,0.0f,1.0f };
+		vertices[0].Color = { 1.0f,1.0f,1.0f };
+		vertices[1].Color = { 1.0f,1.0f,1.0f };
+		vertices[2].Color = { 1.0f,1.0f,1.0f };
+		vertices[3].Color = { 1.0f,1.0f,1.0f };
 
 		vertices[0].TexCoord = { 0.0f,0.0f };
 		vertices[1].TexCoord = { 0.0f,1.0f };
@@ -188,60 +188,29 @@ namespace DT
 
 	void VulkanLearnLayer::CreateImage()
 	{
-		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
-		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
-
-		VkImageCreateInfo imageCreateInfo{};
-		imageCreateInfo.sType				  = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		imageCreateInfo.pNext				  = nullptr;
-		imageCreateInfo.flags				  = 0u;
-		imageCreateInfo.imageType			  = VK_IMAGE_TYPE_2D;
-		imageCreateInfo.format				  = VK_FORMAT_R8G8B8A8_UNORM;
-		imageCreateInfo.extent				  = { 64u,64u,1u };
-		imageCreateInfo.mipLevels			  = 1u;
-		imageCreateInfo.arrayLayers			  = 1u;
-		imageCreateInfo.samples				  = VK_SAMPLE_COUNT_1_BIT;
-		imageCreateInfo.tiling				  = VK_IMAGE_TILING_LINEAR;
-		imageCreateInfo.usage				  = VK_IMAGE_USAGE_SAMPLED_BIT;
-		imageCreateInfo.sharingMode			  = VK_SHARING_MODE_EXCLUSIVE;
-		imageCreateInfo.queueFamilyIndexCount = 0u;
-		imageCreateInfo.pQueueFamilyIndices	  = nullptr;
-		imageCreateInfo.initialLayout		  = VK_IMAGE_LAYOUT_UNDEFINED;
-
-		VmaAllocationCreateInfo allocationCreateInfo{};
-		allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-		allocationCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-		VK_CALL(vmaCreateImage(allocator, &imageCreateInfo, &allocationCreateInfo, &m_Image, &m_ImageAllocation, &m_ImageAllocationInfo));
-
-		VkImageSubresource imageSubresource{};
-		imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		imageSubresource.mipLevel   = 0u;
-		imageSubresource.arrayLayer = 0u;
-		VkSubresourceLayout subresourceLayout;
-		vkGetImageSubresourceLayout(device, m_Image, &imageSubresource, &subresourceLayout);
-
-		m_ImageData = (Pixel*)m_ImageAllocationInfo.pMappedData;
-		m_ImageRowPitch = subresourceLayout.rowPitch;
-
-		int32 width, height, channels;
-		Pixel* tr3pixels = (Pixel*)stbi_load("assets/textures/3-12.bmp", &width, &height, &channels, STBI_rgb_alpha);
-
-		for (uint32 i = 0u; i < 4096u; i++)
-		{
-			m_ImageData[i] = tr3pixels[i];
-		}
+		int32 width = 0, height = 0;
+		uint8* imagePixels = (uint8*)stbi_load("assets/textures/tonyboss_3-16.png", &width, &height, nullptr, STBI_rgb_alpha);
 		
+		ImageSpecification specification{};
+		specification.Width = (uint32)width;
+		specification.Height = (uint32)height;
+		m_Image = Ref<VulkanDynamicImage>::Create(specification);
+		
+		Buffer pixels = Buffer(m_Image->GetBuffer(), m_Image->GetSize());
+		memcpy(pixels.Data, imagePixels, pixels.Size);
+
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 		VkImageViewCreateInfo imageViewCreateInfo{};
 		imageViewCreateInfo.sType        = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		imageViewCreateInfo.pNext        = nullptr;
 		imageViewCreateInfo.flags        = 0u;
-		imageViewCreateInfo.image        = m_Image;
+		imageViewCreateInfo.image        = m_Image->GetVulkanImage();
 		imageViewCreateInfo.viewType     = VK_IMAGE_VIEW_TYPE_2D;
-		imageViewCreateInfo.format       = imageCreateInfo.format;
-		imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_R;
-		imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_G;
-		imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_B;
-		imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_A;
+		imageViewCreateInfo.format       = VK_FORMAT_R8G8B8A8_UNORM;
+		imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 		imageViewCreateInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
 		imageViewCreateInfo.subresourceRange.baseMipLevel   = 0u;
 		imageViewCreateInfo.subresourceRange.levelCount     = 1u;
@@ -249,9 +218,8 @@ namespace DT
 		imageViewCreateInfo.subresourceRange.layerCount     = 1u;
 		VK_CALL(vkCreateImageView(device, &imageViewCreateInfo, nullptr, &m_ImageView));
 
-		Vulkan::TransitionImageLayout(m_Image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	
-		stbi_image_free(tr3pixels);
+		Vulkan::TransitionImageLayout(m_Image->GetVulkanImage(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		stbi_image_free(imagePixels);
 	}
 
 	void VulkanLearnLayer::CreateSampler()
@@ -262,12 +230,12 @@ namespace DT
 		samplerCreateInfo.sType					  = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 		samplerCreateInfo.pNext					  = nullptr;
 		samplerCreateInfo.flags					  = 0u;
-		samplerCreateInfo.magFilter				  = VK_FILTER_LINEAR;
-		samplerCreateInfo.minFilter				  = VK_FILTER_LINEAR;
+		samplerCreateInfo.magFilter				  = VK_FILTER_NEAREST;
+		samplerCreateInfo.minFilter				  = VK_FILTER_NEAREST;
 		samplerCreateInfo.mipmapMode			  = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-		samplerCreateInfo.addressModeU			  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerCreateInfo.addressModeV			  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerCreateInfo.addressModeW			  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerCreateInfo.addressModeU			  = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		samplerCreateInfo.addressModeV			  = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		samplerCreateInfo.addressModeW			  = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
 		samplerCreateInfo.mipLodBias			  = 0.0f;
 		samplerCreateInfo.anisotropyEnable		  = VK_FALSE;
 		samplerCreateInfo.maxAnisotropy			  = 1.0f;
@@ -317,8 +285,6 @@ namespace DT
 		VkRect2D scissor{};
 		scissor.offset = { 0u,0u };
 		scissor.extent = { (uint32)viewport.width,(uint32)viewport.height };
-
-		uint32 seconds = (uint32)Application::Get().GetTime();
 
 		VkDeviceSize offsets = 0u;
 
@@ -389,7 +355,6 @@ namespace DT
 
 		VK_CALL(vkDeviceWaitIdle(device));
 
-		vmaDestroyImage(allocator, m_Image, m_ImageAllocation);
 		vkDestroySampler(device, m_Sampler, nullptr);
 		vkDestroyImageView(device, m_ImageView, nullptr);
 		vkDestroyDescriptorPool(device, m_DescriptorPool, nullptr);

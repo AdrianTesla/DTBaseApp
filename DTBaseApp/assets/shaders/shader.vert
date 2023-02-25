@@ -18,8 +18,8 @@ layout (set = 0, binding = 0) uniform UniformBuffer
 void main() 
 {
     const float pi = 3.14159265358979;
-    const float frequency = 0.01;
-    float angle = 2.0 * pi * frequency * u_UniformBuffer.Time;
+    const float frequency = 0.001;
+    float angle = 0.0 * 2.0 * pi * frequency * u_UniformBuffer.Time;
     
     mat2 rotation = mat2(
         cos(angle), -sin(angle),
