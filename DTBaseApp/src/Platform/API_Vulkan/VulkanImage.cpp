@@ -4,6 +4,14 @@
 
 namespace DT
 {
+	namespace Utils
+	{
+		uint32 CalculateMipLevels(uint32 width, uint32 height, uint32 depth = 1u)
+		{
+			return 1u + (uint32)std::floorf(std::log2f((float)std::max({ width,height,depth })));
+		}
+	}
+
 	VulkanImage::VulkanImage(const ImageSpecification& specification)
 		: m_Specification(specification)
 	{
@@ -27,23 +35,28 @@ namespace DT
 		imageCreateInfo.pNext				  = nullptr;
 		imageCreateInfo.flags				  = 0u;
 		imageCreateInfo.imageType			  = VK_IMAGE_TYPE_2D;
-		imageCreateInfo.format				  = VK_FORMAT_R8G8B8A8_UNORM;
+		imageCreateInfo.format				  = Convert::ToVulkanFormat(m_Specification.Format);
 		imageCreateInfo.extent.width		  = m_Specification.Width;
 		imageCreateInfo.extent.height		  = m_Specification.Height;
 		imageCreateInfo.extent.depth		  = 1u;
-		imageCreateInfo.mipLevels			  = 1u;
-		imageCreateInfo.arrayLayers			  = 1u;
+		imageCreateInfo.mipLevels			  = m_Specification.MipLevels;
+		imageCreateInfo.arrayLayers			  = m_Specification.ArrayLayers;
 		imageCreateInfo.samples				  = VK_SAMPLE_COUNT_1_BIT;
-		imageCreateInfo.tiling				  = VK_IMAGE_TILING_LINEAR;
+		imageCreateInfo.tiling				  = (m_Specification.Dynamic ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL);
 		imageCreateInfo.usage				  = VK_IMAGE_USAGE_SAMPLED_BIT;
 		imageCreateInfo.sharingMode			  = VK_SHARING_MODE_EXCLUSIVE;
 		imageCreateInfo.queueFamilyIndexCount = 0u;
 		imageCreateInfo.pQueueFamilyIndices	  = nullptr;
 		imageCreateInfo.initialLayout		  = VK_IMAGE_LAYOUT_UNDEFINED;
 
+		if (!m_Specification.Dynamic)
+			imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
 		VmaAllocationCreateInfo allocationCreateInfo{};
 		allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-		allocationCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+		if (m_Specification.Dynamic) {
+			allocationCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+		}
 		VK_CALL(vmaCreateImage(allocator, &imageCreateInfo, &allocationCreateInfo, &m_Image, &m_ImageAllocation, &m_ImageAllocationInfo));
 	}
 
@@ -69,17 +82,13 @@ namespace DT
 
 	void VulkanTexture2D::Invalidate()
 	{
-		int32 width = 0, height = 0;
-		uint8* pixels = (uint8*)stbi_load(m_Specification.AssetPath.string().c_str(), &width, &height, nullptr, STBI_rgb_alpha);
+		Destroy();
 
-		ImageSpecification specification{};
-		specification.Width = (uint32)width;
-		specification.Height = (uint32)height;
-		m_Image = Ref<VulkanImage>::Create(specification);
+		CreateStagingBuffer();
 		
-		const VmaAllocationInfo& allocationInfo = m_Image->GetAllocationInfo();
-		memcpy(allocationInfo.pMappedData, pixels, allocationInfo.size);
-		stbi_image_free(pixels);
+		//const VmaAllocationInfo& allocationInfo = m_Image->GetAllocationInfo();
+		//memcpy(allocationInfo.pMappedData, pixels, allocationInfo.size);
+		//stbi_image_free(pixels);
 
 		CreateImageView();
 
@@ -92,11 +101,102 @@ namespace DT
 
 	void VulkanTexture2D::Destroy()
 	{
+		m_Image.Reset();
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 		vkDestroyImageView(device, m_ImageView, nullptr);
 		m_ImageView = VK_NULL_HANDLE;
 	}
 	
+	void VulkanTexture2D::CreateStagingBuffer()
+	{
+		// load the image file from disk
+		std::string pathString = m_Specification.AssetPath.string();
+		const char* filepath = pathString.c_str();
+
+		uint8* pixels = nullptr;
+		uint64 imageSize = 0u;
+		int32 width = 0, height = 0;
+		ImageFormat format = ImageFormat::None;
+
+		if (stbi_is_hdr(filepath)) {
+			pixels = (uint8*)stbi_loadf(filepath, &width, &height, nullptr, STBI_rgb_alpha);
+			imageSize = (uint64)(width * height * sizeof(float) * 4u);
+			format = ImageFormat::RGBA32F;
+		} else {
+			pixels = (uint8*)stbi_load(filepath, &width, &height, nullptr, STBI_rgb_alpha);
+			imageSize = (uint64)(width * height * sizeof(uint8) * 4u);
+			format = ImageFormat::RGBA8;
+		}
+
+		// create the device local VkImage
+		ImageSpecification specification{};
+		specification.Width = (uint32)width;
+		specification.Height = (uint32)height;
+		specification.MipLevels = Utils::CalculateMipLevels(specification.Width, specification.Height);
+		specification.Dynamic = false;
+		m_Image = Ref<VulkanImage>::Create(specification);
+
+		Vulkan::TransitionImageLayout(
+			m_Image->GetVulkanImage(),
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+		);
+
+		// upload the pixels to the staging buffer
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
+
+		VkBuffer stagingBuffer = VK_NULL_HANDLE;		   
+		VmaAllocation stagingAllocation = VK_NULL_HANDLE;  
+		VmaAllocationInfo stagingAllocationInfo{};		   
+
+		VmaAllocationCreateInfo stagingAllocationCreateInfo{};
+		stagingAllocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+		stagingAllocationCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+		Vulkan::CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingAllocationCreateInfo, &stagingBuffer, &stagingAllocation, &stagingAllocationInfo);
+		
+		ASSERT(stagingAllocationInfo.pMappedData != nullptr)
+		memcpy(stagingAllocationInfo.pMappedData, pixels, imageSize);
+
+		stbi_image_free(pixels);
+
+		// now transfer the staging buffer to the GPU
+		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
+
+		VkCommandBuffer commandBuffer = vulkanDevice.AllocateTransferCommandBuffer(true);
+		VkQueue transferQueue = vulkanDevice.GetTransferQueue();
+
+		VkCommandBufferBeginInfo commandBufferBeginInfo{};
+		commandBufferBeginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		commandBufferBeginInfo.pNext            = nullptr;
+		commandBufferBeginInfo.flags            = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		commandBufferBeginInfo.pInheritanceInfo = nullptr;
+		
+		VkBufferImageCopy copyRegion{};
+		copyRegion.bufferOffset                    = 0u;
+		copyRegion.bufferRowLength                 = (uint32)width;
+		copyRegion.bufferImageHeight               = (uint32)height;
+		copyRegion.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+		copyRegion.imageSubresource.mipLevel       = 0u;
+		copyRegion.imageSubresource.baseArrayLayer = 0u;
+		copyRegion.imageSubresource.layerCount     = 1u;
+		copyRegion.imageOffset                     = { 0u,0u,0u };
+		copyRegion.imageExtent.width               = (uint32)width;
+		copyRegion.imageExtent.height              = (uint32)height;
+		copyRegion.imageExtent.depth               = 1u;
+
+		VK_CALL(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
+		{
+			vkCmdCopyBufferToImage(commandBuffer, stagingBuffer, m_Image->GetVulkanImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &copyRegion);
+		}
+		VK_CALL(vkEndCommandBuffer(commandBuffer));
+
+		Vulkan::QueueSubmit(transferQueue, commandBuffer);
+		VK_CALL(vkQueueWaitIdle(transferQueue));
+
+		vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
+	}
+
 	void VulkanTexture2D::CreateImageView()
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
@@ -107,7 +207,7 @@ namespace DT
 		imageViewCreateInfo.flags        = 0u;
 		imageViewCreateInfo.image        = m_Image->GetVulkanImage();
 		imageViewCreateInfo.viewType     = VK_IMAGE_VIEW_TYPE_2D;
-		imageViewCreateInfo.format       = VK_FORMAT_R8G8B8A8_UNORM;
+		imageViewCreateInfo.format       = Convert::ToVulkanFormat(m_Image->GetSpecification().Format);
 		imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 		imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 		imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;

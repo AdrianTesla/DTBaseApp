@@ -2,6 +2,20 @@
 #include "VulkanContext.h"
 #include "VulkanDevice.h"
 
+namespace DT::Convert
+{
+	VkFormat ToVulkanFormat(ImageFormat format)
+	{
+		switch (format)
+		{
+			case ImageFormat::RGBA8:   return VK_FORMAT_R8G8B8A8_UNORM;
+			case ImageFormat::RGBA32F: return VK_FORMAT_R32G32B32A32_SFLOAT;
+		}
+		ASSERT(false);
+		return VK_FORMAT_UNDEFINED;
+	}
+}
+
 namespace DT::Vulkan
 {
 	void QueueSubmit(VkQueue queue, VkCommandBuffer commandBuffer, VkFence fence)
@@ -277,14 +291,7 @@ namespace DT::Vulkan
 		subresourceRange.baseMipLevel = 0u;
 		subresourceRange.levelCount   = 1u;
 		subresourceRange.layerCount   = 1u;
-
-		TransitionImageLayout(
-			commandBuffer,
-			image,
-			oldLayout,
-			newLayout,
-			subresourceRange
-		);
+		TransitionImageLayout(commandBuffer, image, oldLayout, newLayout, subresourceRange);
 
 		VK_CALL(vkEndCommandBuffer(commandBuffer));
 

@@ -46,6 +46,23 @@ namespace DT
 		T m_Instances[MAX_FRAMES_IN_FLIGHT];
 	};
 
+	enum class ImageUsage
+	{
+
+	};
+
+	enum class ImageFormat
+	{
+		None,
+		RGBA8,
+		RGBA32F
+	};
+
+	namespace Convert
+	{
+		VkFormat ToVulkanFormat(ImageFormat format);
+	}
+
 	namespace Vulkan
 	{
 		void QueueSubmit(VkQueue queue, VkCommandBuffer commandBuffer, VkFence fence = VK_NULL_HANDLE);

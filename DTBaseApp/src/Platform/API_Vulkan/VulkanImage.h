@@ -7,6 +7,11 @@ namespace DT
 	{
 		uint32 Width = 1u;
 		uint32 Height = 1u;
+		uint32 MipLevels = 1u;
+		uint32 ArrayLayers = 1u;
+		ImageFormat Format = ImageFormat::RGBA8;
+
+		bool Dynamic = false;
 	};
 
 	class VulkanImage : public RefCounted
@@ -20,6 +25,8 @@ namespace DT
 
 		const VmaAllocationInfo& GetAllocationInfo() const { return m_ImageAllocationInfo; }
 		VkImage GetVulkanImage() const { return m_Image; }
+
+		const ImageSpecification& GetSpecification() const { return m_Specification; }
 	private:
 		VkImage m_Image = VK_NULL_HANDLE;
 		VmaAllocation m_ImageAllocation = VK_NULL_HANDLE;
@@ -45,10 +52,11 @@ namespace DT
 		VkImageView GetVulkanImageView() const { return m_ImageView; }
 		Ref<VulkanImage> GetImage() const { return m_Image; }
 	private:
+		void CreateStagingBuffer();
 		void CreateImageView();
 	private:
 		Ref<VulkanImage> m_Image;
-		VkImageView m_ImageView;
+		VkImageView m_ImageView = VK_NULL_HANDLE;
 		TextureSpecification m_Specification;
 	};
 }
