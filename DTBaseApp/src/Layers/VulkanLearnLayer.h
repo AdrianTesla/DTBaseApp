@@ -47,8 +47,7 @@ namespace DT
 		VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
 		InFlight<VkDescriptorSet> m_DescriptorSets;
 
-		Ref<VulkanDynamicImage> m_Image;
-		VkImageView m_ImageView = VK_NULL_HANDLE;
+		Ref<VulkanTexture2D> m_Texture;
 
 		VkDescriptorImageInfo m_DescriptorImageInfo;
 		VkSampler m_Sampler = VK_NULL_HANDLE;

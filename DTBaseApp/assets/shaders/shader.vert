@@ -17,9 +17,10 @@ layout (set = 0, binding = 0) uniform UniformBuffer
 
 void main() 
 {
+    float time = u_UniformBuffer.Time;
     const float pi = 3.14159265358979;
-    const float frequency = 0.001;
-    float angle = 0.0 * 2.0 * pi * frequency * u_UniformBuffer.Time;
+    const float frequency = 0.01;
+    float angle = 0 * 2.0 * pi * frequency * u_UniformBuffer.Time;
     
     mat2 rotation = mat2(
         cos(angle), -sin(angle),
@@ -28,7 +29,7 @@ void main()
 
     vec2 position = rotation * a_Position;
 
-	position.x /= u_UniformBuffer.AspectRatio;
+	//position.x /= u_UniformBuffer.AspectRatio;
     gl_Position = vec4(position.x, position.y, 0.0, 1.0);
 
     v_VertexColor = a_Color;

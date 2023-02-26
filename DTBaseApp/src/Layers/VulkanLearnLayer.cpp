@@ -69,7 +69,7 @@ namespace DT
 			} TexCoord;
 		};
 
-		const float s = 1.0f / std::sqrtf(2.0f);
+		const float s = 1.0f / 1.0f;
 
 		Vertex vertices[4];
 		vertices[0].Position = { -s,-s };
@@ -188,38 +188,9 @@ namespace DT
 
 	void VulkanLearnLayer::CreateImage()
 	{
-		int32 width = 0, height = 0;
-		uint8* imagePixels = (uint8*)stbi_load("assets/textures/tonyboss_3-16.png", &width, &height, nullptr, STBI_rgb_alpha);
-		
-		ImageSpecification specification{};
-		specification.Width = (uint32)width;
-		specification.Height = (uint32)height;
-		m_Image = Ref<VulkanDynamicImage>::Create(specification);
-		
-		Buffer pixels = Buffer(m_Image->GetBuffer(), m_Image->GetSize());
-		memcpy(pixels.Data, imagePixels, pixels.Size);
-
-		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
-		VkImageViewCreateInfo imageViewCreateInfo{};
-		imageViewCreateInfo.sType        = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		imageViewCreateInfo.pNext        = nullptr;
-		imageViewCreateInfo.flags        = 0u;
-		imageViewCreateInfo.image        = m_Image->GetVulkanImage();
-		imageViewCreateInfo.viewType     = VK_IMAGE_VIEW_TYPE_2D;
-		imageViewCreateInfo.format       = VK_FORMAT_R8G8B8A8_UNORM;
-		imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-		imageViewCreateInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-		imageViewCreateInfo.subresourceRange.baseMipLevel   = 0u;
-		imageViewCreateInfo.subresourceRange.levelCount     = 1u;
-		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0u;
-		imageViewCreateInfo.subresourceRange.layerCount     = 1u;
-		VK_CALL(vkCreateImageView(device, &imageViewCreateInfo, nullptr, &m_ImageView));
-
-		Vulkan::TransitionImageLayout(m_Image->GetVulkanImage(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		stbi_image_free(imagePixels);
+		TextureSpecification specification{};
+		specification.AssetPath = "assets/textures/M_FloorTiles1_Inst_0_BaseColor.png";
+		m_Texture = Ref<VulkanTexture2D>::Create(specification);
 	}
 
 	void VulkanLearnLayer::CreateSampler()
@@ -230,12 +201,12 @@ namespace DT
 		samplerCreateInfo.sType					  = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 		samplerCreateInfo.pNext					  = nullptr;
 		samplerCreateInfo.flags					  = 0u;
-		samplerCreateInfo.magFilter				  = VK_FILTER_NEAREST;
-		samplerCreateInfo.minFilter				  = VK_FILTER_NEAREST;
+		samplerCreateInfo.magFilter				  = VK_FILTER_LINEAR;
+		samplerCreateInfo.minFilter				  = VK_FILTER_LINEAR;
 		samplerCreateInfo.mipmapMode			  = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-		samplerCreateInfo.addressModeU			  = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-		samplerCreateInfo.addressModeV			  = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-		samplerCreateInfo.addressModeW			  = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		samplerCreateInfo.addressModeU			  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerCreateInfo.addressModeV			  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerCreateInfo.addressModeW			  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerCreateInfo.mipLodBias			  = 0.0f;
 		samplerCreateInfo.anisotropyEnable		  = VK_FALSE;
 		samplerCreateInfo.maxAnisotropy			  = 1.0f;
@@ -248,7 +219,7 @@ namespace DT
 		VK_CALL(vkCreateSampler(device, &samplerCreateInfo, nullptr, &m_Sampler));
 
 		m_DescriptorImageInfo.sampler = m_Sampler;
-		m_DescriptorImageInfo.imageView = m_ImageView;
+		m_DescriptorImageInfo.imageView = m_Texture->GetVulkanImageView();
 		m_DescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
 	}
 
@@ -356,7 +327,6 @@ namespace DT
 		VK_CALL(vkDeviceWaitIdle(device));
 
 		vkDestroySampler(device, m_Sampler, nullptr);
-		vkDestroyImageView(device, m_ImageView, nullptr);
 		vkDestroyDescriptorPool(device, m_DescriptorPool, nullptr);
 	}
 }

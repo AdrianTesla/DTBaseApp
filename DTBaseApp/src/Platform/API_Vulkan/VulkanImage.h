@@ -18,35 +18,37 @@ namespace DT
 		void Invalidate();
 		void Destroy();
 
+		const VmaAllocationInfo& GetAllocationInfo() const { return m_ImageAllocationInfo; }
 		VkImage GetVulkanImage() const { return m_Image; }
 	private:
 		VkImage m_Image = VK_NULL_HANDLE;
 		VmaAllocation m_ImageAllocation = VK_NULL_HANDLE;
+		VmaAllocationInfo m_ImageAllocationInfo{};
 
 		ImageSpecification m_Specification;
 	};
 
-	class VulkanDynamicImage : public RefCounted
+	struct TextureSpecification
+	{
+		std::filesystem::path AssetPath;
+	};
+
+	class VulkanTexture2D : public RefCounted
 	{
 	public:
-		VulkanDynamicImage(const ImageSpecification& specification);
-		~VulkanDynamicImage();
+		VulkanTexture2D(const TextureSpecification& specification);
+		~VulkanTexture2D();
 
 		void Invalidate();
 		void Destroy();
 
-		uint32 GetWidth() const { return m_Specification.Width; }
-		uint32 GetHeight() const { return m_Specification.Height; }
-
-		void* GetBuffer() const { return m_AllocationInfo.pMappedData; }
-		uint64 GetSize() const { return m_AllocationInfo.size; }
-
-		VkImage& GetVulkanImage() { return m_Image; }
+		VkImageView GetVulkanImageView() const { return m_ImageView; }
+		Ref<VulkanImage> GetImage() const { return m_Image; }
 	private:
-		ImageSpecification m_Specification;
-		VkImage m_Image = VK_NULL_HANDLE;
-		VmaAllocation m_Allocation = VK_NULL_HANDLE;
-		VmaAllocationInfo m_AllocationInfo;
-		VkSubresourceLayout m_SubresourceLayout{};
+		void CreateImageView();
+	private:
+		Ref<VulkanImage> m_Image;
+		VkImageView m_ImageView;
+		TextureSpecification m_Specification;
 	};
 }
