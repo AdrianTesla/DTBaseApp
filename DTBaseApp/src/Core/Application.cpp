@@ -16,16 +16,19 @@ namespace DT
 		m_RendererContext = RendererContext::Create(m_Window);
 		m_RendererContext->Init();
 
+		Renderer::Init();
+
 		PushLayer(new VulkanLearnLayer);
 	}
 
 	Application::~Application()
 	{
-		for (Layer* layer : m_Layers)
-		{
+		for (Layer* layer : m_Layers) {
 			layer->OnDetach();
 			delete layer;
 		}
+
+		Renderer::Shutdown();
 	}
 
 	void Application::PushLayer(Layer* layer)
@@ -68,12 +71,12 @@ namespace DT
 
 	void Application::RenderPhase()
 	{
-		m_RendererContext->BeginFrame();
+		Renderer::BeginFrame();
 
 		for (Layer* layer : m_Layers)
 			layer->OnRender();
 
-		m_RendererContext->EndFrame();
+		Renderer::EndFrame();
 	}
 
 	void Application::OnEvent(Event& event)
@@ -104,6 +107,7 @@ namespace DT
 			switch (key.GetKeyCode())
 			{
 				case Key::Enter:
+				{
 					static bool windowed = false;
 					if (Input::KeyIsPressed(Key::LeftAlt))
 					{
@@ -113,7 +117,15 @@ namespace DT
 						else
 							Application::Get().GetWindow().ToWindowed();
 					}
-					break;
+				} break;
+				case Key::PadAdd:
+				{
+					if (!key.GetRepeatCount()) {
+						static bool vsync = false;
+						Renderer::SetVerticalSync(vsync);
+						vsync = !vsync;
+					}
+				} break;
 			}
 			return false;
 		});

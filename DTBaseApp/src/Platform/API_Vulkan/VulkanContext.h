@@ -17,9 +17,6 @@ namespace DT
 		virtual void Init() override;
 		virtual void OnWindowResize() override;
 
-		virtual void BeginFrame() override;
-		virtual void EndFrame() override;
-
 		static bool IsInstanceExtensionSupported(const char* extensionName);
 		static bool IsInstanceLayerSupported(const char* layerName);
 
@@ -38,10 +35,6 @@ namespace DT
 		static VulkanSwapchain& GetSwapchain() { return s_Context->m_Swapchain; }
 		
 		static VmaAllocator GetVulkanMemoryAllocator() { return s_Context->m_VulkanMemoryAllocator; }
-		static uint32 CurrentFrame() { return s_Context->m_CurrentFrame; }
-
-		static VkSemaphore& GetActiveRenderCompleteSemaphore() { return s_Context->m_RenderCompleteSemaphores[s_Context->m_CurrentFrame]; }
-		static VkFence& GetActivePreviousFrameFence() { return s_Context->m_PreviousFrameFinishedFences[s_Context->m_CurrentFrame]; }
 	private:
 		void CreateVulkanInstance();
 		void CreateWindowSurface();
@@ -49,7 +42,6 @@ namespace DT
 		void CreateMemoryAllocator();
 		void CreateLogicalDevice();
 		void CreateSwapchain();
-		void CreateSyncObjects();
 	private:
 		std::vector<const char*> BuildRequestedInstanceExtensions();
 		std::vector<const char*> BuildRequestedInstanceLayers();
@@ -66,13 +58,8 @@ namespace DT
 		
 		VulkanPhysicalDevice m_PhysicalDevice;
 		VulkanDevice m_Device;
-		VulkanSwapchain m_Swapchain;
-		bool m_AquireNextImageFailed = false;
-		
-		InFlight<VkFence> m_PreviousFrameFinishedFences{};
-		InFlight<VkSemaphore> m_RenderCompleteSemaphores{};
 
-		uint32 m_CurrentFrame = 0u;
+		VulkanSwapchain m_Swapchain;
 
 		std::vector<VkPhysicalDevice> m_AvailablePhysicalDevices;
 		std::vector<VkLayerProperties> m_AvailableInstanceLayers;

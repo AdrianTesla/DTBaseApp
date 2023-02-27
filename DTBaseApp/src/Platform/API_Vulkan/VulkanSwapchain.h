@@ -29,13 +29,14 @@ namespace DT
 	class VulkanSwapchain
 	{
 	public:
-		void Init(bool verticalSync = false);
+		void Init(bool verticalSyncEnabled = true);
 		void Shutdown();
 
 		void OnWindowResize();
 
 		bool AquireNextImage();
 		void Present(VkSemaphore waitSemaphore);
+		void SetVerticalSync(bool enabled);
 
 		uint32 GetImageCount() const { return m_ImageCount; }
 		uint32 GetCurrentImageIndex() const { return m_CurrentImageIndex; }
@@ -89,7 +90,8 @@ namespace DT
 
 		InFlight<VkSemaphore> m_ImageAvailableSemaphores;
 
-		bool m_VerticalSync;
+		bool m_OldVerticalSync = true;
+		bool m_VerticalSync = true;
 		bool m_LogCreation = true;
 		bool m_SurfaceResized = false;
 	};

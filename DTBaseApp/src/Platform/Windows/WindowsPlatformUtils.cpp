@@ -26,7 +26,7 @@ namespace DT
 		ofn.lpstrFilter  = filter;
 		ofn.nFilterIndex = 1u;
 		ofn.Flags        = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-		if (GetOpenFileNameA(&ofn) == TRUE)
+		if (GetOpenFileName(&ofn) == TRUE)
 			return ofn.lpstrFile;
 
 		return std::string();
@@ -48,7 +48,7 @@ namespace DT
 		ofn.nFilterIndex = 1u;
 		ofn.Flags        = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 		
-		if (GetSaveFileNameA(&ofn) == TRUE)
+		if (GetSaveFileName(&ofn) == TRUE)
 			return ofn.lpstrFile;
 
 		return std::string();

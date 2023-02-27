@@ -1,6 +1,7 @@
 #include "Vulkan.h"
 #include "VulkanContext.h"
 #include "VulkanDevice.h"
+#include "Platform/PlatformUtils.h"
 
 namespace DT::Convert
 {
@@ -49,52 +50,44 @@ namespace DT::Vulkan
 		VK_CALL(vmaCreateBuffer(allocator, &bufferCreateInfo, pAllocationCreateInfo, pBuffer, pAllocation, pAllocationInfo));
 	}
 
+	void CreateImage(uint32 width, uint32 height, VkFormat format, uint32 mipLevels, uint32 arrayLayers, VkImageTiling tiling, VkImageUsageFlags usage, VmaAllocationCreateInfo* pAllocationCreateInfo, VkImage* pImage, VmaAllocation* pAllocation, VmaAllocationInfo* pAllocationInfo)
+	{
+		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
+
+		VkImageCreateInfo imageCreateInfo{};
+		imageCreateInfo.sType				  = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageCreateInfo.pNext				  = nullptr;
+		imageCreateInfo.flags				  = 0u;
+		imageCreateInfo.imageType			  = VK_IMAGE_TYPE_2D;
+		imageCreateInfo.format				  = format;
+		imageCreateInfo.extent.width		  = width;
+		imageCreateInfo.extent.height		  = height;
+		imageCreateInfo.extent.depth		  = 1u;
+		imageCreateInfo.mipLevels			  = mipLevels;
+		imageCreateInfo.arrayLayers			  = arrayLayers;
+		imageCreateInfo.samples				  = VK_SAMPLE_COUNT_1_BIT;
+		imageCreateInfo.tiling				  = tiling;
+		imageCreateInfo.usage				  = usage;
+		imageCreateInfo.sharingMode			  = VK_SHARING_MODE_EXCLUSIVE;
+		imageCreateInfo.queueFamilyIndexCount = 0u;
+		imageCreateInfo.pQueueFamilyIndices	  = nullptr;
+		imageCreateInfo.initialLayout		  = VK_IMAGE_LAYOUT_UNDEFINED;
+		VK_CALL(vmaCreateImage(allocator, &imageCreateInfo, pAllocationCreateInfo, pImage, pAllocation, pAllocationInfo));
+	}
+
 	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 	{
 		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
 
-		VkDevice device = vulkanDevice.GetVulkanDevice();
-		VkCommandPool transferPool = vulkanDevice.GetTransferCommandPool(true);
-		VkQueue transferQueue = vulkanDevice.GetTransferQueue();
-
-		VkCommandBuffer copyCommandBuffer;
-		VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
-		commandBufferAllocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		commandBufferAllocateInfo.pNext              = nullptr;
-		commandBufferAllocateInfo.commandPool        = transferPool;
-		commandBufferAllocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		commandBufferAllocateInfo.commandBufferCount = 1u;
-		VK_CALL(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, &copyCommandBuffer));
-
-		VkCommandBufferBeginInfo commandBufferBeginInfo{};
-		commandBufferBeginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		commandBufferBeginInfo.pNext            = nullptr;
-		commandBufferBeginInfo.flags            = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-		commandBufferBeginInfo.pInheritanceInfo = nullptr;
+		VkCommandBuffer commandBuffer = vulkanDevice.BeginCommandBuffer(QueueType::Transfer);
 
 		VkBufferCopy bufferCopyRegion{};
 		bufferCopyRegion.srcOffset = 0u;
 		bufferCopyRegion.dstOffset = 0u; 
 		bufferCopyRegion.size      = size;
+		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1u, &bufferCopyRegion);
 
-		VK_CALL(vkBeginCommandBuffer(copyCommandBuffer, &commandBufferBeginInfo));
-		vkCmdCopyBuffer(copyCommandBuffer, srcBuffer, dstBuffer, 1u, &bufferCopyRegion);
-		VK_CALL(vkEndCommandBuffer(copyCommandBuffer));
-
-		VkSubmitInfo submitInfo{};
-		submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.pNext                = nullptr;
-		submitInfo.waitSemaphoreCount   = 0u;
-		submitInfo.pWaitSemaphores      = nullptr;
-		submitInfo.pWaitDstStageMask    = nullptr;
-		submitInfo.commandBufferCount   = 1u;
-		submitInfo.pCommandBuffers      = &copyCommandBuffer;
-		submitInfo.signalSemaphoreCount = 0u;
-		submitInfo.pSignalSemaphores    = nullptr;
-		VK_CALL(vkQueueSubmit(transferQueue, 1u, &submitInfo, VK_NULL_HANDLE));
-		VK_CALL(vkQueueWaitIdle(transferQueue));
-
-		vkFreeCommandBuffers(device, transferPool, 1u, &copyCommandBuffer);
+		vulkanDevice.EndCommandBuffer();
 	}
 
 	void CreateBufferStaging(const void* data, uint64 size, VkBufferUsageFlags usage, VkBuffer* pBuffer, VmaAllocation* pAllocation)
@@ -111,7 +104,8 @@ namespace DT::Vulkan
 		stagingAllocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
 		stagingAllocationCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 		CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingAllocationCreateInfo, &stagingBuffer, &stagingAllocation, &stagingAllocationInfo);
-		ASSERT(stagingAllocationInfo.pMappedData != nullptr)
+		
+		ASSERT(stagingAllocationInfo.pMappedData != nullptr);
 		memcpy(stagingAllocationInfo.pMappedData, data, size);
 
 		// create device local buffer
@@ -131,10 +125,9 @@ namespace DT::Vulkan
 			VkImageLayout newImageLayout,
 			VkImageSubresourceRange subresourceRange,
 			VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-			VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
-		)
+			VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT)
 	{
-		// Create an image barrier object
+		// create an image barrier object
 		VkImageMemoryBarrier imageMemoryBarrier{};
 		imageMemoryBarrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		imageMemoryBarrier.pNext               = nullptr;
@@ -202,11 +195,11 @@ namespace DT::Vulkan
 
 				imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 				break;
+
 			default:
 				break;
 		}
 
-		// put barrier inside setup command buffer
 		vkCmdPipelineBarrier(
 			commandBuffer,
 			srcStageMask,
@@ -225,8 +218,7 @@ namespace DT::Vulkan
 		VkImageLayout oldImageLayout,
 		VkImageLayout newImageLayout,
 		VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-		VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
-	)
+		VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT)
 	{
 		VkImageSubresourceRange subresourceRange = {};
 		subresourceRange.aspectMask   = aspectMask;
@@ -237,7 +229,7 @@ namespace DT::Vulkan
 	}
 		
 	static void InsertImageMemoryBarrier(
-		VkCommandBuffer cmdbuffer,
+		VkCommandBuffer commandBuffer,
 		VkImage image,
 		VkAccessFlags srcAccessMask,
 		VkAccessFlags dstAccessMask,
@@ -245,8 +237,7 @@ namespace DT::Vulkan
 		VkImageLayout newImageLayout,
 		VkPipelineStageFlags srcStageMask,
 		VkPipelineStageFlags dstStageMask,
-		VkImageSubresourceRange subresourceRange
-	)
+		VkImageSubresourceRange subresourceRange)
 	{
 		VkImageMemoryBarrier imageMemoryBarrier{};
 		imageMemoryBarrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -261,7 +252,7 @@ namespace DT::Vulkan
 		imageMemoryBarrier.subresourceRange    = subresourceRange;
 
 		vkCmdPipelineBarrier(
-			cmdbuffer,
+			commandBuffer,
 			srcStageMask,
 			dstStageMask,
 			0u,
@@ -275,27 +266,14 @@ namespace DT::Vulkan
 	{
 		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
 
-		// transition the image layout from undefined to general
-		VkCommandBuffer commandBuffer = vulkanDevice.AllocateTransferCommandBuffer();
-		
-		VkCommandBufferBeginInfo commandBufferBeginInfo{};
-		commandBufferBeginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		commandBufferBeginInfo.pNext            = nullptr;
-		commandBufferBeginInfo.flags            = 0u;
-		commandBufferBeginInfo.pInheritanceInfo = nullptr;
-		VK_CALL(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
-
-		// transition all faces and all mips from undefined to general
 		VkImageSubresourceRange subresourceRange = {};
 		subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
 		subresourceRange.baseMipLevel = 0u;
 		subresourceRange.levelCount   = 1u;
 		subresourceRange.layerCount   = 1u;
+
+		VkCommandBuffer commandBuffer = vulkanDevice.BeginCommandBuffer(QueueType::Compute);
 		TransitionImageLayout(commandBuffer, image, oldLayout, newLayout, subresourceRange);
-
-		VK_CALL(vkEndCommandBuffer(commandBuffer));
-
-		QueueSubmit(vulkanDevice.GetTransferQueue(), commandBuffer);
-		VK_CALL(vkQueueWaitIdle(vulkanDevice.GetTransferQueue()));
+		vulkanDevice.EndCommandBuffer();
 	}
 }

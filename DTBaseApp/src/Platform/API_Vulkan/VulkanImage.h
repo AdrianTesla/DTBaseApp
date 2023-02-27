@@ -26,11 +26,14 @@ namespace DT
 		const VmaAllocationInfo& GetAllocationInfo() const { return m_ImageAllocationInfo; }
 		VkImage GetVulkanImage() const { return m_Image; }
 
+		void TransitionImageLayout(VkImageLayout newLayout);
+
 		const ImageSpecification& GetSpecification() const { return m_Specification; }
 	private:
 		VkImage m_Image = VK_NULL_HANDLE;
 		VmaAllocation m_ImageAllocation = VK_NULL_HANDLE;
 		VmaAllocationInfo m_ImageAllocationInfo{};
+		VkImageLayout m_CurrentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 		ImageSpecification m_Specification;
 	};
@@ -52,7 +55,6 @@ namespace DT
 		VkImageView GetVulkanImageView() const { return m_ImageView; }
 		Ref<VulkanImage> GetImage() const { return m_Image; }
 	private:
-		void CreateStagingBuffer();
 		void CreateImageView();
 	private:
 		Ref<VulkanImage> m_Image;

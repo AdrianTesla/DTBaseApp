@@ -23,7 +23,7 @@ namespace DT
 		VK_CALL(vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &deviceExtensionCount, nullptr));
 		m_SupportDetails.Extensions.resize(deviceExtensionCount);
 		VK_CALL(vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &deviceExtensionCount, m_SupportDetails.Extensions.data()));
-
+		m_SupportDetails.Properties.deviceID;
 		uint32 queueFamilyPropertyCount;
 		vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyPropertyCount, nullptr);
 		m_SupportDetails.QueueFamilyProperties.resize(queueFamilyPropertyCount);
@@ -127,13 +127,71 @@ namespace DT
 	{
 		CreateDevice();
 		CreateCommandPools();
+		CreateSyncronizationObjects();
+	}
+
+	VkCommandBuffer VulkanDevice::BeginCommandBuffer(QueueType queueType, bool oneTimeSubmit)
+	{
+		ASSERT(m_ActiveCommandBuffer == VK_NULL_HANDLE);
+		ASSERT(m_ActiveCommandPool == VK_NULL_HANDLE);
+		ASSERT(m_ActiveQueue == VK_NULL_HANDLE);
+
+		m_ActiveQueue = GetQueue(queueType);
+		m_ActiveCommandPool = GetCommandPool(queueType, oneTimeSubmit);
+
+		VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
+		commandBufferAllocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		commandBufferAllocateInfo.pNext              = nullptr;
+		commandBufferAllocateInfo.commandPool        = m_ActiveCommandPool;
+		commandBufferAllocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		commandBufferAllocateInfo.commandBufferCount = 1u;
+		VK_CALL(vkAllocateCommandBuffers(m_Device, &commandBufferAllocateInfo, &m_ActiveCommandBuffer));
+		
+		VkCommandBufferBeginInfo commandBufferBeginInfo{};
+		commandBufferBeginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		commandBufferBeginInfo.pNext            = nullptr;
+		commandBufferBeginInfo.flags            = (oneTimeSubmit ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0u);
+		commandBufferBeginInfo.pInheritanceInfo = nullptr;
+		VK_CALL(vkBeginCommandBuffer(m_ActiveCommandBuffer, &commandBufferBeginInfo));
+
+		return m_ActiveCommandBuffer;
+	}
+
+	void VulkanDevice::EndCommandBuffer()
+	{
+		ASSERT(m_ActiveCommandBuffer);
+		ASSERT(m_ActiveCommandPool);
+		ASSERT(m_ActiveQueue);
+
+		VK_CALL(vkEndCommandBuffer(m_ActiveCommandBuffer));
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.pNext                = nullptr;
+		submitInfo.waitSemaphoreCount   = 0u;
+		submitInfo.pWaitSemaphores      = nullptr;
+		submitInfo.pWaitDstStageMask    = nullptr;
+		submitInfo.commandBufferCount   = 1u;
+		submitInfo.pCommandBuffers      = &m_ActiveCommandBuffer;
+		submitInfo.signalSemaphoreCount = 0u;
+		submitInfo.pSignalSemaphores    = nullptr;
+		VK_CALL(vkQueueSubmit(m_ActiveQueue, 1u, &submitInfo, m_WaitFence));
+		
+		VK_CALL(vkWaitForFences(m_Device, 1u, &m_WaitFence, VK_TRUE, UINT64_MAX));
+		VK_CALL(vkResetFences(m_Device, 1u, &m_WaitFence));
+
+		vkFreeCommandBuffers(m_Device, m_ActiveCommandPool, 1u, &m_ActiveCommandBuffer);
+
+		m_ActiveCommandBuffer = VK_NULL_HANDLE;
+		m_ActiveCommandPool = VK_NULL_HANDLE;
+		m_ActiveQueue = VK_NULL_HANDLE;
 	}
 
 	void VulkanDevice::CreateDevice()
 	{
 		VulkanPhysicalDevice& physicalDevice = VulkanContext::GetCurrentPhysicalDevice();
-
 		const QueueFamilyIndices& queueFamilyIndices = physicalDevice.GetQueueFamilyIndices();
+		
 		std::set<uint32> uniqueQueueIndices = {
 			queueFamilyIndices.GraphicsIndex.value(),
 			queueFamilyIndices.TransferIndex.value(),
@@ -211,38 +269,57 @@ namespace DT
 		VK_CALL(vkCreateCommandPool(m_Device, &commandPoolCreateInfo, nullptr, &m_StagingComputeCommandPool));
 	}
 
-	VkCommandBuffer VulkanDevice::AllocateCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel commandBufferLevel)
+	void VulkanDevice::CreateSyncronizationObjects()
 	{
-		VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
-		commandBufferAllocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		commandBufferAllocateInfo.pNext              = nullptr;
-		commandBufferAllocateInfo.commandPool        = commandPool;
-		commandBufferAllocateInfo.level              = commandBufferLevel;
-		commandBufferAllocateInfo.commandBufferCount = 1u;
-
-		VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-		VK_CALL(vkAllocateCommandBuffers(m_Device, &commandBufferAllocateInfo, &commandBuffer));
-
-		return commandBuffer;	
+		VkFenceCreateInfo fenceCreateInfo{};
+		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceCreateInfo.pNext = nullptr;
+		fenceCreateInfo.flags = 0u;
+		VK_CALL(vkCreateFence(m_Device, &fenceCreateInfo, nullptr, &m_WaitFence));
 	}
 
-	VkCommandBuffer VulkanDevice::AllocateGraphicsCommandBuffer(bool useStagingPool, VkCommandBufferLevel commandBufferLevel)
+	VkQueue VulkanDevice::GetQueue(QueueType queueType)
 	{
-		return AllocateCommandBuffer(useStagingPool ? m_StagingGraphicsCommandPool : m_GraphicsCommandPool, commandBufferLevel);
+		switch (queueType)
+		{
+			case QueueType::Graphics: return m_GraphicsQueue;
+			case QueueType::Transfer: return m_TransferQueue;
+			case QueueType::Compute:  return m_ComputeQueue;
+			case QueueType::Present:  return m_PresentQueue;
+		}
+		ASSERT(false);
+		return m_GraphicsQueue;
 	}
 
-	VkCommandBuffer VulkanDevice::AllocateTransferCommandBuffer(bool useStagingPool, VkCommandBufferLevel commandBufferLevel)
+	VkCommandPool VulkanDevice::GetCommandPool(QueueType queueType, bool stagingPool)
 	{
-		return AllocateCommandBuffer(useStagingPool ? m_StagingTransferCommandPool : m_TransferCommandPool, commandBufferLevel);
+		switch (queueType)
+		{
+			case QueueType::Graphics: return (stagingPool ? m_StagingGraphicsCommandPool : m_GraphicsCommandPool);
+			case QueueType::Transfer: return (stagingPool ? m_StagingTransferCommandPool : m_TransferCommandPool);
+			case QueueType::Compute:  return (stagingPool ? m_StagingComputeCommandPool : m_ComputeCommandPool);
+		}
+		ASSERT(false);
+		return m_GraphicsCommandPool;
 	}
 
-	VkCommandBuffer VulkanDevice::AllocateComputeCommandBuffer(bool useStagingPool, VkCommandBufferLevel commandBufferLevel)
-	{
-		return AllocateCommandBuffer(useStagingPool ? m_StagingComputeCommandPool : m_ComputeCommandPool, commandBufferLevel);
-	}
+	//VkCommandBuffer VulkanDevice::AllocateCommandBuffer(QueueType queueType, bool stagingPool, VkCommandBufferLevel level)
+	//{
+	//	VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+	//	VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
+	//	commandBufferAllocateInfo.sType				 = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	//	commandBufferAllocateInfo.pNext				 = nullptr;
+	//	commandBufferAllocateInfo.commandPool		 = GetCommandPool(queueType, stagingPool);
+	//	commandBufferAllocateInfo.level				 = level;
+	//	commandBufferAllocateInfo.commandBufferCount = 1u;
+	//	VK_CALL(vkAllocateCommandBuffers(m_Device, &commandBufferAllocateInfo, &commandBuffer));
+
+	//	return commandBuffer;
+	//}
 
 	void VulkanDevice::Shutdown()
 	{
+		vkDestroyFence(m_Device, m_WaitFence, nullptr);
 		vkDestroyCommandPool(m_Device, m_GraphicsCommandPool, nullptr);
 		vkDestroyCommandPool(m_Device, m_TransferCommandPool, nullptr);
 		vkDestroyCommandPool(m_Device, m_ComputeCommandPool, nullptr);
@@ -251,6 +328,7 @@ namespace DT
 		vkDestroyCommandPool(m_Device, m_StagingComputeCommandPool, nullptr);
 		vkDestroyDevice(m_Device, nullptr);
 
+		m_WaitFence = VK_NULL_HANDLE;
 		m_GraphicsCommandPool = VK_NULL_HANDLE;
 		m_TransferCommandPool = VK_NULL_HANDLE;
 		m_ComputeCommandPool = VK_NULL_HANDLE;

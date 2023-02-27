@@ -4,6 +4,14 @@
 
 namespace DT
 {
+	enum class QueueType
+	{
+		Graphics,
+		Transfer,
+		Compute,
+		Present
+	};
+
 	struct QueueFamilyIndices
 	{
 		std::optional<uint32> GraphicsIndex;
@@ -49,23 +57,18 @@ namespace DT
 		void Shutdown();
 
 		VkDevice GetVulkanDevice() const { return m_Device; }
-		
-		VkCommandBuffer AllocateCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel commandBufferLevel);
-		VkCommandBuffer AllocateGraphicsCommandBuffer(bool useStagingPool = false, VkCommandBufferLevel commandBufferLevel = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-		VkCommandBuffer AllocateTransferCommandBuffer(bool useStagingPool = false, VkCommandBufferLevel commandBufferLevel = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-		VkCommandBuffer AllocateComputeCommandBuffer(bool useStagingPool = false, VkCommandBufferLevel commandBufferLevel = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-		VkCommandPool GetGraphicsCommandPool(bool stagingPool = false) const { return stagingPool ? m_StagingGraphicsCommandPool : m_GraphicsCommandPool; }
-		VkCommandPool GetTransferCommandPool(bool stagingPool = false) const { return stagingPool ? m_StagingTransferCommandPool : m_TransferCommandPool; }
-		VkCommandPool GetComputeCommandPool(bool stagingPool = false) const { return stagingPool ? m_StagingComputeCommandPool : m_ComputeCommandPool; }
+		VkQueue GetQueue(QueueType queueType);
+		VkCommandPool GetCommandPool(QueueType queueType, bool stagingPool = false);
 
-		VkQueue GetGraphicsQueue() const { return m_GraphicsQueue; }
-		VkQueue GetTransferQueue() const { return m_TransferQueue; }
-		VkQueue GetComputeQueue() const { return m_ComputeQueue; }
-		VkQueue GetPresentQueue() const { return m_PresentQueue; }
+		//VkCommandBuffer AllocateCommandBuffer(QueueType queueType, bool stagingPool = false, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+
+		VkCommandBuffer BeginCommandBuffer(QueueType queueType, bool oneTimeSubmit = true);
+		void EndCommandBuffer();
 	private:
 		void CreateDevice();
 		void CreateCommandPools();
+		void CreateSyncronizationObjects();
 	private:
 		std::vector<const char*> BuildRequestedDeviceExtensions();
 		void BuildEnabledFeatures(VkPhysicalDeviceFeatures* features);
@@ -84,5 +87,11 @@ namespace DT
 		VkCommandPool m_StagingGraphicsCommandPool = VK_NULL_HANDLE;
 		VkCommandPool m_StagingTransferCommandPool = VK_NULL_HANDLE;
 		VkCommandPool m_StagingComputeCommandPool = VK_NULL_HANDLE;
+
+		VkFence m_WaitFence = VK_NULL_HANDLE;
+
+		VkQueue m_ActiveQueue = VK_NULL_HANDLE;
+		VkCommandBuffer m_ActiveCommandBuffer = VK_NULL_HANDLE;
+		VkCommandPool m_ActiveCommandPool = VK_NULL_HANDLE;
 	};
 }

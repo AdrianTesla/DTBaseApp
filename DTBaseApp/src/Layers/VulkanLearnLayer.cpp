@@ -41,7 +41,7 @@ namespace DT
 		VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
 		commandBufferAllocateInfo.sType				 = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		commandBufferAllocateInfo.pNext				 = nullptr;
-		commandBufferAllocateInfo.commandPool		 = vulkanDevice.GetGraphicsCommandPool();
+		commandBufferAllocateInfo.commandPool		 = vulkanDevice.GetCommandPool(QueueType::Graphics);
 		commandBufferAllocateInfo.level				 = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		commandBufferAllocateInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 		VK_CALL(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, m_GraphicsCommandBuffers.Data()));
@@ -279,7 +279,7 @@ namespace DT
 		VulkanSwapchain& swapchain = VulkanContext::GetSwapchain();
 		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
 		VkDevice device = vulkanDevice.GetVulkanDevice();
-		VkQueue graphicsQueue = vulkanDevice.GetGraphicsQueue();
+		VkQueue graphicsQueue = vulkanDevice.GetQueue(QueueType::Graphics);
 
 		VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
@@ -292,8 +292,8 @@ namespace DT
 		submitInfo.commandBufferCount   = 1u;
 		submitInfo.pCommandBuffers      = &commandBuffer;
 		submitInfo.signalSemaphoreCount = 1u;
-		submitInfo.pSignalSemaphores    = &VulkanContext::GetActiveRenderCompleteSemaphore();
-		VK_CALL(vkQueueSubmit(graphicsQueue, 1u, &submitInfo, VulkanContext::GetActivePreviousFrameFence()));
+		submitInfo.pSignalSemaphores    = &Renderer::GetActiveRenderCompleteSemaphore();
+		VK_CALL(vkQueueSubmit(graphicsQueue, 1u, &submitInfo, Renderer::GetActivePreviousFrameFence()));
 	}
 
 	void VulkanLearnLayer::OnUpdate(float dt)
@@ -328,5 +328,8 @@ namespace DT
 
 		vkDestroySampler(device, m_Sampler, nullptr);
 		vkDestroyDescriptorPool(device, m_DescriptorPool, nullptr);
+
+		m_Sampler = VK_NULL_HANDLE;		
+		m_DescriptorPool = VK_NULL_HANDLE;
 	}
 }

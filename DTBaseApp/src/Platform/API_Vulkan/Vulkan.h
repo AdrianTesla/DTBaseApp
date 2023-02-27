@@ -46,11 +46,6 @@ namespace DT
 		T m_Instances[MAX_FRAMES_IN_FLIGHT];
 	};
 
-	enum class ImageUsage
-	{
-
-	};
-
 	enum class ImageFormat
 	{
 		None,
@@ -67,6 +62,7 @@ namespace DT
 	{
 		void QueueSubmit(VkQueue queue, VkCommandBuffer commandBuffer, VkFence fence = VK_NULL_HANDLE);
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateInfo* pAllocationCreateInfo, VkBuffer* pBuffer, VmaAllocation* pAllocation, VmaAllocationInfo* pAllocationInfo = nullptr);
+		void CreateImage(uint32 width, uint32 height, VkFormat format, uint32 mipLevels, uint32 arrayLayers, VkImageTiling tiling, VkImageUsageFlags usage, VmaAllocationCreateInfo* pAllocationCreateInfo, VkImage* pImage, VmaAllocation* pAllocation, VmaAllocationInfo* pAllocationInfo = nullptr);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		void CreateBufferStaging(const void* data, uint64 size, VkBufferUsageFlags usage, VkBuffer* pBuffer, VmaAllocation* pAllocation);
 		void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);

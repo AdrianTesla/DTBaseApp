@@ -1,13 +1,16 @@
 #include "VulkanSwapchain.h"
 #include <GLFW/glfw3.h>
 #include "VulkanContext.h"
+#include "Renderer/Renderer.h"
 
 namespace DT
 {
-	void VulkanSwapchain::Init(bool verticalSync)
+	void VulkanSwapchain::Init(bool verticalSyncEnabled)
 	{
-		m_VerticalSync = verticalSync;
-		m_PresentQueue = VulkanContext::GetCurrentDevice().GetPresentQueue();
+		m_VerticalSync = verticalSyncEnabled;
+		m_OldVerticalSync = m_VerticalSync;
+
+		m_PresentQueue = VulkanContext::GetCurrentDevice().GetQueue(QueueType::Present);
 
 		GetSupportDetails();
 		SelectSurfaceFormat();
@@ -31,6 +34,8 @@ namespace DT
 
 	void VulkanSwapchain::RecreateSwapchain()
 	{
+		m_OldVerticalSync = m_VerticalSync;
+
 		Timer timer;
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 
@@ -463,7 +468,7 @@ namespace DT
 			device,
 			m_Swapchain, 
 			UINT64_MAX, 
-			m_ImageAvailableSemaphores[VulkanContext::CurrentFrame()],
+			m_ImageAvailableSemaphores[Renderer::CurrentFrame()],
 			VK_NULL_HANDLE, 
 			&m_CurrentImageIndex
 		);
@@ -493,29 +498,33 @@ namespace DT
 		presentInfo.pResults           = nullptr;
 		
 		VkResult presentResult = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
-		if (presentResult != VK_SUCCESS)
+		if ((presentResult != VK_SUCCESS) || (m_VerticalSync != m_OldVerticalSync))
 		{
-			if (m_SurfaceResized || (presentResult == VK_ERROR_OUT_OF_DATE_KHR) || (presentResult == VK_SUBOPTIMAL_KHR)) {
+			if (m_SurfaceResized || (presentResult == VK_ERROR_OUT_OF_DATE_KHR) || (presentResult == VK_SUBOPTIMAL_KHR) || (m_VerticalSync != m_OldVerticalSync)) {
 				RecreateSwapchain();
 				m_SurfaceResized = false;
-			}
-			else
+			} else {
 				VK_CALL(presentResult);
+			}
 		}
+	}
+
+	void VulkanSwapchain::SetVerticalSync(bool enabled)
+	{
+		m_OldVerticalSync = m_VerticalSync;
+		m_VerticalSync = enabled;
 	}
 
 	void VulkanSwapchain::Shutdown()
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 
-		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
-		{
+		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			vkDestroySemaphore(device, m_ImageAvailableSemaphores[i], nullptr);
 			m_ImageAvailableSemaphores[i] = VK_NULL_HANDLE;
 		}
 		
-		for (uint32 i = 0u; i < m_ImageCount; i++)
-		{
+		for (uint32 i = 0u; i < m_ImageCount; i++) {
 			vkDestroyImageView(device, m_SwapchainImageViews[i], nullptr);
 			vkDestroyFramebuffer(device, m_SwapchainFramebuffers[i], nullptr);
 			m_SwapchainImageViews[i] = VK_NULL_HANDLE;
