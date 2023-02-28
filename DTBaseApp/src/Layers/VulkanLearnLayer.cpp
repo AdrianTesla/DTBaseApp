@@ -168,6 +168,11 @@ namespace DT
 
 		// combined image sampler
 		{
+			VkDescriptorImageInfo descriptorImageInfo{};
+			descriptorImageInfo.sampler		= m_Sampler;
+			descriptorImageInfo.imageView	= m_Texture->GetVulkanImageView();
+			descriptorImageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
 			VkWriteDescriptorSet writeDescriptorSets[MAX_FRAMES_IN_FLIGHT];
 			for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
 			{
@@ -178,7 +183,7 @@ namespace DT
 				writeDescriptorSets[i].dstArrayElement  = 0u;
 				writeDescriptorSets[i].descriptorCount  = 1u;
 				writeDescriptorSets[i].descriptorType   = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-				writeDescriptorSets[i].pImageInfo       = &m_DescriptorImageInfo;
+				writeDescriptorSets[i].pImageInfo       = &descriptorImageInfo;
 				writeDescriptorSets[i].pBufferInfo      = nullptr;
 				writeDescriptorSets[i].pTexelBufferView = nullptr;
 			}
@@ -190,7 +195,20 @@ namespace DT
 	{
 		TextureSpecification specification{};
 		specification.AssetPath = "assets/textures/M_FloorTiles1_Inst_0_BaseColor.png";
+		specification.Dynamic = true;
 		m_Texture = Ref<VulkanTexture2D>::Create(specification);
+
+		void* imageBuffer = m_Texture->GetImage()->GetAllocationInfo().pMappedData;
+		
+		uint32 width = m_Texture->GetWidth();
+		uint32 height = m_Texture->GetHeight();
+
+		#define MAKE_RGBA(r, g, b) uint32((r) | ((g) << 8) | ((b) << 16) | (0xFF << 24))
+		for (uint32 y = 0u; y < width; y++) {
+			for (uint32 x = 0u; x < height; x++) {
+				((uint32*)imageBuffer)[x + y * width] = MAKE_RGBA(0, 255, 0);
+			}
+		}
 	}
 
 	void VulkanLearnLayer::CreateSampler()
@@ -203,7 +221,7 @@ namespace DT
 		samplerCreateInfo.flags					  = 0u;
 		samplerCreateInfo.magFilter				  = VK_FILTER_LINEAR;
 		samplerCreateInfo.minFilter				  = VK_FILTER_LINEAR;
-		samplerCreateInfo.mipmapMode			  = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+		samplerCreateInfo.mipmapMode			  = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 		samplerCreateInfo.addressModeU			  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerCreateInfo.addressModeV			  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerCreateInfo.addressModeW			  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -211,16 +229,12 @@ namespace DT
 		samplerCreateInfo.anisotropyEnable		  = VK_FALSE;
 		samplerCreateInfo.maxAnisotropy			  = 1.0f;
 		samplerCreateInfo.compareEnable			  = VK_FALSE;
-		samplerCreateInfo.compareOp				  = VK_COMPARE_OP_LESS;
+		samplerCreateInfo.compareOp				  = VK_COMPARE_OP_NEVER;
 		samplerCreateInfo.minLod				  = 0.0f;
 		samplerCreateInfo.maxLod				  = 0.0f;
-		samplerCreateInfo.borderColor			  = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+		samplerCreateInfo.borderColor			  = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
 		samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
 		VK_CALL(vkCreateSampler(device, &samplerCreateInfo, nullptr, &m_Sampler));
-
-		m_DescriptorImageInfo.sampler = m_Sampler;
-		m_DescriptorImageInfo.imageView = m_Texture->GetVulkanImageView();
-		m_DescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
 	}
 
 	void VulkanLearnLayer::RecordCommandBuffer(VkCommandBuffer commandBuffer)
@@ -298,14 +312,6 @@ namespace DT
 
 	void VulkanLearnLayer::OnUpdate(float dt)
 	{
-
-		// Supponiamo di avere un moto su traiettoria arbitraria in cui a(t) è esplicitamente nota.
-		// Supponiamo che la velocità iniziare sia v(0) = v0, e supponiamo che dopo un tempo T
-		// la velocità scende a v(T) = 0 avendo percorso uno spazio D.
-		// Dimostrare che D = integrale da 0 a T di ta(t) dt
-
-		// D = int da 0 a T v(t) dt = 
-		// = - int da 0 a T t a(t) dt
 	}
 
 	void VulkanLearnLayer::OnRender()

@@ -39,7 +39,7 @@ namespace DT
 		imageCreateInfo.extent.width		  = m_Specification.Width;
 		imageCreateInfo.extent.height		  = m_Specification.Height;
 		imageCreateInfo.extent.depth		  = 1u;
-		imageCreateInfo.mipLevels			  = m_Specification.MipLevels;
+		imageCreateInfo.mipLevels			  = m_Specification.Dynamic ? 1u : m_Specification.MipLevels;
 		imageCreateInfo.arrayLayers			  = m_Specification.ArrayLayers;
 		imageCreateInfo.samples				  = VK_SAMPLE_COUNT_1_BIT;
 		imageCreateInfo.tiling				  = (m_Specification.Dynamic ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL);
@@ -116,51 +116,62 @@ namespace DT
 		ImageSpecification specification{};
 		specification.Width = (uint32)width;
 		specification.Height = (uint32)height;
+		specification.Dynamic = m_Specification.Dynamic;
 		specification.MipLevels = Utils::CalculateMipLevels(specification.Width, specification.Height);
 		m_Image = Ref<VulkanImage>::Create(specification);
-		m_Image->TransitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-		// upload the pixels to the staging buffer
-		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
-		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
-
-		VkBuffer stagingBuffer = VK_NULL_HANDLE;		   
-		VmaAllocation stagingAllocation = VK_NULL_HANDLE;  
-		VmaAllocationInfo stagingAllocationInfo{};		   
-
-		VmaAllocationCreateInfo stagingAllocationCreateInfo{};
-		stagingAllocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-		stagingAllocationCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-		Vulkan::CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingAllocationCreateInfo, &stagingBuffer, &stagingAllocation, &stagingAllocationInfo);
-		
-		ASSERT(stagingAllocationInfo.pMappedData != nullptr)
-		memcpy(stagingAllocationInfo.pMappedData, pixels, imageSize);
-
-		stbi_image_free(pixels);
-
-		// now transfer the staging buffer to the GPU
-		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
-
-		VkBufferImageCopy copyRegion{};
-		copyRegion.bufferOffset                    = 0u;
-		copyRegion.bufferRowLength                 = 0u;
-		copyRegion.bufferImageHeight               = 0u;
-		copyRegion.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-		copyRegion.imageSubresource.mipLevel       = 0u;
-		copyRegion.imageSubresource.baseArrayLayer = 0u;
-		copyRegion.imageSubresource.layerCount     = 1u;
-		copyRegion.imageOffset                     = { 0u,0u,0u };
-		copyRegion.imageExtent.width               = (uint32)width;
-		copyRegion.imageExtent.height              = (uint32)height;
-		copyRegion.imageExtent.depth               = 1u;
-
-		VkCommandBuffer commandBuffer = vulkanDevice.BeginCommandBuffer(QueueType::Transfer);
+		if (m_Specification.Dynamic)
 		{
-		    vkCmdCopyBufferToImage(commandBuffer, stagingBuffer, m_Image->GetVulkanImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &copyRegion);
+			void* mappedMemory = m_Image->GetAllocationInfo().pMappedData;
+			ASSERT(mappedMemory != nullptr)
+			memcpy(mappedMemory, pixels, imageSize);
 		}
-		vulkanDevice.EndCommandBuffer();
+		else
+		{
+			m_Image->TransitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-		vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
+			// upload the pixels to the staging buffer
+			VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+			VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
+
+			VkBuffer stagingBuffer = VK_NULL_HANDLE;		   
+			VmaAllocation stagingAllocation = VK_NULL_HANDLE;  
+			VmaAllocationInfo stagingAllocationInfo{};		   
+
+			VmaAllocationCreateInfo stagingAllocationCreateInfo{};
+			stagingAllocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+			stagingAllocationCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+			Vulkan::CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingAllocationCreateInfo, &stagingBuffer, &stagingAllocation, &stagingAllocationInfo);
+		
+			ASSERT(stagingAllocationInfo.pMappedData != nullptr)
+			memcpy(stagingAllocationInfo.pMappedData, pixels, imageSize);
+
+			stbi_image_free(pixels);
+
+			// now transfer the staging buffer to the GPU
+			VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
+
+			VkBufferImageCopy copyRegion{};
+			copyRegion.bufferOffset                    = 0u;
+			copyRegion.bufferRowLength                 = 0u;
+			copyRegion.bufferImageHeight               = 0u;
+			copyRegion.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+			copyRegion.imageSubresource.mipLevel       = 0u;
+			copyRegion.imageSubresource.baseArrayLayer = 0u;
+			copyRegion.imageSubresource.layerCount     = 1u;
+			copyRegion.imageOffset                     = { 0u,0u,0u };
+			copyRegion.imageExtent.width               = (uint32)width;
+			copyRegion.imageExtent.height              = (uint32)height;
+			copyRegion.imageExtent.depth               = 1u;
+
+			VkCommandBuffer commandBuffer = vulkanDevice.BeginCommandBuffer(QueueType::Transfer);
+			{
+				vkCmdCopyBufferToImage(commandBuffer, stagingBuffer, m_Image->GetVulkanImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &copyRegion);
+			}
+			vulkanDevice.EndCommandBuffer();
+
+			vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
+		}
 		m_Image->TransitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		CreateImageView();
 	}

@@ -33,8 +33,8 @@ void main()
     float xDeviation = sin(40 * r.y + 10.0 * time);
     float yDeviation = sin(40 * r.x + 10.0 * time);
 
-    texCoord.x += 0.01 * xDeviation;
-    texCoord.y += 0.01 * yDeviation;
+    texCoord.x += 0.002 * xDeviation;
+    texCoord.y += 0.002 * yDeviation;
 
     float cx = 1.0 - pow(abs(sin(10 * r.x) + sin(10 * r.y) - xDeviation), 0.3);
     float cy = 1.0 - pow(abs(sin(10 * r.x) + sin(10 * r.y) - yDeviation), 0.3);

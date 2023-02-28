@@ -40,7 +40,7 @@ namespace DT
 	void Application::Run()
 	{
 		Timer timer;
-		while (m_AppRunning)
+		while (m_AppRunning) 
 		{
 			m_Window->ProcessEvents();
 			if (!m_AppMinimized) 

@@ -25,6 +25,10 @@ namespace DT
 
 		const VmaAllocationInfo& GetAllocationInfo() const { return m_ImageAllocationInfo; }
 		VkImage GetVulkanImage() const { return m_Image; }
+		VkFormat GetVulkanFormat() const { return Convert::ToVulkanFormat(m_Specification.Format); }
+
+		uint32 GetWidth() const { return m_Specification.Width; }
+		uint32 GetHeight() const { return m_Specification.Height; }
 
 		void TransitionImageLayout(VkImageLayout newLayout);
 
@@ -41,6 +45,7 @@ namespace DT
 	struct TextureSpecification
 	{
 		std::filesystem::path AssetPath;
+		bool Dynamic = false;
 	};
 
 	class VulkanTexture2D : public RefCounted
@@ -51,6 +56,9 @@ namespace DT
 
 		void Invalidate();
 		void Destroy();
+
+		uint32 GetWidth() const { return m_Image->GetWidth(); }
+		uint32 GetHeight() const { return m_Image->GetHeight(); }
 
 		VkImageView GetVulkanImageView() const { return m_ImageView; }
 		Ref<VulkanImage> GetImage() const { return m_Image; }

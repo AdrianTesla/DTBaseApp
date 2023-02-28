@@ -49,7 +49,6 @@ namespace DT
 
 		Ref<VulkanTexture2D> m_Texture;
 
-		VkDescriptorImageInfo m_DescriptorImageInfo;
 		VkSampler m_Sampler = VK_NULL_HANDLE;
 	};
 }
