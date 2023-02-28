@@ -27,6 +27,29 @@ namespace DT
 		CreateSyncronizationObjects();
 	}
 
+	void VulkanSwapchain::Shutdown()
+	{
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();						
+																						
+		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++) {							
+			vkDestroySemaphore(device, m_ImageAvailableSemaphores[i], nullptr);			
+			m_ImageAvailableSemaphores[i] = VK_NULL_HANDLE;								
+		}																				
+																						
+		for (uint32 i = 0u; i < m_ImageCount; i++) {
+			vkDestroyImageView(device, m_SwapchainImageViews[i], nullptr);
+			vkDestroyFramebuffer(device, m_SwapchainFramebuffers[i], nullptr);
+			m_SwapchainImageViews[i] = VK_NULL_HANDLE;
+			m_SwapchainFramebuffers[i] = VK_NULL_HANDLE;
+		}
+
+		vkDestroyRenderPass(device, m_SwapchainRenderPass, nullptr);					
+		vkDestroySwapchainKHR(device, m_Swapchain, nullptr);							
+																						
+		m_Swapchain = VK_NULL_HANDLE;													
+		m_SwapchainRenderPass = VK_NULL_HANDLE;
+	}
+
 	VkSemaphore& VulkanSwapchain::GetImageAvailableSemaphore(uint32 frameIndex) 
 	{ 
 		return m_ImageAvailableSemaphores[frameIndex];
@@ -496,7 +519,7 @@ namespace DT
 		presentInfo.pSwapchains        = &m_Swapchain;
 		presentInfo.pImageIndices      = &m_CurrentImageIndex;
 		presentInfo.pResults           = nullptr;
-		
+
 		VkResult presentResult = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
 		if ((presentResult != VK_SUCCESS) || (m_VerticalSync != m_OldVerticalSync))
 		{
@@ -513,29 +536,6 @@ namespace DT
 	{
 		m_OldVerticalSync = m_VerticalSync;
 		m_VerticalSync = enabled;
-	}
-
-	void VulkanSwapchain::Shutdown()
-	{
-		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
-
-		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			vkDestroySemaphore(device, m_ImageAvailableSemaphores[i], nullptr);
-			m_ImageAvailableSemaphores[i] = VK_NULL_HANDLE;
-		}
-		
-		for (uint32 i = 0u; i < m_ImageCount; i++) {
-			vkDestroyImageView(device, m_SwapchainImageViews[i], nullptr);
-			vkDestroyFramebuffer(device, m_SwapchainFramebuffers[i], nullptr);
-			m_SwapchainImageViews[i] = VK_NULL_HANDLE;
-			m_SwapchainFramebuffers[i] = VK_NULL_HANDLE;
-		}
-
-		vkDestroyRenderPass(device, m_SwapchainRenderPass, nullptr);
-		vkDestroySwapchainKHR(device, m_Swapchain, nullptr);
-		
-		m_Swapchain = VK_NULL_HANDLE;
-		m_SwapchainRenderPass = VK_NULL_HANDLE;
 	}
 
 	void VulkanSwapchain::OnWindowResize()

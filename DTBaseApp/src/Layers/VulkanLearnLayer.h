@@ -38,11 +38,11 @@ namespace DT
 		Ref<VulkanPipeline> m_Pipeline;
 		Ref<VulkanVertexBuffer> m_VertexBuffer;
 		Ref<VulkanIndexBuffer> m_IndexBuffer;
+		InFlight<Ref<VulkanUniformBuffer>> m_UniformBuffers;
 
 		VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
 
 		InFlight<VkCommandBuffer> m_GraphicsCommandBuffers;
-		InFlight<Ref<VulkanUniformBuffer>> m_UniformBuffers;
 		InFlight<VkDescriptorSet> m_DescriptorSets;
 
 		Ref<VulkanTexture2D> m_Texture;

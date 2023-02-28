@@ -6,7 +6,6 @@ namespace DT
 	void VulkanRenderer::Init()
 	{
 		s_Context = this;
-
 		m_Swapchain.Init();
 
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
