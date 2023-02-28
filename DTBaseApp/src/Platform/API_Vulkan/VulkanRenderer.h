@@ -22,6 +22,8 @@ namespace DT
 		static VkSemaphore& GetActiveRenderCompleteSemaphore() { return s_Context->m_RenderCompleteSemaphores[s_Context->m_CurrentFrame]; }
 		static VkFence& GetActivePreviousFrameFence() { return s_Context->m_PreviousFrameFinishedFences[s_Context->m_CurrentFrame]; }
 	private:
+		void CreateSyncronizationObjects();
+	private:
 		inline static VulkanRenderer* s_Context = nullptr;
 
 		VulkanSwapchain m_Swapchain;

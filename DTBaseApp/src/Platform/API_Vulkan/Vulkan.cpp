@@ -1,6 +1,5 @@
 #include "Vulkan.h"
 #include "VulkanContext.h"
-#include "VulkanDevice.h"
 #include "Platform/PlatformUtils.h"
 
 namespace DT::Convert

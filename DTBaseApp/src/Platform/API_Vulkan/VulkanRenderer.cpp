@@ -6,8 +6,13 @@ namespace DT
 	void VulkanRenderer::Init()
 	{
 		s_Context = this;
-		m_Swapchain.Init();
 
+		m_Swapchain.Init();
+		CreateSyncronizationObjects();
+	}
+
+	void VulkanRenderer::CreateSyncronizationObjects()
+	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
         
 		VkFenceCreateInfo fenceCreateInfo{};
