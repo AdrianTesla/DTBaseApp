@@ -3,6 +3,7 @@
 #include "Core/Input.h"
 #include "Platform/PlatformUtils.h"
 #include "Platform/API_Vulkan/VulkanContext.h"
+#include "Platform/API_Vulkan/VulkanRenderer.h"
 #include <stb_image.h>
 
 namespace DT
@@ -17,10 +18,8 @@ namespace DT
 
 	void VulkanLearnLayer::OnAttach()
 	{
-		m_Shader = Ref<VulkanShader>::Create();
-
 		PipelineSpecification specification{};
-		specification.Shader = m_Shader;
+		specification.Shader = Ref<VulkanShader>::Create();
 		specification.PolygonMode = PolygonMode::Fill;
 		m_Pipeline = Ref<VulkanPipeline>::Create(specification);
 
@@ -195,20 +194,7 @@ namespace DT
 	{
 		TextureSpecification specification{};
 		specification.AssetPath = "assets/textures/M_FloorTiles1_Inst_0_BaseColor.png";
-		specification.Dynamic = true;
 		m_Texture = Ref<VulkanTexture2D>::Create(specification);
-
-		void* imageBuffer = m_Texture->GetImage()->GetAllocationInfo().pMappedData;
-		
-		uint32 width = m_Texture->GetWidth();
-		uint32 height = m_Texture->GetHeight();
-
-		#define MAKE_RGBA(r, g, b) uint32((r) | ((g) << 8) | ((b) << 16) | (0xFF << 24))
-		for (uint32 y = 0u; y < width; y++) {
-			for (uint32 x = 0u; x < height; x++) {
-				((uint32*)imageBuffer)[x + y * width] = MAKE_RGBA(0, 255, 0);
-			}
-		}
 	}
 
 	void VulkanLearnLayer::CreateSampler()
@@ -239,7 +225,7 @@ namespace DT
 
 	void VulkanLearnLayer::RecordCommandBuffer(VkCommandBuffer commandBuffer)
 	{
-		VulkanSwapchain& swapchain = VulkanContext::GetSwapchain();
+		VulkanSwapchain& swapchain = VulkanRenderer::GetSwapchain();
 
 		VkCommandBufferBeginInfo commandBufferBeginInfo{};
 		commandBufferBeginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -290,7 +276,7 @@ namespace DT
 
 	void VulkanLearnLayer::ExecuteCommandBuffer(VkCommandBuffer commandBuffer)
 	{
-		VulkanSwapchain& swapchain = VulkanContext::GetSwapchain();
+		VulkanSwapchain& swapchain = VulkanRenderer::GetSwapchain();
 		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
 		VkDevice device = vulkanDevice.GetVulkanDevice();
 		VkQueue graphicsQueue = vulkanDevice.GetQueue(QueueType::Graphics);
@@ -306,8 +292,8 @@ namespace DT
 		submitInfo.commandBufferCount   = 1u;
 		submitInfo.pCommandBuffers      = &commandBuffer;
 		submitInfo.signalSemaphoreCount = 1u;
-		submitInfo.pSignalSemaphores    = &Renderer::GetActiveRenderCompleteSemaphore();
-		VK_CALL(vkQueueSubmit(graphicsQueue, 1u, &submitInfo, Renderer::GetActivePreviousFrameFence()));
+		submitInfo.pSignalSemaphores    = &VulkanRenderer::GetActiveRenderCompleteSemaphore();
+		VK_CALL(vkQueueSubmit(graphicsQueue, 1u, &submitInfo, VulkanRenderer::GetActivePreviousFrameFence()));
 	}
 
 	void VulkanLearnLayer::OnUpdate(float dt)

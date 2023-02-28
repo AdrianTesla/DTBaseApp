@@ -35,20 +35,17 @@ namespace DT
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer);
 		void ExecuteCommandBuffer(VkCommandBuffer commandBuffer);
 	private:
-		Ref<VulkanShader> m_Shader;
 		Ref<VulkanPipeline> m_Pipeline;
 		Ref<VulkanVertexBuffer> m_VertexBuffer;
 		Ref<VulkanIndexBuffer> m_IndexBuffer;
 
-		InFlight<VkCommandBuffer> m_GraphicsCommandBuffers;
-
-		InFlight<Ref<VulkanUniformBuffer>> m_UniformBuffers;
-
 		VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
+
+		InFlight<VkCommandBuffer> m_GraphicsCommandBuffers;
+		InFlight<Ref<VulkanUniformBuffer>> m_UniformBuffers;
 		InFlight<VkDescriptorSet> m_DescriptorSets;
 
 		Ref<VulkanTexture2D> m_Texture;
-
 		VkSampler m_Sampler = VK_NULL_HANDLE;
 	};
 }

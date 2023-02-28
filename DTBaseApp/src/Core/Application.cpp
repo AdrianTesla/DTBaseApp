@@ -29,6 +29,7 @@ namespace DT
 		}
 
 		Renderer::Shutdown();
+		m_RendererContext->Shutdown();
 	}
 
 	void Application::PushLayer(Layer* layer)
@@ -99,7 +100,7 @@ namespace DT
 		dispatcher.Dispatch<WindowResizeEvent>([&](WindowResizeEvent& e)
 		{
 			m_AppMinimized = e.IsDegenerate();
-			m_RendererContext->OnWindowResize();
+			Renderer::OnWindowResize();
 			return false;
 		});
 		dispatcher.Dispatch<KeyPressedEvent>([](KeyPressedEvent& key)

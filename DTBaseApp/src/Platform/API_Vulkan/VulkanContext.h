@@ -12,10 +12,9 @@ namespace DT
 	{
 	public:
 		VulkanContext(const Ref<Window>& window);
-		virtual ~VulkanContext();
 
 		virtual void Init() override;
-		virtual void OnWindowResize() override;
+		virtual void Shutdown() override;
 
 		static bool IsInstanceExtensionSupported(const char* extensionName);
 		static bool IsInstanceLayerSupported(const char* layerName);
@@ -32,8 +31,6 @@ namespace DT
 		static VkPhysicalDevice GetCurrentVulkanPhysicalDevice() { return s_Context->m_PhysicalDevice.GetVulkanPhysicalDevice(); }
 		
 		static VkSurfaceKHR GetSurface() { return s_Context->m_Surface; }
-		static VulkanSwapchain& GetSwapchain() { return s_Context->m_Swapchain; }
-		
 		static VmaAllocator GetVulkanMemoryAllocator() { return s_Context->m_VulkanMemoryAllocator; }
 	private:
 		void CreateVulkanInstance();
@@ -41,7 +38,6 @@ namespace DT
 		void SelectPhysicalDevice();
 		void CreateMemoryAllocator();
 		void CreateLogicalDevice();
-		void CreateSwapchain();
 	private:
 		std::vector<const char*> BuildRequestedInstanceExtensions();
 		std::vector<const char*> BuildRequestedInstanceLayers();
@@ -58,8 +54,6 @@ namespace DT
 		
 		VulkanPhysicalDevice m_PhysicalDevice;
 		VulkanDevice m_Device;
-
-		VulkanSwapchain m_Swapchain;
 
 		std::vector<VkPhysicalDevice> m_AvailablePhysicalDevices;
 		std::vector<VkLayerProperties> m_AvailableInstanceLayers;

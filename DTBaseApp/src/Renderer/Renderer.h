@@ -13,10 +13,9 @@ namespace DT
 		static void BeginFrame();
 		static void EndFrame();
 
+		static void OnWindowResize();
+
 		static void SetVerticalSync(bool enabled);
 		static uint32 CurrentFrame();
-
-		static VkSemaphore& GetActiveRenderCompleteSemaphore();
-		static VkFence& GetActivePreviousFrameFence();
 	};
 }

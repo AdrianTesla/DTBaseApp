@@ -1,5 +1,6 @@
 #include "VulkanPipeline.h"
 #include "VulkanContext.h"
+#include "VulkanRenderer.h"
 
 namespace DT
 {
@@ -245,7 +246,7 @@ namespace DT
 		graphicsPipelineCreateInfo.pColorBlendState    = &pipelineColorBlendStateCreateInfo;
 		graphicsPipelineCreateInfo.pDynamicState       = &pipelineDynamicStateCreateInfo;
 		graphicsPipelineCreateInfo.layout              = m_PipelineLayout;
-		graphicsPipelineCreateInfo.renderPass          = VulkanContext::GetSwapchain().GetSwapchainRenderPass();
+		graphicsPipelineCreateInfo.renderPass          = VulkanRenderer::GetSwapchain().GetSwapchainRenderPass();
 		graphicsPipelineCreateInfo.subpass             = 0u;
 		graphicsPipelineCreateInfo.basePipelineHandle  = VK_NULL_HANDLE;
 		graphicsPipelineCreateInfo.basePipelineIndex   = 0;

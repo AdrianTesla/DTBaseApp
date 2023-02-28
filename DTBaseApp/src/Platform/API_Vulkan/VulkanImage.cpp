@@ -57,10 +57,9 @@ namespace DT
 		
 		if (m_Specification.Dynamic) 
 			allocationCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+		m_CurrentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 		VK_CALL(vmaCreateImage(allocator, &imageCreateInfo, &allocationCreateInfo, &m_Image, &m_ImageAllocation, &m_ImageAllocationInfo));
-
-		m_CurrentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	}
 
 	void VulkanImage::Destroy()
@@ -84,7 +83,7 @@ namespace DT
 		Invalidate();
 	}
 
-	VulkanTexture2D::~VulkanTexture2D()
+	VulkanTexture2D::~VulkanTexture2D() 
 	{
 		Destroy();
 	}
@@ -146,26 +145,23 @@ namespace DT
 			ASSERT(stagingAllocationInfo.pMappedData != nullptr)
 			memcpy(stagingAllocationInfo.pMappedData, pixels, imageSize);
 
-			stbi_image_free(pixels);
-
 			// now transfer the staging buffer to the GPU
 			VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
 
-			VkBufferImageCopy copyRegion{};
-			copyRegion.bufferOffset                    = 0u;
-			copyRegion.bufferRowLength                 = 0u;
-			copyRegion.bufferImageHeight               = 0u;
-			copyRegion.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-			copyRegion.imageSubresource.mipLevel       = 0u;
-			copyRegion.imageSubresource.baseArrayLayer = 0u;
-			copyRegion.imageSubresource.layerCount     = 1u;
-			copyRegion.imageOffset                     = { 0u,0u,0u };
-			copyRegion.imageExtent.width               = (uint32)width;
-			copyRegion.imageExtent.height              = (uint32)height;
-			copyRegion.imageExtent.depth               = 1u;
-
 			VkCommandBuffer commandBuffer = vulkanDevice.BeginCommandBuffer(QueueType::Transfer);
 			{
+				VkBufferImageCopy copyRegion{};
+				copyRegion.bufferOffset                    = 0u;
+				copyRegion.bufferRowLength                 = 0u;
+				copyRegion.bufferImageHeight               = 0u;
+				copyRegion.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+				copyRegion.imageSubresource.mipLevel       = 0u;
+				copyRegion.imageSubresource.baseArrayLayer = 0u;
+				copyRegion.imageSubresource.layerCount     = 1u;
+				copyRegion.imageOffset                     = { 0u,0u,0u };
+				copyRegion.imageExtent.width               = (uint32)width;
+				copyRegion.imageExtent.height              = (uint32)height;
+				copyRegion.imageExtent.depth               = 1u;
 				vkCmdCopyBufferToImage(commandBuffer, stagingBuffer, m_Image->GetVulkanImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &copyRegion);
 			}
 			vulkanDevice.EndCommandBuffer();
@@ -173,6 +169,8 @@ namespace DT
 			vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
 		}
 		m_Image->TransitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		stbi_image_free(pixels);
+
 		CreateImageView();
 	}
 

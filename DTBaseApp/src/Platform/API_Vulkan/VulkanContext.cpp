@@ -92,7 +92,6 @@ namespace DT
 		SelectPhysicalDevice();
 		CreateLogicalDevice();
 		CreateMemoryAllocator();
-		CreateSwapchain();
 	}
 
 	void VulkanContext::CreateVulkanInstance()
@@ -231,11 +230,6 @@ namespace DT
 		m_Device.Init();
 	}
 
-	void VulkanContext::CreateSwapchain()
-	{
-		m_Swapchain.Init();
-	}
-
 	void VulkanContext::CreateMemoryAllocator()
 	{		
 		VmaAllocatorCreateInfo allocatorCreateInfo{};
@@ -253,14 +247,13 @@ namespace DT
 		VK_CALL(vmaCreateAllocator(&allocatorCreateInfo, &m_VulkanMemoryAllocator));
 	}
 
-	VulkanContext::~VulkanContext()
+	void VulkanContext::Shutdown()
 	{
 		VkDevice device = m_Device.GetVulkanDevice();
 
 		VK_CALL(vkDeviceWaitIdle(device));
 
 		vmaDestroyAllocator(m_VulkanMemoryAllocator);
-		m_Swapchain.Shutdown();
 		m_Device.Shutdown();
 
 		vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
@@ -271,10 +264,5 @@ namespace DT
 		m_VulkanMemoryAllocator = VK_NULL_HANDLE;
 		m_Surface = VK_NULL_HANDLE;
 		m_Instance = VK_NULL_HANDLE;
-	}
-
-	void VulkanContext::OnWindowResize()
-	{
-		m_Swapchain.OnWindowResize();
 	}
 }

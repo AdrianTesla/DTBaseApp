@@ -36,6 +36,7 @@ namespace DT
 		bool m_AppMinimized = false;
 
 		Ref<RendererContext> m_RendererContext;
+
 		Ref<Window> m_Window;
 		std::vector<Layer*> m_Layers;
 
