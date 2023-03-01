@@ -10,16 +10,15 @@ namespace DT
 		uint32 Depth = 1u;
 		uint32 MipLevels = 1u;
 		uint32 ArrayLayers = 1u;
-		ImageType Type = ImageType::Image2D;
 		ImageFormat Format = ImageFormat::RGBA8;
 		ImageUsageFlags UsageFlags = ImageUsage::Texture;
 	};
 
-	class VulkanImage : public RefCounted
+	class VulkanImage2D : public RefCounted
 	{
 	public:
-		VulkanImage(const ImageSpecification& specification);
-		~VulkanImage();
+		VulkanImage2D(const ImageSpecification& specification);
+		~VulkanImage2D();
 
 		void Invalidate();
 		void Destroy();
@@ -59,7 +58,7 @@ namespace DT
 		void Destroy();
 
 		VkImageView GetVulkanImageView() const { return m_ImageView; }
-		Ref<VulkanImage> GetImage() const { return m_Image; }
+		Ref<VulkanImage2D> GetImage() const { return m_Image; }
 	private:
 		struct ImageData
 		{
@@ -72,7 +71,7 @@ namespace DT
 		void LoadImageFile(ImageData* imageData);
 		void CreateImageView();
 	private:
-		Ref<VulkanImage> m_Image;
+		Ref<VulkanImage2D> m_Image;
 		VkImageView m_ImageView = VK_NULL_HANDLE;
 		TextureSpecification m_Specification;
 	};

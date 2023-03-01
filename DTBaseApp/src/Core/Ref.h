@@ -15,6 +15,7 @@ namespace DT
 	template<typename T>
 	class Ref
 	{
+		static_assert(std::is_base_of<RefCounted, T>(), "Creating a Ref<> on a type that is not RefCounted!");
 	public:
 		Ref() 
 			: m_Instance(nullptr) 
@@ -159,7 +160,6 @@ namespace DT
 		template<typename T2>
 		friend class Ref;
 
-		static_assert(std::is_base_of<RefCounted, T>(), "The object is not reference counted!");
 	};
 
 	template<typename T>

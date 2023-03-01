@@ -55,11 +55,23 @@ namespace DT::Convert
 		}
 		return usage;
 	}
+	
+	VkPolygonMode ToVulkanPolygonMode(PolygonMode polygonMode)
+	{
+		switch (polygonMode)
+		{
+			case PolygonMode::Fill:      return VK_POLYGON_MODE_FILL;
+			case PolygonMode::Wireframe: return VK_POLYGON_MODE_LINE;
+			case PolygonMode::Point:     return VK_POLYGON_MODE_POINT;
+		}
+		ASSERT(false);
+		return VK_POLYGON_MODE_MAX_ENUM;
+	}
 }
 
 namespace DT::Vulkan
 {
-	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateInfo* pAllocationCreateInfo, VkBuffer* pBuffer, VmaAllocation* pAllocation, VmaAllocationInfo* pAllocationInfo)
+	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateInfo* pAllocationCreateInfo, VulkanBuffer* pBuffer)
 	{
 		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
 
@@ -72,53 +84,49 @@ namespace DT::Vulkan
 		bufferCreateInfo.sharingMode           = VK_SHARING_MODE_EXCLUSIVE;
 		bufferCreateInfo.queueFamilyIndexCount = 0u;
 		bufferCreateInfo.pQueueFamilyIndices   = nullptr;
-		VK_CALL(vmaCreateBuffer(allocator, &bufferCreateInfo, pAllocationCreateInfo, pBuffer, pAllocation, pAllocationInfo));
+		VK_CALL(vmaCreateBuffer(allocator, &bufferCreateInfo, pAllocationCreateInfo, &pBuffer->Buffer, &pBuffer->Allocation, &pBuffer->AllocationInfo));
 	}
 
-	void CreateBufferStaging(const void* data, uint64 size, VkBufferUsageFlags usage, VkBuffer* pBuffer, VmaAllocation* pAllocation)
+	void CreateBufferStaging(const void* data, uint64 size, VkBufferUsageFlags usage, VulkanBuffer* pBuffer)
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
 
-		// create staging buffer and upload data to it
-		VkBuffer stagingBuffer = VK_NULL_HANDLE;
-		VmaAllocation stagingAllocation = VK_NULL_HANDLE;
-		VmaAllocationInfo stagingAllocationInfo{};
-		
+		// create staging buffer
+		VulkanBuffer stagingBuffer{};
 		VmaAllocationCreateInfo stagingAllocationCreateInfo{};
 		stagingAllocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
 		stagingAllocationCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-		CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingAllocationCreateInfo, &stagingBuffer, &stagingAllocation, &stagingAllocationInfo);
+		CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingAllocationCreateInfo, &stagingBuffer);
 		
-		ASSERT(stagingAllocationInfo.pMappedData != nullptr);
-		memcpy(stagingAllocationInfo.pMappedData, data, size);
+		// upload data to it
+		ASSERT(stagingBuffer.AllocationInfo.pMappedData != nullptr);
+		memcpy(stagingBuffer.AllocationInfo.pMappedData, data, size);
 
 		// create device local buffer
 		VmaAllocationCreateInfo allocationCreateInfo{};
-		allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-		CreateBuffer(size, usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT, &allocationCreateInfo, pBuffer, pAllocation);
+		allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+		CreateBuffer(size, usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT, &allocationCreateInfo, pBuffer);
 		
+		// copy the staging buffer to the device local buffer
 		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
 		VkCommandBuffer commandBuffer = vulkanDevice.BeginCommandBuffer(QueueType::Transfer);
-		{
-			VkBufferCopy bufferCopyRegion{};
-			bufferCopyRegion.srcOffset = 0u;
-			bufferCopyRegion.dstOffset = 0u; 
-			bufferCopyRegion.size      = size;
-			vkCmdCopyBuffer(commandBuffer, stagingBuffer, *pBuffer, 1u, &bufferCopyRegion);
-		}
+		vkCmd::CopyBuffer(commandBuffer, stagingBuffer.Buffer, pBuffer->Buffer, size);
 		vulkanDevice.EndCommandBuffer();
 
 		// destroy staging buffer and free staging allocation
-		vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
+		vmaDestroyBuffer(allocator, stagingBuffer.Buffer, stagingBuffer.Allocation);
 	}
-	
+}
+
+namespace DT::vkCmd
+{
 	void CopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 	{
 		VkBufferCopy bufferCopyRegion{};
 		bufferCopyRegion.srcOffset = 0u;
-		bufferCopyRegion.dstOffset = 0u; 
-		bufferCopyRegion.size      = size;
+		bufferCopyRegion.dstOffset = 0u;
+		bufferCopyRegion.size = size;
 		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1u, &bufferCopyRegion);
 	}
 
@@ -205,21 +213,21 @@ namespace DT::Vulkan
 		VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_NONE;
 		VkAccessFlags dstAccess = VK_ACCESS_NONE;
 
-		if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) 
+		if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED)
 		{
 			srcAccess = 0u;
-			srcStage  = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		} 
-		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) 
+			srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		}
+		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
 		{
 			srcAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
-			srcStage  = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		}
 
 		if (newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
 		{
 			dstAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
-		    dstStage  = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		}
 		else if (newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		{
@@ -228,23 +236,23 @@ namespace DT::Vulkan
 		}
 
 		VkImageMemoryBarrier imageMemoryBarrier{};
-		imageMemoryBarrier.sType			   = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		imageMemoryBarrier.pNext			   = nullptr;
-		imageMemoryBarrier.srcAccessMask	   = srcAccess;
-		imageMemoryBarrier.dstAccessMask	   = dstAccess;
-		imageMemoryBarrier.oldLayout		   = oldLayout;
-		imageMemoryBarrier.newLayout		   = newLayout;
+		imageMemoryBarrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		imageMemoryBarrier.pNext               = nullptr;
+		imageMemoryBarrier.srcAccessMask       = srcAccess;
+		imageMemoryBarrier.dstAccessMask       = dstAccess;
+		imageMemoryBarrier.oldLayout           = oldLayout;
+		imageMemoryBarrier.newLayout           = newLayout;
 		imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		imageMemoryBarrier.image			   = image;
-		imageMemoryBarrier.subresourceRange.aspectMask	   = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageMemoryBarrier.image               = image;
+		imageMemoryBarrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
 		imageMemoryBarrier.subresourceRange.baseMipLevel   = 0u;
-		imageMemoryBarrier.subresourceRange.levelCount	   = 1u;
+		imageMemoryBarrier.subresourceRange.levelCount     = 1u;
 		imageMemoryBarrier.subresourceRange.baseArrayLayer = 0u;
-		imageMemoryBarrier.subresourceRange.layerCount	   = 1u;
+		imageMemoryBarrier.subresourceRange.layerCount     = 1u;
 
 		vkCmdPipelineBarrier(
-			commandBuffer, 
+			commandBuffer,
 			srcStage, dstStage, 0u,
 			0u, nullptr,            // memory barrier
 			0u, nullptr,            // buffer memory barrier

@@ -12,29 +12,28 @@ namespace DT
 		}
 	}
 
-	VulkanImage::VulkanImage(const ImageSpecification& specification)
+	VulkanImage2D::VulkanImage2D(const ImageSpecification& specification)
 		: m_Specification(specification)
 	{
 		Invalidate();
 	}
 
-	VulkanImage::~VulkanImage()
+	VulkanImage2D::~VulkanImage2D()
 	{
 		Destroy();
 	}
 
-	void VulkanImage::Invalidate()
+	void VulkanImage2D::Invalidate()
 	{
 		Destroy();
 
-		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
 
 		VkImageCreateInfo imageCreateInfo{};
 		imageCreateInfo.sType				  = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		imageCreateInfo.pNext				  = nullptr;
 		imageCreateInfo.flags				  = 0u;
-		imageCreateInfo.imageType			  = Convert::ToVulkanImageType(m_Specification.Type);
+		imageCreateInfo.imageType			  = VK_IMAGE_TYPE_2D;
 		imageCreateInfo.format				  = Convert::ToVulkanFormat(m_Specification.Format);
 		imageCreateInfo.extent.width		  = m_Specification.Width;
 		imageCreateInfo.extent.height		  = m_Specification.Height;
@@ -56,7 +55,7 @@ namespace DT
 		m_CurrentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	}
 
-	void VulkanImage::Destroy()
+	void VulkanImage2D::Destroy()
 	{
 		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
 		vmaDestroyImage(allocator, m_Image, m_ImageAllocation);
@@ -64,23 +63,21 @@ namespace DT
 		m_ImageAllocation = VK_NULL_HANDLE;
 	}
 
-	void VulkanImage::TransitionImageLayout(VkImageLayout newLayout)
+	void VulkanImage2D::TransitionImageLayout(VkImageLayout newLayout)
 	{
 		VulkanDevice vulkanDevice = VulkanContext::GetCurrentDevice();
-		
 		VkCommandBuffer commandBuffer = vulkanDevice.BeginCommandBuffer(QueueType::Graphics);
-		Vulkan::TransitionImageLayout(commandBuffer, m_Image, m_CurrentLayout, newLayout);
+		vkCmd::TransitionImageLayout(commandBuffer, m_Image, m_CurrentLayout, newLayout);
 		vulkanDevice.EndCommandBuffer();
 
 		m_CurrentLayout = newLayout;
 	}
 
-	void VulkanImage::TransitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout)
+	void VulkanImage2D::TransitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout)
 	{
 		VulkanDevice vulkanDevice = VulkanContext::GetCurrentDevice();
-
 		VkCommandBuffer commandBuffer = vulkanDevice.BeginCommandBuffer(QueueType::Graphics);
-		Vulkan::TransitionImageLayout(commandBuffer, m_Image, oldLayout, newLayout);
+		vkCmd::TransitionImageLayout(commandBuffer, m_Image, oldLayout, newLayout);
 		vulkanDevice.EndCommandBuffer();
 	}
 
@@ -110,39 +107,33 @@ namespace DT
 		specification.Format = imageData.Format;
 		specification.MipLevels = Utils::CalculateMipLevels(specification.Width, specification.Height, specification.Depth);
 		specification.UsageFlags = ImageUsage::Texture | ImageUsage::TransferDst;
-		m_Image = Ref<VulkanImage>::Create(specification);
+		m_Image = Ref<VulkanImage2D>::Create(specification);
 
 		// upload the pixels to the staging buffer
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
 
-		VkBuffer stagingBuffer = VK_NULL_HANDLE;		   
-		VmaAllocation stagingAllocation = VK_NULL_HANDLE;  
-		VmaAllocationInfo stagingAllocationInfo{};		   
-
+		VulkanBuffer stagingBuffer{};
 		VmaAllocationCreateInfo stagingAllocationCreateInfo{};
 		stagingAllocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
 		stagingAllocationCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-		Vulkan::CreateBuffer(imageData.Size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingAllocationCreateInfo, &stagingBuffer, &stagingAllocation, &stagingAllocationInfo);
+		Vulkan::CreateBuffer(imageData.Size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &stagingAllocationCreateInfo, &stagingBuffer);
 		
-		ASSERT(stagingAllocationInfo.pMappedData != nullptr)
-		memcpy(stagingAllocationInfo.pMappedData, imageData.Data, imageData.Size);
+		ASSERT(stagingBuffer.AllocationInfo.pMappedData != nullptr)
+		memcpy(stagingBuffer.AllocationInfo.pMappedData, imageData.Data, imageData.Size);
 		stbi_image_free(imageData.Data);
 
-		Timer timer;
-
+		VkImage image = m_Image->GetVulkanImage();
 		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
 		VkCommandBuffer commandBuffer = vulkanDevice.BeginCommandBuffer(QueueType::Graphics);
 		{
-			Vulkan::TransitionImageLayout(commandBuffer, m_Image->GetVulkanImage(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-			Vulkan::CopyBufferToImage(commandBuffer, stagingBuffer, m_Image->GetVulkanImage(), imageData.Width, imageData.Height);
-			Vulkan::TransitionImageLayout(commandBuffer, m_Image->GetVulkanImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+			vkCmd::TransitionImageLayout(commandBuffer, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+			vkCmd::CopyBufferToImage(commandBuffer, stagingBuffer.Buffer, image, imageData.Width, imageData.Height);
+			vkCmd::TransitionImageLayout(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		}
 		vulkanDevice.EndCommandBuffer();
 
-		LOG_WARN("Transition, copy, transition: {} us", timer.ElapsedMicroseconds());
-
-		vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
+		vmaDestroyBuffer(allocator, stagingBuffer.Buffer, stagingBuffer.Allocation);
 		CreateImageView();
 	}
 

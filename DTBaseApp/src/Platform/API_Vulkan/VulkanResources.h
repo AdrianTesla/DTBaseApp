@@ -9,10 +9,9 @@ namespace DT
 		VulkanVertexBuffer(const void* data, uint64 size);
 		~VulkanVertexBuffer();
 
-		VkBuffer& GetVulkanBuffer() { return m_Buffer; }
+		VkBuffer& GetVulkanBuffer() { return m_Buffer.Buffer; }
 	private:
-		VkBuffer m_Buffer = VK_NULL_HANDLE;
-		VmaAllocation m_Allocation = VK_NULL_HANDLE;
+		VulkanBuffer m_Buffer;
 	};
 
 	class VulkanIndexBuffer : public RefCounted
@@ -22,10 +21,9 @@ namespace DT
 		~VulkanIndexBuffer();
 		
 		uint32 GetIndexCount() const { return m_IndexCount; }
-		VkBuffer& GetVulkanBuffer() { return m_Buffer; }
+		VkBuffer& GetVulkanBuffer() { return m_Buffer.Buffer; }
 	private:
-		VkBuffer m_Buffer = VK_NULL_HANDLE;
-		VmaAllocation m_Allocation = VK_NULL_HANDLE;
+		VulkanBuffer m_Buffer;
 		uint32 m_IndexCount = 0u;
 	};
 
@@ -36,14 +34,24 @@ namespace DT
 		~VulkanUniformBuffer();
 
 		void SetData(const void* data, uint64 size);
-		VkBuffer& GetVulkanBuffer() { return m_Buffer; }
+		VkBuffer& GetVulkanBuffer() { return m_Buffer.Buffer; }
 		const VkDescriptorBufferInfo& GetDescriptorBufferInfo() const { return m_DescriptorBufferInfo; }
 	private:
-		VkBuffer m_Buffer = VK_NULL_HANDLE;
-		VmaAllocation m_Allocation = VK_NULL_HANDLE;
-		VmaAllocationInfo m_AllocationInfo;
-		uint64 m_Size = 0u;
+		VulkanBuffer m_Buffer;
+		VkDescriptorBufferInfo m_DescriptorBufferInfo{};
+	};
 
+	class VulkanStorageBuffer : public RefCounted
+	{
+	public:
+		VulkanStorageBuffer(uint64 size);
+		~VulkanStorageBuffer();
+
+		void SetData(const void* data, uint64 size);
+		VkBuffer& GetVulkanBuffer() { return m_Buffer.Buffer; }
+		const VkDescriptorBufferInfo& GetDescriptorBufferInfo() const { return m_DescriptorBufferInfo; }
+	private:
+		VulkanBuffer m_Buffer;
 		VkDescriptorBufferInfo m_DescriptorBufferInfo{};
 	};
 }

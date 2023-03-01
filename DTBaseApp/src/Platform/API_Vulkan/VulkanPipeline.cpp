@@ -4,21 +4,6 @@
 
 namespace DT
 {
-	namespace Utils
-	{
-		VkPolygonMode GetVulkanPolygonMode(PolygonMode polygonMode)
-		{
-			switch (polygonMode)
-			{
-				case PolygonMode::Fill:      return VK_POLYGON_MODE_FILL;
-				case PolygonMode::Wireframe: return VK_POLYGON_MODE_LINE;
-				case PolygonMode::Point:     return VK_POLYGON_MODE_POINT;
-			}
-			ASSERT(false);
-			return VK_POLYGON_MODE_MAX_ENUM;
-		}
-	}
-
 	VulkanPipeline::VulkanPipeline(const PipelineSpecification& specification)
 		: m_Specification(specification)
 	{
@@ -111,7 +96,7 @@ namespace DT
 		pipelineRasterizationStateCreateInfo.flags                   = 0u;
 		pipelineRasterizationStateCreateInfo.depthClampEnable        = VK_FALSE;
 		pipelineRasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
-		pipelineRasterizationStateCreateInfo.polygonMode             = Utils::GetVulkanPolygonMode(m_Specification.PolygonMode);
+		pipelineRasterizationStateCreateInfo.polygonMode             = Convert::ToVulkanPolygonMode(m_Specification.PolygonMode);
 		pipelineRasterizationStateCreateInfo.cullMode                = VK_CULL_MODE_NONE;
 		pipelineRasterizationStateCreateInfo.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		pipelineRasterizationStateCreateInfo.depthBiasEnable         = VK_FALSE;

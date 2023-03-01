@@ -60,6 +60,13 @@ namespace DT
 		Image3D
 	};
 
+	enum class PolygonMode
+	{
+		Fill,
+		Wireframe,
+		Point
+	};
+
 	namespace ImageUsage
 	{
 		enum Usage
@@ -76,18 +83,37 @@ namespace DT
 	}
 	typedef uint32 ImageUsageFlags;
 
+	struct VulkanBuffer
+	{
+		VkBuffer Buffer = VK_NULL_HANDLE;
+		VmaAllocation Allocation = VK_NULL_HANDLE;
+		VmaAllocationInfo AllocationInfo{};
+	};
+
+	struct VulkanImage
+	{
+		VkImage Image = VK_NULL_HANDLE;
+		VmaAllocation Allocation = VK_NULL_HANDLE;
+		VmaAllocationInfo AllocationInfo{};
+	};
+
 	namespace Convert
 	{
 		VkFormat ToVulkanFormat(ImageFormat format);
 		VkImageType ToVulkanImageType(ImageType imageType);
 		VkImageUsageFlagBits ToVulkanImageUsage(ImageUsage::Usage usage);
 		VkImageUsageFlags ToVulkanImageUsageFlags(ImageUsageFlags usageFlags);
+		VkPolygonMode ToVulkanPolygonMode(PolygonMode polygonMode);
 	}
 
 	namespace Vulkan
 	{
-		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateInfo* pAllocationCreateInfo, VkBuffer* pBuffer, VmaAllocation* pAllocation, VmaAllocationInfo* pAllocationInfo = nullptr);
-		void CreateBufferStaging(const void* data, uint64 size, VkBufferUsageFlags usage, VkBuffer* pBuffer, VmaAllocation* pAllocation);
+		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateInfo* pAllocationCreateInfo, VulkanBuffer* pBuffer);
+		void CreateBufferStaging(const void* data, uint64 size, VkBufferUsageFlags usage, VulkanBuffer* pBuffer);
+	}
+
+	namespace vkCmd
+	{
 		void CopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		void CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, uint32 width, uint32 height);
 		void TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);

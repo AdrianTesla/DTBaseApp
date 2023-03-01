@@ -27,7 +27,7 @@ namespace DT
 		CreateBuffers();
 		CreateImage();
 		CreateSampler();
-
+		
 		CreateDescriptorPools();
 		CreateDescriptorSets();
 	}
@@ -146,48 +146,49 @@ namespace DT
 		descriptorSetAllocateInfo.pSetLayouts        = descriptorSetLayouts;
 		VK_CALL(vkAllocateDescriptorSets(device, &descriptorSetAllocateInfo, m_DescriptorSets.Data()));
 
-		// uniform buffer
+		std::vector<VkWriteDescriptorSet> writeDescriptorSets;
+		writeDescriptorSets.reserve(2u * MAX_FRAMES_IN_FLIGHT);
+
+		// in-flight uniform buffers
+		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
-			VkWriteDescriptorSet writeDescriptorSets[MAX_FRAMES_IN_FLIGHT];
-			for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
-			{
-				writeDescriptorSets[i].sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				writeDescriptorSets[i].pNext            = nullptr;
-				writeDescriptorSets[i].dstSet           = m_DescriptorSets[i];
-				writeDescriptorSets[i].dstBinding       = 0u;
-				writeDescriptorSets[i].dstArrayElement  = 0u;
-				writeDescriptorSets[i].descriptorCount  = 1u;
-				writeDescriptorSets[i].descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				writeDescriptorSets[i].pImageInfo       = nullptr;
-				writeDescriptorSets[i].pBufferInfo      = &m_UniformBuffers[i]->GetDescriptorBufferInfo();
-				writeDescriptorSets[i].pTexelBufferView = nullptr;
-			}
-			vkUpdateDescriptorSets(device, (uint32)std::size(writeDescriptorSets), writeDescriptorSets, 0u, nullptr);
+			VkWriteDescriptorSet& writeDescriptorSet = writeDescriptorSets.emplace_back();
+
+			writeDescriptorSet.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			writeDescriptorSet.pNext            = nullptr;
+			writeDescriptorSet.dstSet           = m_DescriptorSets[i];
+			writeDescriptorSet.dstBinding       = 0u;
+			writeDescriptorSet.dstArrayElement  = 0u;
+			writeDescriptorSet.descriptorCount  = 1u;
+			writeDescriptorSet.descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			writeDescriptorSet.pImageInfo       = nullptr;
+			writeDescriptorSet.pBufferInfo      = &m_UniformBuffers[i]->GetDescriptorBufferInfo();
+			writeDescriptorSet.pTexelBufferView = nullptr;
 		}
 
 		// combined image sampler
-		{
-			VkDescriptorImageInfo descriptorImageInfo{};
-			descriptorImageInfo.sampler		= m_Sampler;
-			descriptorImageInfo.imageView	= m_Texture->GetVulkanImageView();
-			descriptorImageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		VkDescriptorImageInfo descriptorImageInfo{};
+		descriptorImageInfo.sampler		= m_Sampler;
+		descriptorImageInfo.imageView	= m_Texture->GetVulkanImageView();
+		descriptorImageInfo.imageLayout	= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-			VkWriteDescriptorSet writeDescriptorSets[MAX_FRAMES_IN_FLIGHT];
-			for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
-			{
-				writeDescriptorSets[i].sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				writeDescriptorSets[i].pNext            = nullptr;
-				writeDescriptorSets[i].dstSet           = m_DescriptorSets[i];
-				writeDescriptorSets[i].dstBinding       = 1u;
-				writeDescriptorSets[i].dstArrayElement  = 0u;
-				writeDescriptorSets[i].descriptorCount  = 1u;
-				writeDescriptorSets[i].descriptorType   = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-				writeDescriptorSets[i].pImageInfo       = &descriptorImageInfo;
-				writeDescriptorSets[i].pBufferInfo      = nullptr;
-				writeDescriptorSets[i].pTexelBufferView = nullptr;
-			}
-			vkUpdateDescriptorSets(device, (uint32)std::size(writeDescriptorSets), writeDescriptorSets, 0u, nullptr);
+		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			VkWriteDescriptorSet& writeDescriptorSet = writeDescriptorSets.emplace_back();
+
+			writeDescriptorSet.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			writeDescriptorSet.pNext            = nullptr;
+			writeDescriptorSet.dstSet           = m_DescriptorSets[i];
+			writeDescriptorSet.dstBinding       = 1u;
+			writeDescriptorSet.dstArrayElement  = 0u;
+			writeDescriptorSet.descriptorCount  = 1u;
+			writeDescriptorSet.descriptorType   = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			writeDescriptorSet.pImageInfo       = &descriptorImageInfo;
+			writeDescriptorSet.pBufferInfo      = nullptr;
+			writeDescriptorSet.pTexelBufferView = nullptr;
 		}
+
+		vkUpdateDescriptorSets(device, (uint32)writeDescriptorSets.size(), writeDescriptorSets.data(), 0u, nullptr);
 	}
 
 	void VulkanLearnLayer::CreateImage()

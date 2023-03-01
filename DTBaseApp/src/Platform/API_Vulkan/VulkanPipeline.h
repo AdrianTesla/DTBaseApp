@@ -5,13 +5,6 @@
 
 namespace DT
 {
-	enum class PolygonMode
-	{
-		Fill,
-		Wireframe,
-		Point
-	};
-
 	struct PipelineSpecification
 	{
 		Ref<VulkanShader> Shader;
