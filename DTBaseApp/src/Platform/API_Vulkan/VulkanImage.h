@@ -7,11 +7,12 @@ namespace DT
 	{
 		uint32 Width = 1u;
 		uint32 Height = 1u;
+		uint32 Depth = 1u;
 		uint32 MipLevels = 1u;
 		uint32 ArrayLayers = 1u;
+		ImageType Type = ImageType::Image2D;
 		ImageFormat Format = ImageFormat::RGBA8;
-
-		bool Dynamic = false;
+		ImageUsageFlags UsageFlags = ImageUsage::Texture;
 	};
 
 	class VulkanImage : public RefCounted
@@ -31,6 +32,7 @@ namespace DT
 		uint32 GetHeight() const { return m_Specification.Height; }
 
 		void TransitionImageLayout(VkImageLayout newLayout);
+		void TransitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
 
 		const ImageSpecification& GetSpecification() const { return m_Specification; }
 	private:
@@ -45,7 +47,6 @@ namespace DT
 	struct TextureSpecification
 	{
 		std::filesystem::path AssetPath;
-		bool Dynamic = false;
 	};
 
 	class VulkanTexture2D : public RefCounted
@@ -57,12 +58,18 @@ namespace DT
 		void Invalidate();
 		void Destroy();
 
-		uint32 GetWidth() const { return m_Image->GetWidth(); }
-		uint32 GetHeight() const { return m_Image->GetHeight(); }
-
 		VkImageView GetVulkanImageView() const { return m_ImageView; }
 		Ref<VulkanImage> GetImage() const { return m_Image; }
 	private:
+		struct ImageData
+		{
+			void* Data = nullptr;
+			uint32 Size = 0u;
+			uint32 Width = 0u;
+			uint32 Height = 0u;
+			ImageFormat Format = ImageFormat::None;
+		};
+		void LoadImageFile(ImageData* imageData);
 		void CreateImageView();
 	private:
 		Ref<VulkanImage> m_Image;

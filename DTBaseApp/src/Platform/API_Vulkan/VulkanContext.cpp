@@ -5,6 +5,7 @@
 
 namespace DT
 {
+
 	#pragma region VulkanContext
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanMessageCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) 
@@ -467,13 +468,14 @@ namespace DT
 			queueFamilyIndices.PresentIndex.value()
 		};
 
-		std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos;
-		deviceQueueCreateInfos.reserve(uniqueQueueIndices.size());
+		constexpr float defaultQueuePriority = 1.0f;
+		
+		uint32 i = 0u;
+		VkDeviceQueueCreateInfo deviceQueueCreateInfos[3u];
+		ASSERT(std::size(deviceQueueCreateInfos) >= uniqueQueueIndices.size());
 		for (uint32 queueIndex : uniqueQueueIndices)
 		{
-			constexpr float defaultQueuePriority = 1.0f;
-			
-			VkDeviceQueueCreateInfo& deviceQueueCreateInfo = deviceQueueCreateInfos.emplace_back();
+			VkDeviceQueueCreateInfo& deviceQueueCreateInfo = deviceQueueCreateInfos[i++];
 			deviceQueueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 			deviceQueueCreateInfo.pNext            = nullptr;
 			deviceQueueCreateInfo.flags            = 0u;
@@ -496,8 +498,8 @@ namespace DT
 		deviceCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		deviceCreateInfo.pNext                   = nullptr;
 		deviceCreateInfo.flags                   = 0u;
-		deviceCreateInfo.queueCreateInfoCount    = (uint32)deviceQueueCreateInfos.size();
-		deviceCreateInfo.pQueueCreateInfos       = deviceQueueCreateInfos.data();
+		deviceCreateInfo.queueCreateInfoCount    = (uint32)uniqueQueueIndices.size();
+		deviceCreateInfo.pQueueCreateInfos       = deviceQueueCreateInfos;
 		deviceCreateInfo.enabledLayerCount       = 0u;
 		deviceCreateInfo.ppEnabledLayerNames     = nullptr;
 		deviceCreateInfo.enabledExtensionCount   = (uint32)deviceExtensions.size();
@@ -617,4 +619,5 @@ namespace DT
 	}
 
 	#pragma endregion
+
 }

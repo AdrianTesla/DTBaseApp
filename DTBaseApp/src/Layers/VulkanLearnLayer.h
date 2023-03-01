@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Layer.h"
 #include "Platform/API_Vulkan/VulkanPipeline.h"
-#include "Platform/API_Vulkan/VulkanBuffers.h"
+#include "Platform/API_Vulkan/VulkanResources.h"
 #include "Platform/API_Vulkan/VulkanImage.h"
 
 namespace DT

@@ -53,18 +53,43 @@ namespace DT
 		RGBA32F
 	};
 
+	enum class ImageType
+	{
+		Image1D,
+		Image2D,
+		Image3D
+	};
+
+	namespace ImageUsage
+	{
+		enum Usage
+		{
+			TransferSrc         = Bit(0),
+			TransferDst         = Bit(1),
+			Texture             = Bit(2),
+			Storage             = Bit(3),
+			ColorAttachment     = Bit(4),
+			DepthAttachment     = Bit(5),
+			TransientAttachment = Bit(6),
+			InputAttachment     = Bit(7)
+		};
+	}
+	typedef uint32 ImageUsageFlags;
+
 	namespace Convert
 	{
 		VkFormat ToVulkanFormat(ImageFormat format);
+		VkImageType ToVulkanImageType(ImageType imageType);
+		VkImageUsageFlagBits ToVulkanImageUsage(ImageUsage::Usage usage);
+		VkImageUsageFlags ToVulkanImageUsageFlags(ImageUsageFlags usageFlags);
 	}
 
 	namespace Vulkan
 	{
-		void QueueSubmit(VkQueue queue, VkCommandBuffer commandBuffer, VkFence fence = VK_NULL_HANDLE);
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateInfo* pAllocationCreateInfo, VkBuffer* pBuffer, VmaAllocation* pAllocation, VmaAllocationInfo* pAllocationInfo = nullptr);
-		void CreateImage(uint32 width, uint32 height, VkFormat format, uint32 mipLevels, uint32 arrayLayers, VkImageTiling tiling, VkImageUsageFlags usage, VmaAllocationCreateInfo* pAllocationCreateInfo, VkImage* pImage, VmaAllocation* pAllocation, VmaAllocationInfo* pAllocationInfo = nullptr);
-		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		void CreateBufferStaging(const void* data, uint64 size, VkBufferUsageFlags usage, VkBuffer* pBuffer, VmaAllocation* pAllocation);
-		void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
+		void CopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+		void CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, uint32 width, uint32 height);
+		void TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
 	}
 }
