@@ -11,7 +11,7 @@ namespace DT
 		uint32 MipLevels = 1u;
 		uint32 ArrayLayers = 1u;
 		ImageFormat Format = ImageFormat::RGBA8;
-		ImageUsageFlags UsageFlags = ImageUsage::Texture;
+		ImageUsage Usage = ImageUsage::Texture;
 	};
 
 	class VulkanImage2D : public RefCounted
@@ -23,21 +23,26 @@ namespace DT
 		void Invalidate();
 		void Destroy();
 
-		const VmaAllocationInfo& GetAllocationInfo() const { return m_ImageAllocationInfo; }
-		VkImage GetVulkanImage() const { return m_Image; }
-		VkFormat GetVulkanFormat() const { return Convert::ToVulkanFormat(m_Specification.Format); }
-
+		const VmaAllocationInfo& GetAllocationInfo() const { return m_AllocationInfo; }
+		const VkImage& GetVulkanImage() const { return m_Image; }
+		VkFormat GetVulkanFormat() const { return m_Format; }
+		uint32 MipLevels() const { return m_Specification.MipLevels; }
 		uint32 GetWidth() const { return m_Specification.Width; }
 		uint32 GetHeight() const { return m_Specification.Height; }
 
-		void TransitionImageLayout(VkImageLayout newLayout);
-		void TransitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
+		void cmdTransitionLayoutAllMips(VkCommandBuffer commandBuffer, VkImageLayout newLayout);
+		void cmdTransitionLayoutAllMips(VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout);
+		void cmdTransitionLayoutSingleMip(VkCommandBuffer commandBuffer, uint32 mip, VkImageLayout oldLayout, VkImageLayout newLayout);
+		void cmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer);
+		void cmdGenerateMips(VkCommandBuffer commandBuffer);
 
 		const ImageSpecification& GetSpecification() const { return m_Specification; }
 	private:
 		VkImage m_Image = VK_NULL_HANDLE;
-		VmaAllocation m_ImageAllocation = VK_NULL_HANDLE;
-		VmaAllocationInfo m_ImageAllocationInfo{};
+		VmaAllocation m_Allocation = VK_NULL_HANDLE;
+		VmaAllocationInfo m_AllocationInfo{};
+
+		VkFormat m_Format = VK_FORMAT_UNDEFINED;
 		VkImageLayout m_CurrentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 		ImageSpecification m_Specification;

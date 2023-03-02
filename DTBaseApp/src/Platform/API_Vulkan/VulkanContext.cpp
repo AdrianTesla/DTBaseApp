@@ -283,6 +283,63 @@ namespace DT
 		SelectQueueFamilyIndices();
 	}
 
+	bool VulkanPhysicalDevice::IsFormatFeatureSupported(VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags formatFeatures) const
+	{
+		VkFormatProperties formatProperties;
+		vkGetPhysicalDeviceFormatProperties(m_PhysicalDevice, format, &formatProperties);
+		if (tiling == VK_IMAGE_TILING_OPTIMAL) {
+			for (uint8 bit = 0u; bit < 32; bit++) {
+				VkFormatFeatureFlagBits currentFeature = VkFormatFeatureFlagBits(1u << bit);
+				if (currentFeature & formatFeatures) {
+					if (!(formatProperties.optimalTilingFeatures & currentFeature)) {
+						return false;
+					}
+				}
+			}
+		} else {
+			for (uint8 bit = 0u; bit < 32; bit++) {
+				VkFormatFeatureFlagBits currentFeature = VkFormatFeatureFlagBits(1u << bit);
+				if (currentFeature & formatFeatures) {
+					if (!(formatProperties.linearTilingFeatures & currentFeature)) {
+						return false;
+					}
+				}
+			}
+		}
+		return true;
+	}
+
+	VkFormat VulkanPhysicalDevice::GetBestDepthOnlyFormat(VkImageTiling tiling) const
+	{
+		constexpr VkFormat preferenceDepthOnlyFormats[] = {
+			VK_FORMAT_D32_SFLOAT,
+			VK_FORMAT_D16_UNORM
+		};
+		for (size_t i = 0u; i < std::size(preferenceDepthOnlyFormats); i++) {
+			if (IsFormatFeatureSupported(preferenceDepthOnlyFormats[i], tiling, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+				return preferenceDepthOnlyFormats[i];
+			}
+		}
+		ASSERT(false);
+		return VK_FORMAT_UNDEFINED;
+	}
+
+	VkFormat VulkanPhysicalDevice::GetBestDepthStencilFormat(VkImageTiling tiling) const
+	{
+		constexpr VkFormat preferenceDepthStencilFormats[] = {
+			VK_FORMAT_D24_UNORM_S8_UINT,  // higher performance
+			VK_FORMAT_D32_SFLOAT_S8_UINT,
+			VK_FORMAT_D16_UNORM_S8_UINT
+		};
+		for (size_t i = 0u; i < std::size(preferenceDepthStencilFormats); i++) {
+			if (IsFormatFeatureSupported(preferenceDepthStencilFormats[i], tiling, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+				return preferenceDepthStencilFormats[i];
+			}
+		}
+		ASSERT(false);
+		return VK_FORMAT_UNDEFINED;
+	}
+
 	void VulkanPhysicalDevice::GetSupportDetails()
 	{
 		vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_SupportDetails.Properties);
@@ -605,6 +662,7 @@ namespace DT
 	{
 		features->wideLines = VK_TRUE;
 		features->fillModeNonSolid = VK_TRUE;
+		features->samplerAnisotropy = VK_TRUE;
 
 		VulkanPhysicalDevice& physicalDevice = VulkanContext::GetCurrentPhysicalDevice();
 		const VkPhysicalDeviceFeatures& supportedFeatures = physicalDevice.GetSupportedFeatures();

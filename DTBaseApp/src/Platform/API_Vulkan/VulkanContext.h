@@ -39,6 +39,9 @@ namespace DT
 		VkPhysicalDevice GetVulkanPhysicalDevice() const { return m_PhysicalDevice; }
 		const QueueFamilyIndices& GetQueueFamilyIndices() const { return m_QueueFamilyIndices; }
 		const VkPhysicalDeviceFeatures& GetSupportedFeatures() const { return m_SupportDetails.Features; }
+		bool IsFormatFeatureSupported(VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags formatFeatures) const;
+		VkFormat GetBestDepthOnlyFormat(VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL) const;
+		VkFormat GetBestDepthStencilFormat(VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL) const;
 	private:
 		void GetSupportDetails();
 		void SelectQueueFamilyIndices();

@@ -13,7 +13,7 @@ namespace DT
 	}
 
 	VulkanImage2D::VulkanImage2D(const ImageSpecification& specification)
-		: m_Specification(specification)
+		: m_Specification(specification), m_Format(Convert::ToVulkanFormat(specification.Format))
 	{
 		Invalidate();
 	}
@@ -29,58 +29,105 @@ namespace DT
 
 		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
 
+		VkImageUsageFlags imageUsage = 0u;
+
+		if (m_Specification.Usage == ImageUsage::Texture) 
+		{
+			imageUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+		}
+		else
+		{
+			ASSERT(false);
+		}
+
 		VkImageCreateInfo imageCreateInfo{};
 		imageCreateInfo.sType				  = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		imageCreateInfo.pNext				  = nullptr;
 		imageCreateInfo.flags				  = 0u;
 		imageCreateInfo.imageType			  = VK_IMAGE_TYPE_2D;
-		imageCreateInfo.format				  = Convert::ToVulkanFormat(m_Specification.Format);
-		imageCreateInfo.extent.width		  = m_Specification.Width;
-		imageCreateInfo.extent.height		  = m_Specification.Height;
-		imageCreateInfo.extent.depth		  = m_Specification.Depth;
-		imageCreateInfo.mipLevels			  = m_Specification.MipLevels;
-		imageCreateInfo.arrayLayers			  = m_Specification.ArrayLayers;
+		imageCreateInfo.format				  = m_Format;
+		imageCreateInfo.extent.width		  = m_Specification.Width;		    
+		imageCreateInfo.extent.height		  = m_Specification.Height;		    
+		imageCreateInfo.extent.depth		  = m_Specification.Depth;		    
+		imageCreateInfo.mipLevels			  = m_Specification.MipLevels;	    
+		imageCreateInfo.arrayLayers			  = m_Specification.ArrayLayers;    
 		imageCreateInfo.samples				  = VK_SAMPLE_COUNT_1_BIT;
 		imageCreateInfo.tiling				  = VK_IMAGE_TILING_OPTIMAL;
-		imageCreateInfo.usage				  = Convert::ToVulkanImageUsageFlags(m_Specification.UsageFlags);
+		imageCreateInfo.usage				  = imageUsage;
 		imageCreateInfo.sharingMode			  = VK_SHARING_MODE_EXCLUSIVE;
 		imageCreateInfo.queueFamilyIndexCount = 0u;
 		imageCreateInfo.pQueueFamilyIndices	  = nullptr;
 		imageCreateInfo.initialLayout		  = VK_IMAGE_LAYOUT_UNDEFINED;
 
 		VmaAllocationCreateInfo allocationCreateInfo{};
-		allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-		VK_CALL(vmaCreateImage(allocator, &imageCreateInfo, &allocationCreateInfo, &m_Image, &m_ImageAllocation, &m_ImageAllocationInfo));
-		
+		allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+		VK_CALL(vmaCreateImage(allocator, &imageCreateInfo, &allocationCreateInfo, &m_Image, &m_Allocation, &m_AllocationInfo));
+
 		m_CurrentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	}
 
 	void VulkanImage2D::Destroy()
 	{
 		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
-		vmaDestroyImage(allocator, m_Image, m_ImageAllocation);
+		vmaDestroyImage(allocator, m_Image, m_Allocation);
 		m_Image = VK_NULL_HANDLE;
-		m_ImageAllocation = VK_NULL_HANDLE;
+		m_Allocation = VK_NULL_HANDLE;
 	}
 
-	void VulkanImage2D::TransitionImageLayout(VkImageLayout newLayout)
+	void VulkanImage2D::cmdTransitionLayoutAllMips(VkCommandBuffer commandBuffer, VkImageLayout newLayout)
 	{
-		VulkanDevice vulkanDevice = VulkanContext::GetCurrentDevice();
-		VkCommandBuffer commandBuffer = vulkanDevice.BeginCommandBuffer(QueueType::Graphics);
-		vkCmd::TransitionImageLayout(commandBuffer, m_Image, m_CurrentLayout, newLayout);
-		vulkanDevice.EndCommandBuffer();
-
+		vkCmd::TransitionImageLayoutAllMips(commandBuffer, m_Image, m_CurrentLayout, newLayout, m_Format, m_Specification.MipLevels);
 		m_CurrentLayout = newLayout;
 	}
 
-	void VulkanImage2D::TransitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout)
+	void VulkanImage2D::cmdTransitionLayoutAllMips(VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout)
 	{
-		VulkanDevice vulkanDevice = VulkanContext::GetCurrentDevice();
-		VkCommandBuffer commandBuffer = vulkanDevice.BeginCommandBuffer(QueueType::Graphics);
-		vkCmd::TransitionImageLayout(commandBuffer, m_Image, oldLayout, newLayout);
-		vulkanDevice.EndCommandBuffer();
+		vkCmd::TransitionImageLayoutAllMips(commandBuffer, m_Image, oldLayout, newLayout, m_Format, m_Specification.MipLevels);
+		m_CurrentLayout = newLayout;
 	}
 
+	void VulkanImage2D::cmdTransitionLayoutSingleMip(VkCommandBuffer commandBuffer, uint32 mip, VkImageLayout oldLayout, VkImageLayout newLayout)
+	{
+		vkCmd::TransitionImageLayoutSingleMip(commandBuffer, m_Image, oldLayout, newLayout, m_Format, mip);
+	}
+
+	void VulkanImage2D::cmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer)
+	{			
+		vkCmd::CopyBufferToImage(commandBuffer, buffer, m_Image, m_Specification.Width, m_Specification.Height);
+	}
+
+	void VulkanImage2D::cmdGenerateMips(VkCommandBuffer commandBuffer)
+	{
+		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
+
+		int32 width = m_Specification.Width;
+		int32 height = m_Specification.Height;
+
+		for (uint32 mip = 0u; mip < m_Specification.MipLevels - 1u; mip++)
+		{
+			cmdTransitionLayoutSingleMip(commandBuffer, mip, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+			VkImageBlit imageBlitRegion{};
+			imageBlitRegion.srcSubresource.aspectMask	  = VK_IMAGE_ASPECT_COLOR_BIT;
+			imageBlitRegion.srcSubresource.mipLevel		  = mip;
+			imageBlitRegion.srcSubresource.baseArrayLayer = 0u;
+			imageBlitRegion.srcSubresource.layerCount	  = 1u;
+			imageBlitRegion.srcOffsets[0] = { 0,0,0 };
+			imageBlitRegion.srcOffsets[1] = { width,height,1 };
+
+			width /= 2;
+			height /= 2;
+
+			imageBlitRegion.dstSubresource.aspectMask	  = VK_IMAGE_ASPECT_COLOR_BIT;
+			imageBlitRegion.dstSubresource.mipLevel		  = mip + 1u;
+			imageBlitRegion.dstSubresource.baseArrayLayer = 0u;
+			imageBlitRegion.dstSubresource.layerCount	  = 1u;
+			imageBlitRegion.dstOffsets[0] = { 0,0,0 };
+			imageBlitRegion.dstOffsets[1] = { width,height,1 };
+			vkCmdBlitImage(commandBuffer, m_Image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, m_Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &imageBlitRegion, VK_FILTER_LINEAR);
+		}
+		cmdTransitionLayoutSingleMip(commandBuffer, m_Specification.MipLevels - 1u, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+	}
 
 	VulkanTexture2D::VulkanTexture2D(const TextureSpecification& specification)
 		: m_Specification(specification)
@@ -100,15 +147,6 @@ namespace DT
 		ImageData imageData;
 		LoadImageFile(&imageData);
 
-		// create the device local image
-		ImageSpecification specification{};
-		specification.Width = imageData.Width;
-		specification.Height = imageData.Height;
-		specification.Format = imageData.Format;
-		specification.MipLevels = Utils::CalculateMipLevels(specification.Width, specification.Height, specification.Depth);
-		specification.UsageFlags = ImageUsage::Texture | ImageUsage::TransferDst;
-		m_Image = Ref<VulkanImage2D>::Create(specification);
-
 		// upload the pixels to the staging buffer
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
@@ -123,13 +161,23 @@ namespace DT
 		memcpy(stagingBuffer.AllocationInfo.pMappedData, imageData.Data, imageData.Size);
 		stbi_image_free(imageData.Data);
 
-		VkImage image = m_Image->GetVulkanImage();
+		// create the device local image
+		ImageSpecification specification{};
+		specification.Width = imageData.Width;
+		specification.Height = imageData.Height;
+		specification.Format = imageData.Format;
+		specification.Usage = ImageUsage::Texture;
+		specification.MipLevels = Utils::CalculateMipLevels(specification.Width, specification.Height, specification.Depth);
+		m_Image = Ref<VulkanImage2D>::Create(specification);
+
+		// copy the staging buffer to it and generate the mipchain
 		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
 		VkCommandBuffer commandBuffer = vulkanDevice.BeginCommandBuffer(QueueType::Graphics);
 		{
-			vkCmd::TransitionImageLayout(commandBuffer, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-			vkCmd::CopyBufferToImage(commandBuffer, stagingBuffer.Buffer, image, imageData.Width, imageData.Height);
-			vkCmd::TransitionImageLayout(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+			m_Image->cmdTransitionLayoutAllMips(commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+			m_Image->cmdCopyBufferToImage(commandBuffer, stagingBuffer.Buffer);
+			m_Image->cmdGenerateMips(commandBuffer);
+			m_Image->cmdTransitionLayoutAllMips(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		}
 		vulkanDevice.EndCommandBuffer();
 
@@ -161,6 +209,7 @@ namespace DT
 		}
 		imageData->Width = (uint32)width;
 		imageData->Height = (uint32)height;
+		ASSERT(imageData->Data);
 	}
 
 	void VulkanTexture2D::CreateImageView()
@@ -180,7 +229,7 @@ namespace DT
 		imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 		imageViewCreateInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
 		imageViewCreateInfo.subresourceRange.baseMipLevel   = 0u;
-		imageViewCreateInfo.subresourceRange.levelCount     = 1u;
+		imageViewCreateInfo.subresourceRange.levelCount     = m_Image->MipLevels();
 		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0u;
 		imageViewCreateInfo.subresourceRange.layerCount     = 1u;
 		VK_CALL(vkCreateImageView(device, &imageViewCreateInfo, nullptr, &m_ImageView));

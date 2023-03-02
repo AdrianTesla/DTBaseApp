@@ -50,7 +50,15 @@ namespace DT
 	{
 		None,
 		RGBA8,
-		RGBA32F
+		RGBA32F,
+		D32
+	};
+
+	enum class ImageUsage
+	{
+		Texture,
+		Attachment,
+		Storage
 	};
 
 	enum class PolygonMode
@@ -73,22 +81,6 @@ namespace DT
 		None
 	};
 
-	namespace ImageUsage
-	{
-		enum Usage
-		{
-			TransferSrc         = Bit(0),
-			TransferDst         = Bit(1),
-			Texture             = Bit(2),
-			Storage             = Bit(3),
-			ColorAttachment     = Bit(4),
-			DepthAttachment     = Bit(5),
-			TransientAttachment = Bit(6),
-			InputAttachment     = Bit(7)
-		};
-	}
-	typedef uint32 ImageUsageFlags;
-
 	struct VulkanBuffer
 	{
 		VkBuffer Buffer = VK_NULL_HANDLE;
@@ -96,11 +88,17 @@ namespace DT
 		VmaAllocationInfo AllocationInfo{};
 	};
 
+	struct MemoryDependency
+	{
+		VkPipelineStageFlags SrcStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+		VkPipelineStageFlags DstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+		VkAccessFlags SrcAccess = VK_ACCESS_NONE;
+		VkAccessFlags DstAccess = VK_ACCESS_NONE;
+	};
+
 	namespace Convert
 	{
 		VkFormat ToVulkanFormat(ImageFormat format);
-		VkImageUsageFlagBits ToVulkanImageUsage(ImageUsage::Usage usage);
-		VkImageUsageFlags ToVulkanImageUsageFlags(ImageUsageFlags usageFlags);
 		VkPolygonMode ToVulkanPolygonMode(PolygonMode polygonMode);
 		VkPrimitiveTopology ToVulkanPrimitiveTopology(PrimitiveTopology polygonMode);
 		VkCullModeFlags ToVulkanCullMode(FaceCulling culling);
@@ -110,12 +108,20 @@ namespace DT
 	{
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateInfo* pAllocationCreateInfo, VulkanBuffer* pBuffer);
 		void CreateBufferStaging(const void* data, uint64 size, VkBufferUsageFlags usage, VulkanBuffer* pBuffer);
+		bool HasDepthComponent(VkFormat format);
+		bool HasStencilComponent(VkFormat format);
+		bool HasColorComponent(VkFormat format);
+		MemoryDependency CalculateMemoryDependency(VkImageLayout oldLayout, VkImageLayout newLayout);
+		VkImageAspectFlags GetImageAspectFlags(VkFormat format);
 	}
 
 	namespace vkCmd
 	{
 		void CopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		void CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, uint32 width, uint32 height);
-		void TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
+		void TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, const VkImageSubresourceRange& subresource, const MemoryDependency& dependency);
+		void TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, const VkImageSubresourceRange& subresource);
+		void TransitionImageLayoutAllMips(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkFormat format, uint32 mipLevels);
+		void TransitionImageLayoutSingleMip(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkFormat format, uint32 mip);
 	}
 }

@@ -467,7 +467,7 @@ namespace DT
 		attachmentDescriptions[1].format         = m_DepthFormat;
 		attachmentDescriptions[1].samples        = VK_SAMPLE_COUNT_1_BIT;
 		attachmentDescriptions[1].loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		attachmentDescriptions[1].storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+		attachmentDescriptions[1].storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachmentDescriptions[1].stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachmentDescriptions[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachmentDescriptions[1].initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -510,7 +510,7 @@ namespace DT
 		renderPassCreateInfo.pAttachments    = attachmentDescriptions.data();
 		renderPassCreateInfo.subpassCount    = 1u;
 		renderPassCreateInfo.pSubpasses      = &subpassDescription;
-		renderPassCreateInfo.dependencyCount = 1u;	
+		renderPassCreateInfo.dependencyCount = 1u;
 		renderPassCreateInfo.pDependencies   = &subpassDependency;
 		VK_CALL(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &m_SwapchainRenderPass));
 	}
@@ -533,7 +533,12 @@ namespace DT
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
 
-		m_DepthFormat = VK_FORMAT_D32_SFLOAT;
+		VulkanPhysicalDevice& physicalDevice = VulkanContext::GetCurrentPhysicalDevice();
+		
+		Timer timer;
+		m_DepthFormat = physicalDevice.GetBestDepthStencilFormat();
+		float micros = timer.ElapsedMicroseconds();
+		LOG_TRACE("Found depth format {} in {} us", string_VkFormat(m_DepthFormat), micros);
 
 		VkImageCreateInfo imageCreateInfo{};
 		imageCreateInfo.sType				  = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

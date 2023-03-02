@@ -252,12 +252,12 @@ namespace DT
 		samplerCreateInfo.addressModeV			  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerCreateInfo.addressModeW			  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerCreateInfo.mipLodBias			  = 0.0f;
-		samplerCreateInfo.anisotropyEnable		  = VK_FALSE;
-		samplerCreateInfo.maxAnisotropy			  = 1.0f;
+		samplerCreateInfo.anisotropyEnable		  = VK_TRUE;
+		samplerCreateInfo.maxAnisotropy			  = 16.0f;
 		samplerCreateInfo.compareEnable			  = VK_FALSE;
-		samplerCreateInfo.compareOp				  = VK_COMPARE_OP_NEVER;
+		samplerCreateInfo.compareOp				  = VK_COMPARE_OP_LESS;
 		samplerCreateInfo.minLod				  = 0.0f;
-		samplerCreateInfo.maxLod				  = 0.0f;
+		samplerCreateInfo.maxLod				  = VK_LOD_CLAMP_NONE;
 		samplerCreateInfo.borderColor			  = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
 		samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
 		VK_CALL(vkCreateSampler(device, &samplerCreateInfo, nullptr, &m_Sampler));
@@ -312,8 +312,8 @@ namespace DT
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline->GetPipelineLayout(), 0u, 1u, &m_DescriptorSets[Renderer::CurrentFrame()], 0u, nullptr);
 			vkCmdPushConstants(commandBuffer, m_Pipeline->GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(glm::mat4), &s_Cube0Transform);
 			vkCmdDrawIndexed(commandBuffer, m_IndexBuffer->GetIndexCount(), 1u, 0u, 0u, 0u);
-			vkCmdPushConstants(commandBuffer, m_Pipeline->GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(glm::mat4), &s_Cube1Transform);
-			vkCmdDrawIndexed(commandBuffer, m_IndexBuffer->GetIndexCount(), 1u, 0u, 0u, 0u);
+		 	//vkCmdPushConstants(commandBuffer, m_Pipeline->GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(glm::mat4), &s_Cube1Transform);
+		 	//vkCmdDrawIndexed(commandBuffer, m_IndexBuffer->GetIndexCount(), 1u, 0u, 0u, 0u);
 			vkCmdEndRenderPass(commandBuffer);
 		}
 		VK_CALL(vkEndCommandBuffer(commandBuffer));
@@ -351,15 +351,20 @@ namespace DT
 		float yRotation = 0.3f * t;
 		float zRotation = 0.4f * t;
 
+		float sep = 0.5f + 0.5f * std::sin(t);
+		sep *= 20.0f;
+
 		s_Cube0Transform = glm::mat4(1.0f);
-		s_Cube0Transform = glm::rotate(s_Cube0Transform, +xRotation, glm::vec3(1.0f, 0.0f, 0.0f));
-		s_Cube0Transform = glm::rotate(s_Cube0Transform, +yRotation, glm::vec3(0.0f, 1.0f, 0.0f));
-		s_Cube0Transform = glm::rotate(s_Cube0Transform, +zRotation, glm::vec3(0.0f, 0.0f, 1.0f));
+		s_Cube0Transform = glm::translate(s_Cube0Transform, { 0.0f,0.0f,1.0f - sep });
+		s_Cube0Transform = glm::rotate(s_Cube0Transform, +xRotation, { 1.0f,0.0f,0.0f });
+		s_Cube0Transform = glm::rotate(s_Cube0Transform, +yRotation, { 0.0f,1.0f,0.0f });
+		s_Cube0Transform = glm::rotate(s_Cube0Transform, +zRotation, { 0.0f,0.0f,1.0f });
 
 		s_Cube1Transform = glm::mat4(1.0f);
-		s_Cube1Transform = glm::rotate(s_Cube1Transform, -xRotation, glm::vec3(1.0f, 0.0f, 0.0f));
-		s_Cube1Transform = glm::rotate(s_Cube1Transform, -yRotation, glm::vec3(0.0f, 1.0f, 0.0f));
-		s_Cube1Transform = glm::rotate(s_Cube1Transform, -zRotation, glm::vec3(0.0f, 0.0f, 1.0f));
+		s_Cube1Transform = glm::translate(s_Cube1Transform, { 0.0f,0.0f,-sep });
+		s_Cube1Transform = glm::rotate(s_Cube1Transform, -xRotation, { 1.0f,0.0f,0.0f });
+		s_Cube1Transform = glm::rotate(s_Cube1Transform, -yRotation, { 0.0f,1.0f,0.0f });
+		s_Cube1Transform = glm::rotate(s_Cube1Transform, -zRotation, { 0.0f,0.0f,1.0f });
 	}
 
 	void VulkanLearnLayer::OnRender()

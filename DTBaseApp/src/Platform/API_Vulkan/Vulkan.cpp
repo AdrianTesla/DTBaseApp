@@ -10,40 +10,12 @@ namespace DT::Convert
 		{
 			case ImageFormat::RGBA8:   return VK_FORMAT_R8G8B8A8_UNORM;
 			case ImageFormat::RGBA32F: return VK_FORMAT_R32G32B32A32_SFLOAT;
+			case ImageFormat::D32:     return VK_FORMAT_D32_SFLOAT;
 		}
 		ASSERT(false);
 		return VK_FORMAT_UNDEFINED;
 	}
 
-	VkImageUsageFlagBits ToVulkanImageUsage(ImageUsage::Usage usage)
-	{
-		switch (usage)
-		{
-			case ImageUsage::TransferSrc:		  return VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-			case ImageUsage::TransferDst:		  return VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-			case ImageUsage::Texture:			  return VK_IMAGE_USAGE_SAMPLED_BIT;
-			case ImageUsage::Storage:			  return VK_IMAGE_USAGE_STORAGE_BIT;
-			case ImageUsage::ColorAttachment:	  return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-			case ImageUsage::DepthAttachment:	  return VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-			case ImageUsage::TransientAttachment: return VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
-			case ImageUsage::InputAttachment:	  return VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-		}
-		ASSERT(false);
-		return VK_IMAGE_USAGE_FLAG_BITS_MAX_ENUM;
-	}
-
-	VkImageUsageFlags ToVulkanImageUsageFlags(ImageUsageFlags usageFlags)
-	{
-		VkImageUsageFlags usage = 0u;
-		for (uint8 i = 0u; i < 32u; i++) {
-			ImageUsage::Usage currentFlag = ImageUsage::Usage(1 << i);
-			if (currentFlag & usageFlags) {
-				usage |= ToVulkanImageUsage(currentFlag);
-			}
-		}
-		return usage;
-	}
-	
 	VkPolygonMode ToVulkanPolygonMode(PolygonMode polygonMode)
 	{
 		switch (polygonMode)
@@ -127,6 +99,105 @@ namespace DT::Vulkan
 
 		// destroy staging buffer and free staging allocation
 		vmaDestroyBuffer(allocator, stagingBuffer.Buffer, stagingBuffer.Allocation);
+	}
+
+	bool HasDepthComponent(VkFormat format)
+	{
+		switch (format)
+		{
+			case VK_FORMAT_D32_SFLOAT_S8_UINT:
+			case VK_FORMAT_D32_SFLOAT:
+			case VK_FORMAT_D24_UNORM_S8_UINT:
+			case VK_FORMAT_D16_UNORM_S8_UINT:
+			case VK_FORMAT_D16_UNORM:
+				return true;
+		}
+		return false;
+	}
+	
+	bool HasStencilComponent(VkFormat format)
+	{
+		switch (format)
+		{
+			case VK_FORMAT_D32_SFLOAT_S8_UINT:
+			case VK_FORMAT_D24_UNORM_S8_UINT:
+			case VK_FORMAT_D16_UNORM_S8_UINT:
+				return true;
+		}
+		return false;
+	}
+
+	bool HasColorComponent(VkFormat format)
+	{
+		return !HasDepthComponent(format) && !HasStencilComponent(format);
+	}
+	
+	MemoryDependency CalculateMemoryDependency(VkImageLayout oldLayout, VkImageLayout newLayout)
+	{
+		MemoryDependency dependency{};
+
+		if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+		{
+			dependency.SrcAccess = 0u;
+			dependency.SrcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		}
+		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+		{
+			dependency.SrcAccess = VK_ACCESS_TRANSFER_READ_BIT;
+			dependency.SrcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
+		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+		{
+			dependency.SrcAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
+			dependency.SrcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
+		else 
+		{ 
+			ASSERT(false); 
+		}
+
+		if (newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+		{
+			dependency.DstAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
+			dependency.DstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
+		else if (newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+		{
+			dependency.DstAccess = VK_ACCESS_TRANSFER_READ_BIT;
+			dependency.DstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
+		else if (newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		{
+			dependency.DstAccess = VK_ACCESS_SHADER_READ_BIT;
+			dependency.DstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		}
+		else if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+		{
+			dependency.DstAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+			dependency.DstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		}
+		else
+		{
+			ASSERT(false);
+		}
+
+		return dependency;
+	}
+
+	VkImageAspectFlags GetImageAspectFlags(VkFormat format)
+	{
+		VkImageAspectFlags imageAspect = 0u;
+
+		if (Vulkan::HasDepthComponent(format))
+			imageAspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
+
+		if (Vulkan::HasStencilComponent(format))
+			imageAspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
+
+		if (Vulkan::HasColorComponent(format))
+			imageAspect |= VK_IMAGE_ASPECT_COLOR_BIT;
+
+		return imageAspect;
 	}
 }
 
@@ -216,58 +287,59 @@ namespace DT::vkCmd
 	//	);
 	//}
 
-	void TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout)
+	void TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, const VkImageSubresourceRange& subresource, const MemoryDependency& dependency)
 	{
-		VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_NONE;
-		VkAccessFlags srcAccess = VK_ACCESS_NONE;
-
-		VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_NONE;
-		VkAccessFlags dstAccess = VK_ACCESS_NONE;
-
-		if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED)
-		{
-			srcAccess = 0u;
-			srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-		{
-			srcAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
-			srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		}
-
-		if (newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-		{
-			dstAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
-			dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		}
-		else if (newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-		{
-			dstAccess = VK_ACCESS_SHADER_READ_BIT;
-			dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-		}
-
 		VkImageMemoryBarrier imageMemoryBarrier{};
 		imageMemoryBarrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		imageMemoryBarrier.pNext               = nullptr;
-		imageMemoryBarrier.srcAccessMask       = srcAccess;
-		imageMemoryBarrier.dstAccessMask       = dstAccess;
+		imageMemoryBarrier.srcAccessMask       = dependency.SrcAccess;
+		imageMemoryBarrier.dstAccessMask       = dependency.DstAccess;
 		imageMemoryBarrier.oldLayout           = oldLayout;
 		imageMemoryBarrier.newLayout           = newLayout;
 		imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		imageMemoryBarrier.image               = image;
-		imageMemoryBarrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-		imageMemoryBarrier.subresourceRange.baseMipLevel   = 0u;
-		imageMemoryBarrier.subresourceRange.levelCount     = 1u;
-		imageMemoryBarrier.subresourceRange.baseArrayLayer = 0u;
-		imageMemoryBarrier.subresourceRange.layerCount     = 1u;
+		imageMemoryBarrier.subresourceRange    = subresource;
 
 		vkCmdPipelineBarrier(
 			commandBuffer,
-			srcStage, dstStage, 0u,
+			dependency.SrcStage, dependency.DstStage, 0u,
 			0u, nullptr,            // memory barrier
 			0u, nullptr,            // buffer memory barrier
 			1u, &imageMemoryBarrier // image memory barrier
 		);
+	}
+
+	void TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, const VkImageSubresourceRange& subresource)
+	{
+		MemoryDependency dependency = Vulkan::CalculateMemoryDependency(oldLayout, newLayout);
+		TransitionImageLayout(commandBuffer, image, oldLayout, newLayout, subresource, dependency);
+	}
+
+	void TransitionImageLayoutAllMips(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkFormat format, uint32 mipLevels)
+	{
+		VkImageSubresourceRange subresource{};
+		subresource.aspectMask	   = Vulkan::GetImageAspectFlags(format);
+		subresource.baseMipLevel   = 0u;
+		subresource.levelCount	   = mipLevels;
+		subresource.baseArrayLayer = 0u;
+		subresource.layerCount	   = 1u;
+		TransitionImageLayout(commandBuffer, image, oldLayout, newLayout, subresource);
+	}
+
+	void TransitionImageLayoutSingleMip(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkFormat format, uint32 mip)
+	{
+		VkImageSubresourceRange subresource{};
+		subresource.aspectMask	   = Vulkan::GetImageAspectFlags(format);
+		subresource.baseMipLevel   = mip;
+		subresource.levelCount	   = 1u;
+		subresource.baseArrayLayer = 0u;
+		subresource.layerCount	   = 1u;
+		TransitionImageLayout(commandBuffer, image, oldLayout, newLayout, subresource);
+	}
+
+
+	void TransitionImageMipLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32 mipLevel)
+	{
 	}
 }
