@@ -24,6 +24,7 @@ project "DTBaseApp"
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.vk_mem_alloc}",
 		"%{IncludeDir.stb}",
+		"%{IncludeDir.glm}",
 		"%{IncludeDir.VulkanSDK}"
 	}
 

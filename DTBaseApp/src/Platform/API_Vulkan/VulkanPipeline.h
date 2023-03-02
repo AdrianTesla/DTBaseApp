@@ -9,6 +9,8 @@ namespace DT
 	{
 		Ref<VulkanShader> Shader;
 		PolygonMode PolygonMode = PolygonMode::Fill;
+		PrimitiveTopology Topology = PrimitiveTopology::TriangleList;
+		FaceCulling Culling = FaceCulling::Back;
 	};
 
 	class VulkanPipeline : public RefCounted

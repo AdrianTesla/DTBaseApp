@@ -22,7 +22,10 @@ namespace DT
 		SelectSurfaceTransform();
 		CreateSwapchain();
 		CreateSwapchainImageViews();
+
+		CreateDepthImage();
 		CreateSwapchainRenderPass();
+
 		CreateSwapchainFramebuffers();
 		CreateSyncronizationObjects();
 	}
@@ -30,7 +33,17 @@ namespace DT
 	void VulkanSwapchain::Shutdown()
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();						
-																						
+
+
+		// temp
+		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
+		vmaDestroyImage(allocator, m_DepthImage, m_DepthImageAllocation);
+		vkDestroyImageView(device, m_DepthImageView, nullptr);
+		m_DepthImage = VK_NULL_HANDLE;
+		m_DepthImageAllocation = VK_NULL_HANDLE;
+		m_DepthImageView = VK_NULL_HANDLE;
+
+
 		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++) {							
 			vkDestroySemaphore(device, m_ImageAvailableSemaphores[i], nullptr);			
 			m_ImageAvailableSemaphores[i] = VK_NULL_HANDLE;								
@@ -70,6 +83,16 @@ namespace DT
 		for (uint32 i = 0u; i < m_ImageCount; i++)
 			vkDestroyImageView(device, m_SwapchainImageViews[i], nullptr);
 
+		// temp
+		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
+		vmaDestroyImage(allocator, m_DepthImage, m_DepthImageAllocation);
+		vkDestroyImageView(device, m_DepthImageView, nullptr);
+		m_DepthImage = VK_NULL_HANDLE;
+		m_DepthImageAllocation = VK_NULL_HANDLE;
+		m_DepthImageView = VK_NULL_HANDLE;
+
+		vkDestroyImageView(device, m_DepthImageView, nullptr);
+
 		m_LogCreation = false;
 
 		GetSupportDetails();
@@ -82,6 +105,7 @@ namespace DT
 		SelectSurfaceTransform();
 		CreateSwapchain();
 		CreateSwapchainImageViews();
+		CreateDepthImage();
 		CreateSwapchainFramebuffers();
 
 		LOG_WARN("Recreated swapchain with size ({}, {}) ({} ms)", m_Width, m_Height, timer.ElapsedMilliseconds());
@@ -404,13 +428,18 @@ namespace DT
 		m_SwapchainFramebuffers.Size = m_ImageCount;
 		for (uint32 i = 0u; i < m_ImageCount; i++)
 		{
+			VkImageView imageViews[2] = {
+				m_SwapchainImageViews[i],
+				m_DepthImageView
+			};
+
 			VkFramebufferCreateInfo framebufferCreateInfo{};
 			framebufferCreateInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 			framebufferCreateInfo.pNext           = nullptr;
 			framebufferCreateInfo.flags           = 0u;
 			framebufferCreateInfo.renderPass      = m_SwapchainRenderPass;
-			framebufferCreateInfo.attachmentCount = 1u;
-			framebufferCreateInfo.pAttachments    = &m_SwapchainImageViews[i];
+			framebufferCreateInfo.attachmentCount = (uint32)std::size(imageViews);
+			framebufferCreateInfo.pAttachments    = imageViews;
 			framebufferCreateInfo.width           = (uint32)m_Width;
 			framebufferCreateInfo.height          = (uint32)m_Height;
 			framebufferCreateInfo.layers          = 1u;
@@ -422,20 +451,35 @@ namespace DT
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 
-		VkAttachmentDescription attachmentDescription{};
-		attachmentDescription.flags          = 0u;
-		attachmentDescription.format         = m_SurfaceFormat.format;
-		attachmentDescription.samples        = VK_SAMPLE_COUNT_1_BIT;
-		attachmentDescription.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		attachmentDescription.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
-		attachmentDescription.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		attachmentDescription.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachmentDescription.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		std::array<VkAttachmentDescription, 2u> attachmentDescriptions{};
+
+		attachmentDescriptions[0].flags          = 0u;
+		attachmentDescriptions[0].format         = m_SurfaceFormat.format;
+		attachmentDescriptions[0].samples        = VK_SAMPLE_COUNT_1_BIT;
+		attachmentDescriptions[0].loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		attachmentDescriptions[0].storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+		attachmentDescriptions[0].stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachmentDescriptions[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachmentDescriptions[0].initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+		attachmentDescriptions[0].finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+		attachmentDescriptions[1].flags          = 0u;
+		attachmentDescriptions[1].format         = m_DepthFormat;
+		attachmentDescriptions[1].samples        = VK_SAMPLE_COUNT_1_BIT;
+		attachmentDescriptions[1].loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		attachmentDescriptions[1].storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+		attachmentDescriptions[1].stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachmentDescriptions[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachmentDescriptions[1].initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+		attachmentDescriptions[1].finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 		VkAttachmentReference colorAttachmentReference{};
 		colorAttachmentReference.attachment = 0u;
 		colorAttachmentReference.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		VkAttachmentReference depthAttachmentReference{};
+		depthAttachmentReference.attachment = 1u;
+		depthAttachmentReference.layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 		VkSubpassDescription subpassDescription{};
 		subpassDescription.flags                   = 0u;
@@ -445,25 +489,25 @@ namespace DT
 		subpassDescription.colorAttachmentCount    = 1u;
 		subpassDescription.pColorAttachments       = &colorAttachmentReference;
 		subpassDescription.pResolveAttachments     = nullptr;
-		subpassDescription.pDepthStencilAttachment = nullptr;
+		subpassDescription.pDepthStencilAttachment = &depthAttachmentReference;
 		subpassDescription.preserveAttachmentCount = 0u;
 		subpassDescription.pPreserveAttachments    = nullptr;
 
 		VkSubpassDependency subpassDependency{};
 		subpassDependency.srcSubpass      = VK_SUBPASS_EXTERNAL;
 		subpassDependency.dstSubpass      = 0u;
-		subpassDependency.srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		subpassDependency.dstStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		subpassDependency.srcAccessMask   = 0u;
-		subpassDependency.dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		subpassDependency.srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;	 
+		subpassDependency.dstStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;	 
+		subpassDependency.srcAccessMask   = 0u;																							 
+		subpassDependency.dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;		 
 		subpassDependency.dependencyFlags = 0u;
 
 		VkRenderPassCreateInfo renderPassCreateInfo{};
 		renderPassCreateInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassCreateInfo.pNext           = nullptr;
 		renderPassCreateInfo.flags           = 0u;
-		renderPassCreateInfo.attachmentCount = 1u;
-		renderPassCreateInfo.pAttachments    = &attachmentDescription;
+		renderPassCreateInfo.attachmentCount = (uint32)attachmentDescriptions.size();
+		renderPassCreateInfo.pAttachments    = attachmentDescriptions.data();
 		renderPassCreateInfo.subpassCount    = 1u;
 		renderPassCreateInfo.pSubpasses      = &subpassDescription;
 		renderPassCreateInfo.dependencyCount = 1u;	
@@ -479,8 +523,59 @@ namespace DT
 		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 		semaphoreCreateInfo.pNext = nullptr;
 		semaphoreCreateInfo.flags = 0u;
+
 		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
 			VK_CALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &m_ImageAvailableSemaphores[i]));
+	}
+
+	void VulkanSwapchain::CreateDepthImage()
+	{
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
+
+		m_DepthFormat = VK_FORMAT_D32_SFLOAT;
+
+		VkImageCreateInfo imageCreateInfo{};
+		imageCreateInfo.sType				  = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageCreateInfo.pNext				  = nullptr;
+		imageCreateInfo.flags				  = 0u;
+		imageCreateInfo.imageType			  = VK_IMAGE_TYPE_2D;
+		imageCreateInfo.format				  = m_DepthFormat;
+		imageCreateInfo.extent.width		  = (uint32)m_Width;
+		imageCreateInfo.extent.height		  = (uint32)m_Height;
+		imageCreateInfo.extent.depth		  = 1u;
+		imageCreateInfo.mipLevels			  = 1u;
+		imageCreateInfo.arrayLayers			  = 1u;
+		imageCreateInfo.samples				  = VK_SAMPLE_COUNT_1_BIT;
+		imageCreateInfo.tiling				  = VK_IMAGE_TILING_OPTIMAL;
+		imageCreateInfo.usage				  = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		imageCreateInfo.sharingMode			  = VK_SHARING_MODE_EXCLUSIVE;
+		imageCreateInfo.queueFamilyIndexCount = 0u;
+		imageCreateInfo.pQueueFamilyIndices	  = nullptr;
+		imageCreateInfo.initialLayout		  = VK_IMAGE_LAYOUT_UNDEFINED;
+
+		VmaAllocationCreateInfo allocationCreateInfo{};
+		allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+		allocationCreateInfo.flags = 0u;
+		VK_CALL(vmaCreateImage(allocator, &imageCreateInfo, &allocationCreateInfo, &m_DepthImage, &m_DepthImageAllocation, nullptr));	
+	
+		VkImageViewCreateInfo imageViewCreateInfo{};
+		imageViewCreateInfo.sType		 = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		imageViewCreateInfo.pNext		 = nullptr;
+		imageViewCreateInfo.flags		 = 0u;
+		imageViewCreateInfo.image		 = m_DepthImage;
+		imageViewCreateInfo.viewType	 = VK_IMAGE_VIEW_TYPE_2D;
+		imageViewCreateInfo.format		 = m_DepthFormat;
+		imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.subresourceRange.aspectMask		= VK_IMAGE_ASPECT_DEPTH_BIT;
+		imageViewCreateInfo.subresourceRange.baseMipLevel	= 0u;
+		imageViewCreateInfo.subresourceRange.levelCount		= 1u;
+		imageViewCreateInfo.subresourceRange.baseArrayLayer	= 0u;
+		imageViewCreateInfo.subresourceRange.layerCount		= 1u;
+		VK_CALL(vkCreateImageView(device, &imageViewCreateInfo, nullptr, &m_DepthImageView));
 	}
 
 	bool VulkanSwapchain::AquireNextImage()

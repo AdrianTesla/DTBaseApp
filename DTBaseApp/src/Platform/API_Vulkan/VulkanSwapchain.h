@@ -64,6 +64,9 @@ namespace DT
 		void CreateSwapchainFramebuffers();
 		void CreateSwapchainRenderPass();
 		void CreateSyncronizationObjects();
+
+		// temp
+		void CreateDepthImage();
 	private:
 		SwapchainSupportDetails m_SupportDetails;
 
@@ -78,6 +81,14 @@ namespace DT
 		VkImageUsageFlags m_SwapImageUsage;
 		VkCompositeAlphaFlagBitsKHR m_CompositeAlpha;
 		VkSurfaceTransformFlagBitsKHR m_SurfaceTransform;
+
+
+		// temp
+		VkImage m_DepthImage = VK_NULL_HANDLE;
+		VmaAllocation m_DepthImageAllocation = VK_NULL_HANDLE;
+		VkImageView m_DepthImageView = VK_NULL_HANDLE;
+		VkFormat m_DepthFormat = VK_FORMAT_UNDEFINED;
+
 
 		VkQueue m_PresentQueue = VK_NULL_HANDLE;
 

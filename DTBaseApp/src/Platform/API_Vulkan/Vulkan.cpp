@@ -15,18 +15,6 @@ namespace DT::Convert
 		return VK_FORMAT_UNDEFINED;
 	}
 
-	VkImageType ToVulkanImageType(ImageType imageType)
-	{
-		switch (imageType)
-		{
-			case ImageType::Image1D: return VK_IMAGE_TYPE_1D;
-			case ImageType::Image2D: return VK_IMAGE_TYPE_2D;
-			case ImageType::Image3D: return VK_IMAGE_TYPE_3D;
-		}
-		ASSERT(false);
-		return VK_IMAGE_TYPE_MAX_ENUM;
-	}
-
 	VkImageUsageFlagBits ToVulkanImageUsage(ImageUsage::Usage usage)
 	{
 		switch (usage)
@@ -66,6 +54,29 @@ namespace DT::Convert
 		}
 		ASSERT(false);
 		return VK_POLYGON_MODE_MAX_ENUM;
+	}
+
+	VkPrimitiveTopology ToVulkanPrimitiveTopology(PrimitiveTopology topology)
+	{
+		switch (topology)
+		{
+			case PrimitiveTopology::TriangleList: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+			case PrimitiveTopology::LineList: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+		}
+		ASSERT(false);
+		return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+	}
+
+	VkCullModeFlags ToVulkanCullMode(FaceCulling culling)
+	{
+		switch (culling)
+		{
+			case FaceCulling::Back:  return VK_CULL_MODE_BACK_BIT;
+			case FaceCulling::Front: return VK_CULL_MODE_FRONT_BIT;
+			case FaceCulling::None:  return VK_CULL_MODE_NONE;
+		}
+		ASSERT(false);
+		return VK_CULL_MODE_FLAG_BITS_MAX_ENUM;
 	}
 }
 

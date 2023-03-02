@@ -6,6 +6,7 @@ IncludeDir["glfw"]         = "%{wks.location}/vendor/glfw/include"
 IncludeDir["spdlog"]       = "%{wks.location}/vendor/spdlog/include"
 IncludeDir["vk_mem_alloc"] = "%{wks.location}/vendor/vk_mem_alloc"
 IncludeDir["stb"]          = "%{wks.location}/vendor/stb"
+IncludeDir["glm"]          = "%{wks.location}/vendor/glm"
 IncludeDir["VulkanSDK"]    = "%{VULKAN_SDK}/Include"
 
 -- library directories

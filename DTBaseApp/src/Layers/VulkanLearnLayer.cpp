@@ -6,21 +6,33 @@
 #include "Platform/API_Vulkan/VulkanRenderer.h"
 #include <stb_image.h>
 
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 namespace DT
 {
 	static struct UniformBufferData
 	{
+		glm::mat4 ProjectionMatrix = glm::mat4(1.0f);
+		glm::mat4 ViewMatrix = glm::mat4(1.0f);
 		float ScreenWidth;
 		float ScreenHeight;
 		float AspectRatio;
 		float Time;
-	} s_UniformBufferData;
+	} s_UniformBufferData{};
+
+	static glm::mat4 s_Cube0Transform = glm::mat4(1.0f);
+	static glm::mat4 s_Cube1Transform = glm::mat4(1.0f);
 
 	void VulkanLearnLayer::OnAttach()
 	{
 		PipelineSpecification specification{};
 		specification.Shader = Ref<VulkanShader>::Create();
 		specification.PolygonMode = PolygonMode::Fill;
+		specification.Topology = PrimitiveTopology::TriangleList;
+		specification.Culling = FaceCulling::Back;
 		m_Pipeline = Ref<VulkanPipeline>::Create(specification);
 
 		CreateCommandBuffers();
@@ -50,43 +62,68 @@ namespace DT
 	{
 		struct Vertex
 		{
-			struct
-			{
-				float x;
-				float y;
-			} Position;
-			struct
-			{
-				float r;
-				float g;
-				float b;
-			} Color;
-			struct
-			{
-				float u;
-				float v;
-			} TexCoord;
+			glm::vec3 Position;
+			glm::vec3 Color;
+			glm::vec2 TexCoord;
 		};
 
-		const float s = 1.0f / 1.0f;
+		const float s = 0.5f;
 
-		Vertex vertices[4];
-		vertices[0].Position = { -s,-s };
-		vertices[1].Position = { -s,+s };
-		vertices[2].Position = { +s,+s };
-		vertices[3].Position = { +s,-s };
+		Vertex vertices[8];
+		vertices[0].Position = { -s,-s,-s };
+		vertices[1].Position = { -s,-s,+s };
+		vertices[2].Position = { +s,-s,+s };
+		vertices[3].Position = { +s,-s,-s };
+		vertices[4].Position = { -s,+s,-s };
+		vertices[5].Position = { -s,+s,+s };
+		vertices[6].Position = { +s,+s,+s };
+		vertices[7].Position = { +s,+s,-s };
 
-		vertices[0].Color = { 1.0f,1.0f,1.0f };
-		vertices[1].Color = { 1.0f,1.0f,1.0f };
-		vertices[2].Color = { 1.0f,1.0f,1.0f };
-		vertices[3].Color = { 1.0f,1.0f,1.0f };
+		for (uint8 i = 0u; i < 8u; i++) {
+			float r = 1.0f;
+			float g = 1.0f;
+			float b = 1.0f;
+			vertices[i].Color = { r,g,b };
+		}
 
 		vertices[0].TexCoord = { 0.0f,0.0f };
 		vertices[1].TexCoord = { 0.0f,1.0f };
 		vertices[2].TexCoord = { 1.0f,1.0f };
 		vertices[3].TexCoord = { 1.0f,0.0f };
+		vertices[4].TexCoord = { 0.0f,0.0f };
+		vertices[5].TexCoord = { 0.0f,1.0f };
+		vertices[6].TexCoord = { 1.0f,1.0f };
+		vertices[7].TexCoord = { 1.0f,0.0f };
 
-		uint32 indices[6] = { 0u,1u,2u, 0u,2u,3u };
+		constexpr uint32 indices[] = { 
+			0u,2u,1u,
+			2u,0u,3u,
+			0u,5u,4u,
+			5u,0u,1u,
+			5u,1u,6u,
+			6u,1u,2u,
+			2u,7u,6u,
+			7u,2u,3u,
+			4u,7u,3u,
+			3u,0u,4u,
+			7u,4u,5u,
+			7u,5u,6u
+		};
+
+		constexpr uint32 line_indices[] = { 
+			0u,1u,
+			1u,2u,
+			2u,3u,
+			3u,0u,
+			0u,4u,
+			1u,5u,
+			2u,6u,
+			3u,7u,
+			4u,5u,
+			5u,6u,
+			6u,7u,
+			7u,4u
+		};
 
 		m_VertexBuffer = Ref<VulkanVertexBuffer>::Create(vertices, sizeof(vertices));
 		m_IndexBuffer = Ref<VulkanIndexBuffer>::Create(indices, sizeof(indices));
@@ -103,6 +140,8 @@ namespace DT
 		s_UniformBufferData.ScreenWidth  = width;
 		s_UniformBufferData.ScreenHeight = height;
 		s_UniformBufferData.AspectRatio  = width / height;
+		s_UniformBufferData.ProjectionMatrix = glm::perspective(45.0f, s_UniformBufferData.AspectRatio, 0.1f, 1000.0f);
+		s_UniformBufferData.ViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
 		s_UniformBufferData.Time = (float)Application::Get().GetTime();
 		
 		m_UniformBuffers[Renderer::CurrentFrame()]->SetData(&s_UniformBufferData, sizeof(s_UniformBufferData));
@@ -234,7 +273,9 @@ namespace DT
 		commandBufferBeginInfo.flags            = 0u;
 		commandBufferBeginInfo.pInheritanceInfo = nullptr;
 
-		VkClearValue clearValue = {{{ 0.0f,0.0f,0.0f,1.0f }}};
+		VkClearValue clearValues[2];
+		clearValues[0].color              = {{ 0.0f,0.0f,0.0f,1.0f }};
+		clearValues[1].depthStencil.depth = 1.0f;
 
 		VkRenderPassBeginInfo renderPassBeginInfo{};
 		renderPassBeginInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -243,20 +284,20 @@ namespace DT
 		renderPassBeginInfo.framebuffer       = swapchain.GetActiveFramebuffer();
 		renderPassBeginInfo.renderArea.offset = { 0u,0u };
 		renderPassBeginInfo.renderArea.extent = { (uint32)swapchain.GetWidth(),(uint32)swapchain.GetHeight()};
-		renderPassBeginInfo.clearValueCount   = 1u;
-		renderPassBeginInfo.pClearValues      = &clearValue;
+		renderPassBeginInfo.clearValueCount   = (uint32)std::size(clearValues);
+		renderPassBeginInfo.pClearValues      = clearValues;
 
 		VkViewport viewport{};
 		viewport.x        = 0.0f;
-		viewport.y        = 0.0f;
+		viewport.y        = (float)swapchain.GetHeight();
 		viewport.width    = (float)swapchain.GetWidth();
-		viewport.height   = (float)swapchain.GetHeight();
+		viewport.height   = -(float)swapchain.GetHeight();
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 
 		VkRect2D scissor{};
 		scissor.offset = { 0u,0u };
-		scissor.extent = { (uint32)viewport.width,(uint32)viewport.height };
+		scissor.extent = { swapchain.GetWidth(),swapchain.GetHeight() };
 
 		VkDeviceSize offsets = 0u;
 
@@ -269,6 +310,9 @@ namespace DT
 			vkCmdSetViewport(commandBuffer, 0u, 1u, &viewport);
 			vkCmdSetScissor(commandBuffer, 0u, 1u, &scissor);
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline->GetPipelineLayout(), 0u, 1u, &m_DescriptorSets[Renderer::CurrentFrame()], 0u, nullptr);
+			vkCmdPushConstants(commandBuffer, m_Pipeline->GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(glm::mat4), &s_Cube0Transform);
+			vkCmdDrawIndexed(commandBuffer, m_IndexBuffer->GetIndexCount(), 1u, 0u, 0u, 0u);
+			vkCmdPushConstants(commandBuffer, m_Pipeline->GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(glm::mat4), &s_Cube1Transform);
 			vkCmdDrawIndexed(commandBuffer, m_IndexBuffer->GetIndexCount(), 1u, 0u, 0u, 0u);
 			vkCmdEndRenderPass(commandBuffer);
 		}
@@ -299,6 +343,23 @@ namespace DT
 
 	void VulkanLearnLayer::OnUpdate(float dt)
 	{
+		float t = Application::Get().GetTime();
+
+		float factor = (0.5f + 0.5f * std::sin(t)) * 2.0f;
+
+		float xRotation = 0.2f * t;
+		float yRotation = 0.3f * t;
+		float zRotation = 0.4f * t;
+
+		s_Cube0Transform = glm::mat4(1.0f);
+		s_Cube0Transform = glm::rotate(s_Cube0Transform, +xRotation, glm::vec3(1.0f, 0.0f, 0.0f));
+		s_Cube0Transform = glm::rotate(s_Cube0Transform, +yRotation, glm::vec3(0.0f, 1.0f, 0.0f));
+		s_Cube0Transform = glm::rotate(s_Cube0Transform, +zRotation, glm::vec3(0.0f, 0.0f, 1.0f));
+
+		s_Cube1Transform = glm::mat4(1.0f);
+		s_Cube1Transform = glm::rotate(s_Cube1Transform, -xRotation, glm::vec3(1.0f, 0.0f, 0.0f));
+		s_Cube1Transform = glm::rotate(s_Cube1Transform, -yRotation, glm::vec3(0.0f, 1.0f, 0.0f));
+		s_Cube1Transform = glm::rotate(s_Cube1Transform, -zRotation, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 
 	void VulkanLearnLayer::OnRender()

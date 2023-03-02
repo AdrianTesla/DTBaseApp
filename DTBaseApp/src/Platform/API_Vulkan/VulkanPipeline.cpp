@@ -2,6 +2,10 @@
 #include "VulkanContext.h"
 #include "VulkanRenderer.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 namespace DT
 {
 	VulkanPipeline::VulkanPipeline(const PipelineSpecification& specification)
@@ -20,22 +24,9 @@ namespace DT
 
 		struct Vertex
 		{
-			struct
-			{
-				float x;
-				float y;
-			} Position;
-			struct
-			{
-				float r;
-				float g;
-				float b;
-			} Color;
-			struct
-			{
-				float u;
-				float v;
-			} TexCoord;
+			glm::vec3 Position;
+			glm::vec3 Color;
+			glm::vec2 TexCoord;
 		};
 
 		VkVertexInputBindingDescription vertexInputBindingDescription{};
@@ -46,7 +37,7 @@ namespace DT
 		VkVertexInputAttributeDescription vertexInputAttributeDescriptions[3];
 		vertexInputAttributeDescriptions[0].location = 0u;
 		vertexInputAttributeDescriptions[0].binding  = 0u;
-		vertexInputAttributeDescriptions[0].format   = VK_FORMAT_R32G32_SFLOAT;
+		vertexInputAttributeDescriptions[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
 		vertexInputAttributeDescriptions[0].offset   = offsetof(Vertex, Position);
 
 		vertexInputAttributeDescriptions[1].location = 1u;
@@ -72,7 +63,7 @@ namespace DT
 		pipelineInputAssemblyStateCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		pipelineInputAssemblyStateCreateInfo.pNext                  = nullptr;
 		pipelineInputAssemblyStateCreateInfo.flags                  = 0u;
-		pipelineInputAssemblyStateCreateInfo.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		pipelineInputAssemblyStateCreateInfo.topology               = Convert::ToVulkanPrimitiveTopology(m_Specification.Topology);
 		pipelineInputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
 
 		VkPipelineTessellationStateCreateInfo pipelineTessellationStateCreateInfo{};
@@ -97,7 +88,7 @@ namespace DT
 		pipelineRasterizationStateCreateInfo.depthClampEnable        = VK_FALSE;
 		pipelineRasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
 		pipelineRasterizationStateCreateInfo.polygonMode             = Convert::ToVulkanPolygonMode(m_Specification.PolygonMode);
-		pipelineRasterizationStateCreateInfo.cullMode                = VK_CULL_MODE_NONE;
+		pipelineRasterizationStateCreateInfo.cullMode                = Convert::ToVulkanCullMode(m_Specification.Culling);
 		pipelineRasterizationStateCreateInfo.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		pipelineRasterizationStateCreateInfo.depthBiasEnable         = VK_FALSE;
 		pipelineRasterizationStateCreateInfo.depthBiasConstantFactor = 0.0f;
@@ -120,9 +111,9 @@ namespace DT
 		pipelineDepthStencilStateCreateInfo.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		pipelineDepthStencilStateCreateInfo.pNext                 = nullptr;
 		pipelineDepthStencilStateCreateInfo.flags                 = 0u;
-		pipelineDepthStencilStateCreateInfo.depthTestEnable       = VK_FALSE;
-		pipelineDepthStencilStateCreateInfo.depthWriteEnable      = VK_FALSE;
-		pipelineDepthStencilStateCreateInfo.depthCompareOp        = VK_COMPARE_OP_EQUAL;
+		pipelineDepthStencilStateCreateInfo.depthTestEnable       = VK_TRUE;
+		pipelineDepthStencilStateCreateInfo.depthWriteEnable      = VK_TRUE;
+		pipelineDepthStencilStateCreateInfo.depthCompareOp        = VK_COMPARE_OP_LESS;
 		pipelineDepthStencilStateCreateInfo.depthBoundsTestEnable = VK_FALSE;
 		pipelineDepthStencilStateCreateInfo.stencilTestEnable     = VK_FALSE;
 		pipelineDepthStencilStateCreateInfo.front.failOp          = VK_STENCIL_OP_KEEP;
@@ -205,14 +196,19 @@ namespace DT
 		descriptorSetLayoutCreateInfo.pBindings    = descriptorSetLayoutBindings;
 		VK_CALL(vkCreateDescriptorSetLayout(device, &descriptorSetLayoutCreateInfo, nullptr, &m_DescriptorSetLayout));
 
+		VkPushConstantRange pushConstantRange{};
+		pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		pushConstantRange.offset     = 0u;
+		pushConstantRange.size       = sizeof(glm::mat4);
+
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 		pipelineLayoutCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutCreateInfo.pNext                  = nullptr;
 		pipelineLayoutCreateInfo.flags                  = 0u;
 		pipelineLayoutCreateInfo.setLayoutCount         = 1u;
 		pipelineLayoutCreateInfo.pSetLayouts            = &m_DescriptorSetLayout;
-		pipelineLayoutCreateInfo.pushConstantRangeCount = 0u;
-		pipelineLayoutCreateInfo.pPushConstantRanges    = nullptr;
+		pipelineLayoutCreateInfo.pushConstantRangeCount = 1u;
+		pipelineLayoutCreateInfo.pPushConstantRanges    = &pushConstantRange;
 		VK_CALL(vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &m_PipelineLayout));
 
 		VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};

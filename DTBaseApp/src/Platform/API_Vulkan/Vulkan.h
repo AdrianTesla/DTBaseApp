@@ -53,18 +53,24 @@ namespace DT
 		RGBA32F
 	};
 
-	enum class ImageType
-	{
-		Image1D,
-		Image2D,
-		Image3D
-	};
-
 	enum class PolygonMode
 	{
 		Fill,
 		Wireframe,
 		Point
+	};
+
+	enum class PrimitiveTopology
+	{
+		TriangleList,
+		LineList
+	};
+
+	enum class FaceCulling
+	{
+		Back,
+		Front,
+		None
 	};
 
 	namespace ImageUsage
@@ -90,20 +96,14 @@ namespace DT
 		VmaAllocationInfo AllocationInfo{};
 	};
 
-	struct VulkanImage
-	{
-		VkImage Image = VK_NULL_HANDLE;
-		VmaAllocation Allocation = VK_NULL_HANDLE;
-		VmaAllocationInfo AllocationInfo{};
-	};
-
 	namespace Convert
 	{
 		VkFormat ToVulkanFormat(ImageFormat format);
-		VkImageType ToVulkanImageType(ImageType imageType);
 		VkImageUsageFlagBits ToVulkanImageUsage(ImageUsage::Usage usage);
 		VkImageUsageFlags ToVulkanImageUsageFlags(ImageUsageFlags usageFlags);
 		VkPolygonMode ToVulkanPolygonMode(PolygonMode polygonMode);
+		VkPrimitiveTopology ToVulkanPrimitiveTopology(PrimitiveTopology polygonMode);
+		VkCullModeFlags ToVulkanCullMode(FaceCulling culling);
 	}
 
 	namespace Vulkan
