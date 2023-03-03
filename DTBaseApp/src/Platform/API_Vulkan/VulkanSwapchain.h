@@ -4,21 +4,6 @@
 
 namespace DT
 {
-	template<typename T, uint32 MaxSize = 10u>
-	struct FixedArray
-	{
-		FixedArray() = default;
-		FixedArray(uint32 size)
-			: Size(size)
-		{}
-
-		T& operator[](uint32 index) { ASSERT(index < Size); return Data[index]; }
-		const T& operator[](uint32 index) const { ASSERT(index < Size); return Data[index]; }
-
-		T Data[MaxSize];
-		uint32 Size = 0u;
-	};
-
 	struct SwapchainSupportDetails
 	{
 		VkSurfaceCapabilitiesKHR SurfaceCapabilities;
@@ -47,10 +32,13 @@ namespace DT
 		VkSemaphore& GetImageAvailableSemaphore(uint32 frameIndex);
 
 		VkRenderPass GetSwapchainRenderPass() const { return m_SwapchainRenderPass; }
+		VkSampleCountFlagBits GetSwapchainSampleCount() const { return m_MSAACount; }
 		VkFramebuffer GetActiveFramebuffer() const { return m_SwapchainFramebuffers[m_CurrentImageIndex]; }
 		VkImageView GetActiveImageView() const { return m_SwapchainImageViews[m_CurrentImageIndex]; }
 	private:
-		void RecreateSwapchain();
+		void Invalidate();
+		void DestroyDynamicResources();
+
 		void GetSupportDetails();
 		void SelectSurfaceFormat();
 		void SelectPresentMode();
@@ -66,6 +54,7 @@ namespace DT
 		void CreateSyncronizationObjects();
 
 		// temp
+		void CreateMultisampledImages();
 		void CreateDepthImage();
 	private:
 		SwapchainSupportDetails m_SupportDetails;
@@ -84,11 +73,15 @@ namespace DT
 
 
 		// temp
+		VkImage m_MSAAColorImage = VK_NULL_HANDLE;
+		VmaAllocation m_MSAAColorImageAllocation = VK_NULL_HANDLE;
+		VkImageView m_MSAAColorImageView = VK_NULL_HANDLE;
+
 		VkImage m_DepthImage = VK_NULL_HANDLE;
 		VmaAllocation m_DepthImageAllocation = VK_NULL_HANDLE;
 		VkImageView m_DepthImageView = VK_NULL_HANDLE;
 		VkFormat m_DepthFormat = VK_FORMAT_UNDEFINED;
-
+		VkSampleCountFlagBits m_MSAACount = VK_SAMPLE_COUNT_1_BIT;
 
 		VkQueue m_PresentQueue = VK_NULL_HANDLE;
 
@@ -99,7 +92,7 @@ namespace DT
 
 		VkRenderPass m_SwapchainRenderPass = VK_NULL_HANDLE;
 
-		InFlight<VkSemaphore> m_ImageAvailableSemaphores;
+		InFlight<VkSemaphore> m_ImageAvailableSemaphores{};
 
 		bool m_OldVerticalSync = true;
 		bool m_VerticalSync = true;

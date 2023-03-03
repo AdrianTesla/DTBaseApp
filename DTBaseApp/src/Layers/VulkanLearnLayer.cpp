@@ -42,6 +42,9 @@ namespace DT
 		
 		CreateDescriptorPools();
 		CreateDescriptorSets();
+
+		VulkanPhysicalDevice& physicalDevice = VulkanContext::GetCurrentPhysicalDevice();
+		LOG_TRACE("framebuffer MSAA: {}", string_VkSampleCountFlagBits(physicalDevice.GetFramebufferMultisampleCount()));
 	}
 
 	void VulkanLearnLayer::CreateCommandBuffers()
@@ -67,7 +70,19 @@ namespace DT
 			glm::vec2 TexCoord;
 		};
 
-		const float s = 0.5f;
+		constexpr float s = 0.5f;
+
+		constexpr glm::vec3 cubeVertices[] = {
+			{ -s,-s,-s },
+			{ -s,-s,+s },
+			{ +s,-s,+s },
+			{ +s,-s,-s },
+			{ -s,+s,-s },
+			{ -s,+s,+s },
+			{ +s,+s,+s },
+			{ +s,+s,-s }
+		};
+
 
 		Vertex vertices[8];
 		vertices[0].Position = { -s,-s,-s };
@@ -273,9 +288,10 @@ namespace DT
 		commandBufferBeginInfo.flags            = 0u;
 		commandBufferBeginInfo.pInheritanceInfo = nullptr;
 
-		VkClearValue clearValues[2];
-		clearValues[0].color              = {{ 0.0f,0.0f,0.0f,1.0f }};
-		clearValues[1].depthStencil.depth = 1.0f;
+		VkClearValue clearValues[3];
+		clearValues[0].color = {{ 0.0f,0.0f,0.0f,1.0f }};
+		clearValues[1].color = {{ 0.0f,0.0f,0.0f,1.0f }};
+		clearValues[2].depthStencil.depth = 1.0f;
 
 		VkRenderPassBeginInfo renderPassBeginInfo{};
 		renderPassBeginInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -347,21 +363,16 @@ namespace DT
 
 		float factor = (0.5f + 0.5f * std::sin(t)) * 2.0f;
 
-		float xRotation = 0.2f * t;
-		float yRotation = 0.3f * t;
-		float zRotation = 0.4f * t;
-
-		float sep = 0.5f + 0.5f * std::sin(t);
-		sep *= 20.0f;
+		float xRotation = 0.02f * t;
+		float yRotation = 0.03f * t;
+		float zRotation = 0.04f * t;
 
 		s_Cube0Transform = glm::mat4(1.0f);
-		s_Cube0Transform = glm::translate(s_Cube0Transform, { 0.0f,0.0f,1.0f - sep });
 		s_Cube0Transform = glm::rotate(s_Cube0Transform, +xRotation, { 1.0f,0.0f,0.0f });
 		s_Cube0Transform = glm::rotate(s_Cube0Transform, +yRotation, { 0.0f,1.0f,0.0f });
 		s_Cube0Transform = glm::rotate(s_Cube0Transform, +zRotation, { 0.0f,0.0f,1.0f });
 
 		s_Cube1Transform = glm::mat4(1.0f);
-		s_Cube1Transform = glm::translate(s_Cube1Transform, { 0.0f,0.0f,-sep });
 		s_Cube1Transform = glm::rotate(s_Cube1Transform, -xRotation, { 1.0f,0.0f,0.0f });
 		s_Cube1Transform = glm::rotate(s_Cube1Transform, -yRotation, { 0.0f,1.0f,0.0f });
 		s_Cube1Transform = glm::rotate(s_Cube1Transform, -zRotation, { 0.0f,0.0f,1.0f });

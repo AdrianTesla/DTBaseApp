@@ -279,7 +279,7 @@ namespace DT
 		ASSERT(physicalDevice != VK_NULL_HANDLE);
 		m_PhysicalDevice = physicalDevice;
 
-		GetSupportDetails();
+		AquireSupportDetails();
 		SelectQueueFamilyIndices();
 	}
 
@@ -340,7 +340,23 @@ namespace DT
 		return VK_FORMAT_UNDEFINED;
 	}
 
-	void VulkanPhysicalDevice::GetSupportDetails()
+	VkSampleCountFlagBits VulkanPhysicalDevice::GetFramebufferMultisampleCount() const
+	{
+		VkSampleCountFlags colorAttachmentCounts = m_SupportDetails.Properties.limits.framebufferColorSampleCounts;
+		VkSampleCountFlags depthAttachmentCounts = m_SupportDetails.Properties.limits.framebufferDepthSampleCounts;
+		VkSampleCountFlags stencilAttachmentCounts = m_SupportDetails.Properties.limits.framebufferStencilSampleCounts;
+		VkSampleCountFlags combinedCounts = colorAttachmentCounts & depthAttachmentCounts & stencilAttachmentCounts;
+
+		for (size_t i = 6u; i > 0u; i--) {
+			VkSampleCountFlagBits currentCount = VkSampleCountFlagBits(1u << i);
+			if (currentCount & combinedCounts)
+				return currentCount;
+		}
+		ASSERT(false);
+		return VK_SAMPLE_COUNT_1_BIT;
+	}
+
+	void VulkanPhysicalDevice::AquireSupportDetails()
 	{
 		vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_SupportDetails.Properties);
 		vkGetPhysicalDeviceFeatures(m_PhysicalDevice, &m_SupportDetails.Features);
@@ -349,7 +365,7 @@ namespace DT
 		VK_CALL(vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &deviceExtensionCount, nullptr));
 		m_SupportDetails.Extensions.resize(deviceExtensionCount);
 		VK_CALL(vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &deviceExtensionCount, m_SupportDetails.Extensions.data()));
-		m_SupportDetails.Properties.deviceID;
+		
 		uint32 queueFamilyPropertyCount;
 		vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyPropertyCount, nullptr);
 		m_SupportDetails.QueueFamilyProperties.resize(queueFamilyPropertyCount);
@@ -665,7 +681,7 @@ namespace DT
 		features->samplerAnisotropy = VK_TRUE;
 
 		VulkanPhysicalDevice& physicalDevice = VulkanContext::GetCurrentPhysicalDevice();
-		const VkPhysicalDeviceFeatures& supportedFeatures = physicalDevice.GetSupportedFeatures();
+		const VkPhysicalDeviceFeatures& supportedFeatures = physicalDevice.GetSupportDetails().Features;
 		const VkBool32* supported = (VkBool32*)&supportedFeatures;
 		const VkBool32* requested = (VkBool32*)features;
 		constexpr uint32 featureCount = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);

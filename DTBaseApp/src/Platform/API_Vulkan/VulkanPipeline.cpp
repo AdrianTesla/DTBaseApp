@@ -100,7 +100,7 @@ namespace DT
 		pipelineMultisampleStateCreateInfo.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 		pipelineMultisampleStateCreateInfo.pNext                 = nullptr;
 		pipelineMultisampleStateCreateInfo.flags                 = 0u;
-		pipelineMultisampleStateCreateInfo.rasterizationSamples  = VK_SAMPLE_COUNT_1_BIT;
+		pipelineMultisampleStateCreateInfo.rasterizationSamples  = VulkanRenderer::GetSwapchain().GetSwapchainSampleCount();
 		pipelineMultisampleStateCreateInfo.sampleShadingEnable   = VK_FALSE;
 		pipelineMultisampleStateCreateInfo.minSampleShading      = 0.0f;
 		pipelineMultisampleStateCreateInfo.pSampleMask           = nullptr;

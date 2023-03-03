@@ -3,6 +3,21 @@
 
 namespace DT
 {
+	template<typename T, uint32 MaxSize = 10u>
+	struct FixedArray
+	{
+		FixedArray() = default;
+		FixedArray(uint32 size)
+			: Size(size)
+		{}
+
+		T& operator[](uint32 index) { ASSERT(index < Size); return Data[index]; }
+		const T& operator[](uint32 index) const { ASSERT(index < Size); return Data[index]; }
+
+		T Data[MaxSize];
+		uint32 Size = 0u;
+	};
+
 	// non owning raw buffer, release manually
 	struct Buffer
 	{

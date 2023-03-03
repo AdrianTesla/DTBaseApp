@@ -37,13 +37,17 @@ namespace DT
 		bool IsExtensionSupported(const char* deviceExtensionName);
 
 		VkPhysicalDevice GetVulkanPhysicalDevice() const { return m_PhysicalDevice; }
+		const PhysicalDeviceSupportDetails& GetSupportDetails() const { return m_SupportDetails; }
 		const QueueFamilyIndices& GetQueueFamilyIndices() const { return m_QueueFamilyIndices; }
-		const VkPhysicalDeviceFeatures& GetSupportedFeatures() const { return m_SupportDetails.Features; }
+
 		bool IsFormatFeatureSupported(VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags formatFeatures) const;
+		
 		VkFormat GetBestDepthOnlyFormat(VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL) const;
 		VkFormat GetBestDepthStencilFormat(VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL) const;
+		
+		VkSampleCountFlagBits GetFramebufferMultisampleCount() const;
 	private:
-		void GetSupportDetails();
+		void AquireSupportDetails();
 		void SelectQueueFamilyIndices();
 	private:
 		VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;

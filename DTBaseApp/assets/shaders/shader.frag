@@ -40,5 +40,7 @@ void main()
     o_Color = texture(TestImage, texCoord);
     o_Color.rgb *= v_Color * factor;
 
+    o_Color.rgb = v_Color * factor;
+
     o_Color.r /= pow(1.0 - length(v_LocalPos) * 2 / sqrt(3), 0.2 * (0.5 + 0.5 * sin(7 * t)));
 }

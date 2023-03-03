@@ -98,32 +98,30 @@ namespace DT
 
 	void VulkanImage2D::cmdGenerateMips(VkCommandBuffer commandBuffer)
 	{
-		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
+		// blit(i, i + 1) for i = 0 to mipLevels - 1
+		VkImageBlit imageBlitRegion{};
+		imageBlitRegion.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageBlitRegion.dstSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageBlitRegion.srcSubresource.baseArrayLayer = 0u;
+		imageBlitRegion.dstSubresource.baseArrayLayer = 0u;
+		imageBlitRegion.srcSubresource.layerCount	  = 1u;
+		imageBlitRegion.dstSubresource.layerCount	  = 1u;
+		imageBlitRegion.srcOffsets[0] = { 0,0,0 };
+		imageBlitRegion.dstOffsets[0] = { 0,0,0 };
 
 		int32 width = m_Specification.Width;
 		int32 height = m_Specification.Height;
-
-		for (uint32 mip = 0u; mip < m_Specification.MipLevels - 1u; mip++)
+		for (uint32 i = 0u; i < m_Specification.MipLevels - 1u; i++)
 		{
-			cmdTransitionLayoutSingleMip(commandBuffer, mip, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-
-			VkImageBlit imageBlitRegion{};
-			imageBlitRegion.srcSubresource.aspectMask	  = VK_IMAGE_ASPECT_COLOR_BIT;
-			imageBlitRegion.srcSubresource.mipLevel		  = mip;
-			imageBlitRegion.srcSubresource.baseArrayLayer = 0u;
-			imageBlitRegion.srcSubresource.layerCount	  = 1u;
-			imageBlitRegion.srcOffsets[0] = { 0,0,0 };
+			imageBlitRegion.srcSubresource.mipLevel = i;
 			imageBlitRegion.srcOffsets[1] = { width,height,1 };
-
-			width /= 2;
-			height /= 2;
-
-			imageBlitRegion.dstSubresource.aspectMask	  = VK_IMAGE_ASPECT_COLOR_BIT;
-			imageBlitRegion.dstSubresource.mipLevel		  = mip + 1u;
-			imageBlitRegion.dstSubresource.baseArrayLayer = 0u;
-			imageBlitRegion.dstSubresource.layerCount	  = 1u;
-			imageBlitRegion.dstOffsets[0] = { 0,0,0 };
+			
+			width /= 2; height /= 2;
+			
+			imageBlitRegion.dstSubresource.mipLevel = i + 1u;
 			imageBlitRegion.dstOffsets[1] = { width,height,1 };
+
+			cmdTransitionLayoutSingleMip(commandBuffer, i, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 			vkCmdBlitImage(commandBuffer, m_Image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, m_Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &imageBlitRegion, VK_FILTER_LINEAR);
 		}
 		cmdTransitionLayoutSingleMip(commandBuffer, m_Specification.MipLevels - 1u, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
@@ -146,6 +144,7 @@ namespace DT
 
 		ImageData imageData;
 		LoadImageFile(&imageData);
+
 
 		// upload the pixels to the staging buffer
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
