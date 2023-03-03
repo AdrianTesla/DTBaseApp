@@ -32,7 +32,7 @@ namespace DT
 		specification.Shader = Ref<VulkanShader>::Create();
 		specification.PolygonMode = PolygonMode::Fill;
 		specification.Topology = PrimitiveTopology::TriangleList;
-		specification.Culling = FaceCulling::Back;
+		specification.Culling = FaceCulling::None;
 		m_Pipeline = Ref<VulkanPipeline>::Create(specification);
 
 		CreateCommandBuffers();
@@ -66,78 +66,76 @@ namespace DT
 		struct Vertex
 		{
 			glm::vec3 Position;
-			glm::vec3 Color;
 			glm::vec2 TexCoord;
 		};
 
 		constexpr float s = 0.5f;
+		
+		Vertex vertices[24];
 
-		constexpr glm::vec3 cubeVertices[] = {
-			{ -s,-s,-s },
-			{ -s,-s,+s },
-			{ +s,-s,+s },
-			{ +s,-s,-s },
-			{ -s,+s,-s },
-			{ -s,+s,+s },
-			{ +s,+s,+s },
-			{ +s,+s,-s }
-		};
+		vertices[0].Position  = {-s, s,-s }; /* Back. */			    
+        vertices[1].Position  = { s, s,-s };			    
+        vertices[2].Position  = {-s,-s,-s };			    
+        vertices[3].Position  = { s,-s,-s };			    
+        vertices[4].Position  = {-s, s, s }; /* Front. */			    
+		vertices[5].Position  = { s, s, s };			    
+        vertices[6].Position  = {-s,-s, s };			    
+		vertices[7].Position  = { s,-s, s };			    
+        vertices[8].Position  = {-s, s,-s }; /* Left. */			    
+        vertices[9].Position  = {-s,-s,-s };			    
+        vertices[10].Position = {-s,-s, s };			    
+        vertices[11].Position = {-s, s, s };			    
+        vertices[12].Position = { s, s,-s }; /* Right. */			    
+        vertices[13].Position = { s,-s,-s };			    
+        vertices[14].Position = { s,-s, s };			    
+        vertices[15].Position = { s, s, s };			    
+        vertices[16].Position = {-s,-s,-s }; /* Top. */			    
+        vertices[17].Position = {-s,-s, s };			    
+        vertices[18].Position = { s,-s, s };			    
+        vertices[19].Position = { s,-s,-s };			    
+        vertices[20].Position = {-s, s,-s }; /* Bottom. */			    
+        vertices[21].Position = {-s, s, s };			    
+        vertices[22].Position = { s, s, s };			    
+        vertices[23].Position = { s, s,-s };
+                        
+		vertices[0] .TexCoord =	{ 1.0f,1.0f }; /* Back. */
+		vertices[1] .TexCoord =	{ 0.0f,1.0f };
+		vertices[2] .TexCoord =	{ 1.0f,0.0f };
+		vertices[3] .TexCoord =	{ 0.0f,0.0f };
+		vertices[4] .TexCoord =	{ 0.0f,1.0f }; /* Front. */
+		vertices[5] .TexCoord =	{ 1.0f,1.0f };
+		vertices[6] .TexCoord =	{ 0.0f,0.0f };
+		vertices[7] .TexCoord =	{ 1.0f,0.0f };
+		vertices[8] .TexCoord =	{ 0.0f,1.0f }; /* Left. */
+		vertices[9] .TexCoord =	{ 0.0f,0.0f };
+		vertices[10].TexCoord =	{ 1.0f,0.0f };
+		vertices[11].TexCoord =	{ 1.0f,1.0f };
+		vertices[12].TexCoord =	{ 1.0f,1.0f }; /* Right. */
+		vertices[13].TexCoord =	{ 1.0f,0.0f };
+		vertices[14].TexCoord =	{ 0.0f,0.0f };
+		vertices[15].TexCoord =	{ 0.0f,1.0f };
+		vertices[16].TexCoord =	{ 0.0f,1.0f }; /* Top. */
+		vertices[17].TexCoord =	{ 0.0f,0.0f };
+		vertices[18].TexCoord =	{ 1.0f,0.0f };
+		vertices[19].TexCoord =	{ 1.0f,1.0f };
+		vertices[20].TexCoord =	{ 0.0f,0.0f }; /* Bottom. */
+		vertices[21].TexCoord =	{ 0.0f,1.0f };
+		vertices[22].TexCoord =	{ 1.0f,1.0f };
+		vertices[23].TexCoord =	{ 1.0f,0.0f };
 
-
-		Vertex vertices[8];
-		vertices[0].Position = { -s,-s,-s };
-		vertices[1].Position = { -s,-s,+s };
-		vertices[2].Position = { +s,-s,+s };
-		vertices[3].Position = { +s,-s,-s };
-		vertices[4].Position = { -s,+s,-s };
-		vertices[5].Position = { -s,+s,+s };
-		vertices[6].Position = { +s,+s,+s };
-		vertices[7].Position = { +s,+s,-s };
-
-		for (uint8 i = 0u; i < 8u; i++) {
-			float r = 1.0f;
-			float g = 1.0f;
-			float b = 1.0f;
-			vertices[i].Color = { r,g,b };
-		}
-
-		vertices[0].TexCoord = { 0.0f,0.0f };
-		vertices[1].TexCoord = { 0.0f,1.0f };
-		vertices[2].TexCoord = { 1.0f,1.0f };
-		vertices[3].TexCoord = { 1.0f,0.0f };
-		vertices[4].TexCoord = { 0.0f,0.0f };
-		vertices[5].TexCoord = { 0.0f,1.0f };
-		vertices[6].TexCoord = { 1.0f,1.0f };
-		vertices[7].TexCoord = { 1.0f,0.0f };
-
-		constexpr uint32 indices[] = { 
-			0u,2u,1u,
-			2u,0u,3u,
-			0u,5u,4u,
-			5u,0u,1u,
-			5u,1u,6u,
-			6u,1u,2u,
-			2u,7u,6u,
-			7u,2u,3u,
-			4u,7u,3u,
-			3u,0u,4u,
-			7u,4u,5u,
-			7u,5u,6u
-		};
-
-		constexpr uint32 line_indices[] = { 
-			0u,1u,
-			1u,2u,
-			2u,3u,
-			3u,0u,
-			0u,4u,
-			1u,5u,
-			2u,6u,
-			3u,7u,
-			4u,5u,
-			5u,6u,
-			6u,7u,
-			7u,4u
+		constexpr uint32 indices[] = {
+			0,2,3,
+			1,0,3,
+			6,4,7,
+			4,5,7,
+			8,9,10,
+			11,8,10,
+			12,13,14,
+			12,15,14,
+			16,17,18,
+			16,19,18,
+			20,21,22,
+			20,23,22
 		};
 
 		m_VertexBuffer = Ref<VulkanVertexBuffer>::Create(vertices, sizeof(vertices));
@@ -290,8 +288,7 @@ namespace DT
 
 		VkClearValue clearValues[3];
 		clearValues[0].color = {{ 0.0f,0.0f,0.0f,1.0f }};
-		clearValues[1].color = {{ 0.0f,0.0f,0.0f,1.0f }};
-		clearValues[2].depthStencil.depth = 1.0f;
+		clearValues[1].depthStencil.depth = 1.0f;
 
 		VkRenderPassBeginInfo renderPassBeginInfo{};
 		renderPassBeginInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -368,9 +365,9 @@ namespace DT
 		float zRotation = 0.04f * t;
 
 		s_Cube0Transform = glm::mat4(1.0f);
-		s_Cube0Transform = glm::rotate(s_Cube0Transform, +xRotation, { 1.0f,0.0f,0.0f });
-		s_Cube0Transform = glm::rotate(s_Cube0Transform, +yRotation, { 0.0f,1.0f,0.0f });
-		s_Cube0Transform = glm::rotate(s_Cube0Transform, +zRotation, { 0.0f,0.0f,1.0f });
+		s_Cube0Transform = glm::rotate(s_Cube0Transform, xRotation, { 1.0f,0.0f,0.0f });
+		s_Cube0Transform = glm::rotate(s_Cube0Transform, yRotation, { 0.0f,1.0f,0.0f });
+		s_Cube0Transform = glm::rotate(s_Cube0Transform, zRotation, { 0.0f,0.0f,1.0f });
 
 		s_Cube1Transform = glm::mat4(1.0f);
 		s_Cube1Transform = glm::rotate(s_Cube1Transform, -xRotation, { 1.0f,0.0f,0.0f });

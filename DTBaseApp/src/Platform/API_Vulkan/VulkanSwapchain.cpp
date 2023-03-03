@@ -414,8 +414,8 @@ namespace DT
 		{
 			VkImageView imageViews[] = {
 				m_MSAAColorImageView,
-				m_SwapchainImageViews[i],
-				m_DepthImageView
+				m_DepthImageView,
+				m_SwapchainImageViews[i]
 			};
 
 			VkFramebufferCreateInfo framebufferCreateInfo{};
@@ -449,39 +449,39 @@ namespace DT
 		attachmentDescriptions[0].initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
 		attachmentDescriptions[0].finalLayout    = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-		// regular color resolve target
+		// depth attachment
 		attachmentDescriptions[1].flags          = 0u;
-		attachmentDescriptions[1].format         = m_SurfaceFormat.format;
-		attachmentDescriptions[1].samples        = VK_SAMPLE_COUNT_1_BIT;
+		attachmentDescriptions[1].format         = m_DepthFormat;
+		attachmentDescriptions[1].samples        = m_MSAACount;
 		attachmentDescriptions[1].loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		attachmentDescriptions[1].storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+		attachmentDescriptions[1].storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachmentDescriptions[1].stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachmentDescriptions[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachmentDescriptions[1].initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachmentDescriptions[1].finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		attachmentDescriptions[1].finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-		// depth attachment
+		// color resolve target
 		attachmentDescriptions[2].flags          = 0u;
-		attachmentDescriptions[2].format         = m_DepthFormat;
-		attachmentDescriptions[2].samples        = m_MSAACount;
-		attachmentDescriptions[2].loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		attachmentDescriptions[2].storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachmentDescriptions[2].format         = m_SurfaceFormat.format;
+		attachmentDescriptions[2].samples        = VK_SAMPLE_COUNT_1_BIT;
+		attachmentDescriptions[2].loadOp         = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachmentDescriptions[2].storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
 		attachmentDescriptions[2].stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachmentDescriptions[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachmentDescriptions[2].initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachmentDescriptions[2].finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		attachmentDescriptions[2].finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 		VkAttachmentReference colorAttachmentReference{};
 		colorAttachmentReference.attachment = 0u;
 		colorAttachmentReference.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-		VkAttachmentReference resolveColorAttachmentReference{};
-		resolveColorAttachmentReference.attachment = 1u;
-		resolveColorAttachmentReference.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
 		VkAttachmentReference depthAttachmentReference{};
-		depthAttachmentReference.attachment = 2u;
+		depthAttachmentReference.attachment = 1u;
 		depthAttachmentReference.layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+		VkAttachmentReference resolveColorAttachmentReference{};
+		resolveColorAttachmentReference.attachment = 2u;
+		resolveColorAttachmentReference.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		VkSubpassDescription subpassDescription{};
 		subpassDescription.flags                   = 0u;
