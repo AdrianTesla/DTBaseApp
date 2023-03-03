@@ -10,6 +10,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+//#include <glm/ext/scalar_constants.hpp>
 
 namespace DT
 {
@@ -69,74 +70,21 @@ namespace DT
 			glm::vec2 TexCoord;
 		};
 
-		constexpr float s = 0.5f;
-		
-		Vertex vertices[24];
+		constexpr float s = 1.0f;
 
-		vertices[0].Position  = {-s, s,-s }; /* Back. */			    
-        vertices[1].Position  = { s, s,-s };			    
-        vertices[2].Position  = {-s,-s,-s };			    
-        vertices[3].Position  = { s,-s,-s };			    
-        vertices[4].Position  = {-s, s, s }; /* Front. */			    
-		vertices[5].Position  = { s, s, s };			    
-        vertices[6].Position  = {-s,-s, s };			    
-		vertices[7].Position  = { s,-s, s };			    
-        vertices[8].Position  = {-s, s,-s }; /* Left. */			    
-        vertices[9].Position  = {-s,-s,-s };			    
-        vertices[10].Position = {-s,-s, s };			    
-        vertices[11].Position = {-s, s, s };			    
-        vertices[12].Position = { s, s,-s }; /* Right. */			    
-        vertices[13].Position = { s,-s,-s };			    
-        vertices[14].Position = { s,-s, s };			    
-        vertices[15].Position = { s, s, s };			    
-        vertices[16].Position = {-s,-s,-s }; /* Top. */			    
-        vertices[17].Position = {-s,-s, s };			    
-        vertices[18].Position = { s,-s, s };			    
-        vertices[19].Position = { s,-s,-s };			    
-        vertices[20].Position = {-s, s,-s }; /* Bottom. */			    
-        vertices[21].Position = {-s, s, s };			    
-        vertices[22].Position = { s, s, s };			    
-        vertices[23].Position = { s, s,-s };
-                        
-		vertices[0] .TexCoord =	{ 1.0f,1.0f }; /* Back. */
-		vertices[1] .TexCoord =	{ 0.0f,1.0f };
-		vertices[2] .TexCoord =	{ 1.0f,0.0f };
-		vertices[3] .TexCoord =	{ 0.0f,0.0f };
-		vertices[4] .TexCoord =	{ 0.0f,1.0f }; /* Front. */
-		vertices[5] .TexCoord =	{ 1.0f,1.0f };
-		vertices[6] .TexCoord =	{ 0.0f,0.0f };
-		vertices[7] .TexCoord =	{ 1.0f,0.0f };
-		vertices[8] .TexCoord =	{ 0.0f,1.0f }; /* Left. */
-		vertices[9] .TexCoord =	{ 0.0f,0.0f };
-		vertices[10].TexCoord =	{ 1.0f,0.0f };
-		vertices[11].TexCoord =	{ 1.0f,1.0f };
-		vertices[12].TexCoord =	{ 1.0f,1.0f }; /* Right. */
-		vertices[13].TexCoord =	{ 1.0f,0.0f };
-		vertices[14].TexCoord =	{ 0.0f,0.0f };
-		vertices[15].TexCoord =	{ 0.0f,1.0f };
-		vertices[16].TexCoord =	{ 0.0f,1.0f }; /* Top. */
-		vertices[17].TexCoord =	{ 0.0f,0.0f };
-		vertices[18].TexCoord =	{ 1.0f,0.0f };
-		vertices[19].TexCoord =	{ 1.0f,1.0f };
-		vertices[20].TexCoord =	{ 0.0f,0.0f }; /* Bottom. */
-		vertices[21].TexCoord =	{ 0.0f,1.0f };
-		vertices[22].TexCoord =	{ 1.0f,1.0f };
-		vertices[23].TexCoord =	{ 1.0f,0.0f };
+		Vertex vertices[3];
+		for (uint32 i = 0u; i < 3u; i++) {
+			float angle = i * 2.0f * glm::pi<float>() / 3.0f;
+			vertices[i].Position.x = s * std::cosf(angle);
+			vertices[i].Position.y = s * std::sinf(angle);
+			vertices[i].Position.z = 0.0f;
+		}
 
-		constexpr uint32 indices[] = {
-			0,2,3,
-			1,0,3,
-			6,4,7,
-			4,5,7,
-			8,9,10,
-			11,8,10,
-			12,13,14,
-			12,15,14,
-			16,17,18,
-			16,19,18,
-			20,21,22,
-			20,23,22
-		};
+		vertices[0].TexCoord = { 0.0f,0.0f };
+		vertices[1].TexCoord = { 1.0f,0.0f };
+		vertices[2].TexCoord = { 1.0f,1.0f };
+
+		uint32 indices[3] = { 0,1,2 };
 
 		m_VertexBuffer = Ref<VulkanVertexBuffer>::Create(vertices, sizeof(vertices));
 		m_IndexBuffer = Ref<VulkanIndexBuffer>::Create(indices, sizeof(indices));
@@ -362,11 +310,11 @@ namespace DT
 
 		float xRotation = 0.02f * t;
 		float yRotation = 0.03f * t;
-		float zRotation = 0.04f * t;
+		float zRotation = 0.004f * t;
 
 		s_Cube0Transform = glm::mat4(1.0f);
-		s_Cube0Transform = glm::rotate(s_Cube0Transform, xRotation, { 1.0f,0.0f,0.0f });
-		s_Cube0Transform = glm::rotate(s_Cube0Transform, yRotation, { 0.0f,1.0f,0.0f });
+		s_Cube0Transform = glm::rotate(s_Cube0Transform, 0.0f, { 1.0f,0.0f,0.0f });
+		s_Cube0Transform = glm::rotate(s_Cube0Transform, 0.0f, { 0.0f,1.0f,0.0f });
 		s_Cube0Transform = glm::rotate(s_Cube0Transform, zRotation, { 0.0f,0.0f,1.0f });
 
 		s_Cube1Transform = glm::mat4(1.0f);
