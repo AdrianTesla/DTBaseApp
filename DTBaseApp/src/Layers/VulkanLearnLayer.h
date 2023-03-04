@@ -47,5 +47,7 @@ namespace DT
 
 		Ref<VulkanTexture2D> m_Texture;
 		VkSampler m_Sampler = VK_NULL_HANDLE;
+
+		float m_CameraZ = -2.0f;
 	};
 }

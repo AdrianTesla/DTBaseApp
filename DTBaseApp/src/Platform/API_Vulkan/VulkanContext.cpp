@@ -679,6 +679,7 @@ namespace DT
 		features->wideLines = VK_TRUE;
 		features->fillModeNonSolid = VK_TRUE;
 		features->samplerAnisotropy = VK_TRUE;
+		features->sampleRateShading = VK_TRUE;
 
 		VulkanPhysicalDevice& physicalDevice = VulkanContext::GetCurrentPhysicalDevice();
 		const VkPhysicalDeviceFeatures& supportedFeatures = physicalDevice.GetSupportDetails().Features;

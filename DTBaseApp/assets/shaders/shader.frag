@@ -26,12 +26,5 @@ void main()
     vec3 ddy = dFdy(v_WorldPos);
     vec3 normal = normalize(cross(ddx, ddy));
 
-    float factor = dot(normal, vec3(0.0, 0.0, -1.0));
-
     o_Color = texture(TestImage, v_TexCoord);
-    o_Color.rgb *= factor;
-
-    o_Color.r /= pow(1.0 - length(v_LocalPos) * 2 / sqrt(3), 0.2 * (0.5 + 0.5 * sin(7 * t)));
-
-    o_Color.rgb = vec3(248.0 / 255.0, 243.0 / 255.0, 122.0 / 255.0);
 }

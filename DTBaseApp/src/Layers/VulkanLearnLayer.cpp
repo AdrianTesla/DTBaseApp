@@ -13,6 +13,8 @@
 //#include <glm/ext/scalar_constants.hpp>
 
 #include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 namespace DT
 {
@@ -35,16 +37,8 @@ namespace DT
 		specification.Shader = Ref<VulkanShader>::Create();
 		specification.PolygonMode = PolygonMode::Fill;
 		specification.Topology = PrimitiveTopology::TriangleList;
-		specification.Culling = FaceCulling::None;
+		specification.Culling = FaceCulling::Back;
 		m_Pipeline = Ref<VulkanPipeline>::Create(specification);
-
-		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile("assets/models/cube.glb", 0u);
-
-		if (scene != nullptr)
-		{
-			MessageBoxes::ShowInfo("Success!");
-		}
 
 		CreateCommandBuffers();
 		CreateBuffers();
@@ -80,24 +74,37 @@ namespace DT
 			glm::vec2 TexCoord;
 		};
 
-		constexpr float s = 1.0f;
+		Assimp::Importer importer;
+		const aiScene* assimpScene = importer.ReadFile("assets/models/cube.glb", 0u);
 
-		Vertex vertices[3];
-		for (uint32 i = 0u; i < 3u; i++) {
-			float angle = i * 2.0f * glm::pi<float>() / 3.0f;
-			vertices[i].Position.x = s * std::cosf(angle);
-			vertices[i].Position.y = s * std::sinf(angle);
-			vertices[i].Position.z = 0.0f;
+		if (assimpScene == nullptr)
+		{
+			MessageBoxes::ShowInfo("Fail! No model found.");
+		}
+		ASSERT(assimpScene->mMeshes != nullptr);
+		aiMesh* assimpMesh = assimpScene->mMeshes[0]; 
+
+		std::vector<Vertex> vertices(assimpMesh->mNumVertices);
+		for (uint32 i = 0u; i < assimpMesh->mNumVertices; i++)
+		{
+			Vertex& vertex = vertices[i];
+
+			vertex.Position = *(glm::vec3*)&assimpMesh->mVertices[i];
+			vertex.TexCoord = *(glm::vec2*)&assimpMesh->mTextureCoords[0][i];
 		}
 
-		vertices[0].TexCoord = { 0.0f,0.0f };
-		vertices[1].TexCoord = { 1.0f,0.0f };
-		vertices[2].TexCoord = { 1.0f,1.0f };
+		std::vector<uint32> indices;
+		indices.reserve((assimpMesh->mNumFaces * 3u));
+		for (uint32 i = 0u; i < assimpMesh->mNumFaces; i++)
+		{
+			aiFace& assimpFace = assimpMesh->mFaces[i];
+			indices.emplace_back(assimpFace.mIndices[0]);
+			indices.emplace_back(assimpFace.mIndices[1]);
+			indices.emplace_back(assimpFace.mIndices[2]);
+		}
 
-		uint32 indices[3] = { 0,1,2 };
-
-		m_VertexBuffer = Ref<VulkanVertexBuffer>::Create(vertices, sizeof(vertices));
-		m_IndexBuffer = Ref<VulkanIndexBuffer>::Create(indices, sizeof(indices));
+		m_VertexBuffer = Ref<VulkanVertexBuffer>::Create(vertices.data(), vertices.size() * sizeof(Vertex));
+		m_IndexBuffer = Ref<VulkanIndexBuffer>::Create(indices.data(), sizeof(uint32) * indices.size());
 
 		for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++)
 			m_UniformBuffers[i] = Ref<VulkanUniformBuffer>::Create(sizeof(UniformBufferData));
@@ -318,13 +325,14 @@ namespace DT
 
 		float factor = (0.5f + 0.5f * std::sin(t)) * 2.0f;
 
-		float xRotation = 0.02f * t;
-		float yRotation = 0.03f * t;
-		float zRotation = 0.004f * t;
+		float xRotation = 0.2f * t;
+		float yRotation = 0.3f * t;
+		float zRotation = 0.4f * t;
 
 		s_Cube0Transform = glm::mat4(1.0f);
-		s_Cube0Transform = glm::rotate(s_Cube0Transform, 0.0f, { 1.0f,0.0f,0.0f });
-		s_Cube0Transform = glm::rotate(s_Cube0Transform, 0.0f, { 0.0f,1.0f,0.0f });
+		s_Cube0Transform = glm::translate(s_Cube0Transform, { 0.0f,0.0f,m_CameraZ });
+		s_Cube0Transform = glm::rotate(s_Cube0Transform, xRotation, { 1.0f,0.0f,0.0f });
+		s_Cube0Transform = glm::rotate(s_Cube0Transform, yRotation, { 0.0f,1.0f,0.0f });
 		s_Cube0Transform = glm::rotate(s_Cube0Transform, zRotation, { 0.0f,0.0f,1.0f });
 
 		s_Cube1Transform = glm::mat4(1.0f);
@@ -342,6 +350,13 @@ namespace DT
 
 	void VulkanLearnLayer::OnEvent(Event& event)
 	{
+		Event::Dispatcher dispatcher(event);
+
+		dispatcher.Dispatch<MouseScrolledEvent>([&](MouseScrolledEvent& e)
+		{
+			m_CameraZ += 0.1f * e.GetDeltaY();
+			return true;
+		});
 	}
 
 	void VulkanLearnLayer::OnDetach()
