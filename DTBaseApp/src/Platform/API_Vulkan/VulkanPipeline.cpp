@@ -245,4 +245,70 @@ namespace DT
 	{
 		Destroy();
 	}
+
+
+	VulkanComputePipeline::VulkanComputePipeline()
+	{
+		Invalidate();
+	}
+
+	VulkanComputePipeline::~VulkanComputePipeline()
+	{
+		Destroy();
+	}
+
+	void VulkanComputePipeline::Invalidate()
+	{
+		Destroy();
+
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+		
+		Buffer spirv = FileSystem::ReadFileBinary("assets/shaders/comp.spv");
+
+		VkShaderModule computeShaderModule{};
+		VkShaderModuleCreateInfo shaderModuleCreateInfo{};
+		shaderModuleCreateInfo.sType	= VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		shaderModuleCreateInfo.pNext	= nullptr;
+		shaderModuleCreateInfo.flags	= 0u;
+		shaderModuleCreateInfo.codeSize	= spirv.Size;
+		shaderModuleCreateInfo.pCode	= (uint32*)spirv.Data;
+		VK_CALL(vkCreateShaderModule(device, &shaderModuleCreateInfo, nullptr, &computeShaderModule));
+		spirv.Release();
+
+		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
+		pipelineLayoutCreateInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		pipelineLayoutCreateInfo.pNext					= nullptr;
+		pipelineLayoutCreateInfo.flags					= 0u;
+		pipelineLayoutCreateInfo.setLayoutCount			= 0u;
+		pipelineLayoutCreateInfo.pSetLayouts			= nullptr;
+		pipelineLayoutCreateInfo.pushConstantRangeCount	= 0u;
+		pipelineLayoutCreateInfo.pPushConstantRanges	= nullptr;
+		VK_CALL(vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &m_PipelineLayout));
+
+		VkComputePipelineCreateInfo computePipelineCreateInfo{};
+		computePipelineCreateInfo.sType				          = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+		computePipelineCreateInfo.pNext				          = nullptr;
+		computePipelineCreateInfo.flags				          = 0u;
+		computePipelineCreateInfo.stage.sType				  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		computePipelineCreateInfo.stage.pNext				  = nullptr;
+		computePipelineCreateInfo.stage.flags				  = 0u;
+		computePipelineCreateInfo.stage.stage				  = VK_SHADER_STAGE_COMPUTE_BIT;
+		computePipelineCreateInfo.stage.module			      = computeShaderModule;
+		computePipelineCreateInfo.stage.pName				  = "main";
+		computePipelineCreateInfo.stage.pSpecializationInfo   = nullptr;
+		computePipelineCreateInfo.layout			          = m_PipelineLayout;
+		computePipelineCreateInfo.basePipelineHandle          = 0u;
+		computePipelineCreateInfo.basePipelineIndex	          = -1;
+		VK_CALL(vkCreateComputePipelines(device, VK_NULL_HANDLE, 1u, &computePipelineCreateInfo, nullptr, &m_Pipeline));
+		vkDestroyShaderModule(device, computeShaderModule, nullptr);
+	}
+
+	void VulkanComputePipeline::Destroy()
+	{
+		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
+		vkDestroyPipeline(device, m_Pipeline, nullptr);
+		vkDestroyPipelineLayout(device, m_PipelineLayout, nullptr);
+		m_Pipeline = VK_NULL_HANDLE;
+		m_PipelineLayout = VK_NULL_HANDLE;
+	}
 }

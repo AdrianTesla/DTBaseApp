@@ -32,4 +32,18 @@ namespace DT
 		VkDescriptorSetLayout m_DescriptorSetLayout = VK_NULL_HANDLE;
 		VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
 	};
+
+	class VulkanComputePipeline : public RefCounted
+	{
+	public:
+		VulkanComputePipeline();
+		~VulkanComputePipeline();
+
+		void Invalidate();
+		void Destroy();
+
+	private:
+		VkPipeline m_Pipeline = VK_NULL_HANDLE;
+		VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
+	};
 }

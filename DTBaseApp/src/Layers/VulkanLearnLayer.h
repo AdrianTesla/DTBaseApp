@@ -36,6 +36,7 @@ namespace DT
 		void ExecuteCommandBuffer(VkCommandBuffer commandBuffer);
 	private:
 		Ref<VulkanPipeline> m_Pipeline;
+		Ref<VulkanComputePipeline> m_ComputePipeline;
 		Ref<VulkanVertexBuffer> m_VertexBuffer;
 		Ref<VulkanIndexBuffer> m_IndexBuffer;
 		InFlight<Ref<VulkanUniformBuffer>> m_UniformBuffers;

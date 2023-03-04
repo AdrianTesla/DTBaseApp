@@ -39,6 +39,7 @@ namespace DT
 		specification.Topology = PrimitiveTopology::TriangleList;
 		specification.Culling = FaceCulling::Back;
 		m_Pipeline = Ref<VulkanPipeline>::Create(specification);
+		m_ComputePipeline = Ref<VulkanComputePipeline>::Create();
 
 		CreateCommandBuffers();
 		CreateBuffers();
