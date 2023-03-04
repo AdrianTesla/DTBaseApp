@@ -12,6 +12,8 @@
 #include <glm/gtc/type_ptr.hpp>
 //#include <glm/ext/scalar_constants.hpp>
 
+#include <assimp/Importer.hpp>
+
 namespace DT
 {
 	static struct UniformBufferData
@@ -35,6 +37,14 @@ namespace DT
 		specification.Topology = PrimitiveTopology::TriangleList;
 		specification.Culling = FaceCulling::None;
 		m_Pipeline = Ref<VulkanPipeline>::Create(specification);
+
+		Assimp::Importer importer;
+		const aiScene* scene = importer.ReadFile("assets/models/cube.glb", 0u);
+
+		if (scene != nullptr)
+		{
+			MessageBoxes::ShowInfo("Success!");
+		}
 
 		CreateCommandBuffers();
 		CreateBuffers();

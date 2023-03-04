@@ -25,6 +25,8 @@ project "DTBaseApp"
 		"%{IncludeDir.vk_mem_alloc}",
 		"%{IncludeDir.stb}",
 		"%{IncludeDir.glm}",
+		"%{IncludeDir.zlib}",
+		"%{IncludeDir.Assimp}",
 		"%{IncludeDir.VulkanSDK}"
 	}
 
@@ -59,6 +61,8 @@ project "DTBaseApp"
 
 			links
 			{
+				"%{Library.zlib_Debug}",
+				"%{Library.Assimp_Debug}",
 			  	--"%{Library.Vulkan}",
 			  	--"%{Library.ShaderC_Debug}",
 			  	--"%{Library.SPIRV_Tools_Debug}",
@@ -74,6 +78,8 @@ project "DTBaseApp"
 
 			links
 			{
+				"%{Library.zlib_Release}",
+				"%{Library.Assimp_Release}",
 				--"%{Library.Vulkan}",
 			  	--"%{Library.ShaderC_Release}",
 			  	--"%{Library.SPIRV_Cross_Release}",
