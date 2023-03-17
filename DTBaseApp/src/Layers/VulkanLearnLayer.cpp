@@ -10,7 +10,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-//#include <glm/ext/scalar_constants.hpp>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -33,8 +32,13 @@ namespace DT
 
 	void VulkanLearnLayer::OnAttach()
 	{
+		ShaderSpecification shaderSpec{};
+		shaderSpec.VertexSpirvPath = "assets/shaders/vert.spv";
+		shaderSpec.FragmentSpirvPath = "assets/shaders/frag.spv";
+		Ref<VulkanShader> shader = Ref<VulkanShader>::Create(shaderSpec);
+
 		PipelineSpecification specification{};
-		specification.Shader = Ref<VulkanShader>::Create();
+		specification.Shader = shader;
 		specification.PolygonMode = PolygonMode::Fill;
 		specification.Topology = PrimitiveTopology::TriangleList;
 		specification.Culling = FaceCulling::Back;

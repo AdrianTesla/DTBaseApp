@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "Layers/VulkanLearnLayer.h"
+#include "Layers/VulkanComputeLayer.h"
 #include "Input.h"
 #include <GLFW/glfw3.h>
 
@@ -18,7 +19,7 @@ namespace DT
 
 		Renderer::Init();
 
-		PushLayer(new VulkanLearnLayer);
+		PushLayer(new VulkanComputeLayer);
 	}
 
 	Application::~Application()

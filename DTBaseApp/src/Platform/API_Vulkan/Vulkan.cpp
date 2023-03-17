@@ -70,6 +70,14 @@ namespace DT::Vulkan
 		VK_CALL(vmaCreateBuffer(allocator, &bufferCreateInfo, pAllocationCreateInfo, &pBuffer->Buffer, &pBuffer->Allocation, &pBuffer->AllocationInfo));
 	}
 
+	void DestroyBuffer(VulkanBuffer& buffer)
+	{
+		VmaAllocator allocator = VulkanContext::GetVulkanMemoryAllocator();
+		vmaDestroyBuffer(allocator, buffer.Buffer, buffer.Allocation);
+		buffer.Buffer = VK_NULL_HANDLE;
+		buffer.Allocation = VK_NULL_HANDLE;
+	}
+
 	void CreateBufferStaging(const void* data, uint64 size, VkBufferUsageFlags usage, VulkanBuffer* pBuffer)
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
@@ -175,6 +183,11 @@ namespace DT::Vulkan
 		{
 			dependency.DstAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 			dependency.DstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		}
+		else if (newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+		{
+			dependency.DstAccess = 0u;
+			dependency.DstStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 		}
 		else
 		{

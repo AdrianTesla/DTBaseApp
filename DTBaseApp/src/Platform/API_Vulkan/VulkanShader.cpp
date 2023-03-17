@@ -3,7 +3,8 @@
 
 namespace DT
 {
-	VulkanShader::VulkanShader()
+	VulkanShader::VulkanShader(const ShaderSpecification& specification)
+		: m_Specification(specification)
 	{
 		Invalidate();
 	}
@@ -20,7 +21,7 @@ namespace DT
 		// vertex shader
 		{
 			VkShaderModuleCreateInfo shaderModuleCreateInfo{};
-			Buffer spirv = FileSystem::ReadFileBinary("assets/shaders/vert.spv");
+			Buffer spirv = FileSystem::ReadFileBinary(m_Specification.VertexSpirvPath);
 			shaderModuleCreateInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			shaderModuleCreateInfo.pNext    = nullptr;
 			shaderModuleCreateInfo.flags    = 0u;
@@ -40,7 +41,7 @@ namespace DT
 		// fragment shader
 		{
 			VkShaderModuleCreateInfo shaderModuleCreateInfo{}; 
-			Buffer spirv = FileSystem::ReadFileBinary("assets/shaders/frag.spv");
+			Buffer spirv = FileSystem::ReadFileBinary(m_Specification.FragmentSpirvPath);
 			shaderModuleCreateInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			shaderModuleCreateInfo.pNext    = nullptr;
 			shaderModuleCreateInfo.flags    = 0u;

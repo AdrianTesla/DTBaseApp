@@ -5,7 +5,7 @@ namespace DT
 {
 	void VulkanRenderer::Init()
 	{
-		s_Context = this;
+		s_Instance = this;
 
 		m_Swapchain.Init();
 		CreateSyncronizationObjects();
@@ -37,6 +37,7 @@ namespace DT
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 
         for (uint32 i = 0u; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			VK_CALL(vkWaitForFences(device, 1u, &m_PreviousFrameFinishedFences[i], VK_TRUE, UINT64_MAX));
             vkDestroyFence(device, m_PreviousFrameFinishedFences[i], nullptr);
             vkDestroySemaphore(device, m_RenderCompleteSemaphores[i], nullptr);
         }

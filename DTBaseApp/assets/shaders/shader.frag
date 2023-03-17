@@ -27,4 +27,5 @@ void main()
     vec3 normal = normalize(cross(ddx, ddy));
 
     o_Color = texture(TestImage, v_TexCoord);
+    o_Color.rgb *= max(0.0, dot(normal, vec3(0.0, 0.0, -1.0)));
 }

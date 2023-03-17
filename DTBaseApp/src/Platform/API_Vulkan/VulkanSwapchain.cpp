@@ -371,6 +371,20 @@ namespace DT
 		VK_CALL(vkGetSwapchainImagesKHR(device, m_Swapchain, &m_ImageCount, m_SwapchainImages.Data));
 		m_SwapchainImages.Size = m_ImageCount;
 
+		VulkanDevice& vulkanDevice = VulkanContext::GetCurrentDevice();
+		VkCommandBuffer commandBuffer = vulkanDevice.BeginCommandBuffer(QueueType::Graphics);
+		for (uint32 i = 0u; i < m_ImageCount; i++) {
+			vkCmd::TransitionImageLayoutSingleMip(
+				commandBuffer, 
+				m_SwapchainImages[i], 
+				VK_IMAGE_LAYOUT_UNDEFINED, 
+				VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 
+				m_SurfaceFormat.format, 
+				0u
+			);
+		}
+		vulkanDevice.EndCommandBuffer();
+
 		if (m_LogCreation) {
 			LOG_INFO("Created swapchain with {} images, each ({}, {})", m_ImageCount, m_Width, m_Height);
 		}

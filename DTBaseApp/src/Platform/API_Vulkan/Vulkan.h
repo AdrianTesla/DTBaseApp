@@ -107,6 +107,7 @@ namespace DT
 	namespace Vulkan
 	{
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateInfo* pAllocationCreateInfo, VulkanBuffer* pBuffer);
+		void DestroyBuffer(VulkanBuffer& buffer);
 		void CreateBufferStaging(const void* data, uint64 size, VkBufferUsageFlags usage, VulkanBuffer* pBuffer);
 		bool HasDepthComponent(VkFormat format);
 		bool HasStencilComponent(VkFormat format);

@@ -8,6 +8,9 @@
 
 namespace DT
 {
+
+	#pragma region VulkanGraphicsPipeline
+
 	VulkanPipeline::VulkanPipeline(const PipelineSpecification& specification)
 		: m_Specification(specification)
 	{
@@ -16,10 +19,9 @@ namespace DT
 
 	void VulkanPipeline::Invalidate()
 	{
-		Timer timer;
-
 		Destroy();
 
+		Timer timer;
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
 
 		struct Vertex
@@ -246,6 +248,9 @@ namespace DT
 		Destroy();
 	}
 
+	#pragma endregion
+
+	#pragma region VulkanComputePipeline
 
 	VulkanComputePipeline::VulkanComputePipeline()
 	{
@@ -275,12 +280,39 @@ namespace DT
 		VK_CALL(vkCreateShaderModule(device, &shaderModuleCreateInfo, nullptr, &computeShaderModule));
 		spirv.Release();
 
+		VkDescriptorSetLayoutBinding descriptorSetLayoutBindings[3];
+		descriptorSetLayoutBindings[0].binding			  = 0u;
+		descriptorSetLayoutBindings[0].descriptorType	  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorSetLayoutBindings[0].descriptorCount	  = 1u;
+		descriptorSetLayoutBindings[0].stageFlags		  = VK_SHADER_STAGE_COMPUTE_BIT;
+		descriptorSetLayoutBindings[0].pImmutableSamplers = nullptr;
+
+		descriptorSetLayoutBindings[1].binding			  = 1u;
+		descriptorSetLayoutBindings[1].descriptorType	  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		descriptorSetLayoutBindings[1].descriptorCount	  = 1u;
+		descriptorSetLayoutBindings[1].stageFlags		  = VK_SHADER_STAGE_COMPUTE_BIT;
+		descriptorSetLayoutBindings[1].pImmutableSamplers = nullptr;
+
+		descriptorSetLayoutBindings[2].binding			  = 2u;
+		descriptorSetLayoutBindings[2].descriptorType	  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		descriptorSetLayoutBindings[2].descriptorCount	  = 1u;
+		descriptorSetLayoutBindings[2].stageFlags		  = VK_SHADER_STAGE_COMPUTE_BIT;
+		descriptorSetLayoutBindings[2].pImmutableSamplers = nullptr;
+
+		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{};
+		descriptorSetLayoutCreateInfo.sType		   = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		descriptorSetLayoutCreateInfo.pNext		   = nullptr;
+		descriptorSetLayoutCreateInfo.flags		   = 0u;
+		descriptorSetLayoutCreateInfo.bindingCount = (uint32)std::size(descriptorSetLayoutBindings);
+		descriptorSetLayoutCreateInfo.pBindings	   = descriptorSetLayoutBindings;
+		VK_CALL(vkCreateDescriptorSetLayout(device, &descriptorSetLayoutCreateInfo, nullptr, &m_DescriptorSetLayout));
+
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 		pipelineLayoutCreateInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutCreateInfo.pNext					= nullptr;
 		pipelineLayoutCreateInfo.flags					= 0u;
-		pipelineLayoutCreateInfo.setLayoutCount			= 0u;
-		pipelineLayoutCreateInfo.pSetLayouts			= nullptr;
+		pipelineLayoutCreateInfo.setLayoutCount			= 1u;
+		pipelineLayoutCreateInfo.pSetLayouts			= &m_DescriptorSetLayout;
 		pipelineLayoutCreateInfo.pushConstantRangeCount	= 0u;
 		pipelineLayoutCreateInfo.pPushConstantRanges	= nullptr;
 		VK_CALL(vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &m_PipelineLayout));
@@ -306,9 +338,14 @@ namespace DT
 	void VulkanComputePipeline::Destroy()
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
-		vkDestroyPipeline(device, m_Pipeline, nullptr);
+		vkDestroyDescriptorSetLayout(device, m_DescriptorSetLayout, nullptr);
 		vkDestroyPipelineLayout(device, m_PipelineLayout, nullptr);
+		vkDestroyPipeline(device, m_Pipeline, nullptr);
+		m_DescriptorSetLayout = VK_NULL_HANDLE;
 		m_Pipeline = VK_NULL_HANDLE;
 		m_PipelineLayout = VK_NULL_HANDLE;
 	}
+
+	#pragma endregion
+
 }

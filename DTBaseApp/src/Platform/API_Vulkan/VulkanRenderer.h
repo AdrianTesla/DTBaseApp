@@ -18,13 +18,13 @@ namespace DT
 
 		virtual uint32 CurrentFrame() const override { return m_CurrentFrame; }
 
-		static VulkanSwapchain& GetSwapchain() { return s_Context->m_Swapchain; }
-		static VkSemaphore& GetActiveRenderCompleteSemaphore() { return s_Context->m_RenderCompleteSemaphores[s_Context->m_CurrentFrame]; }
-		static VkFence& GetActivePreviousFrameFence() { return s_Context->m_PreviousFrameFinishedFences[s_Context->m_CurrentFrame]; }
+		static VulkanSwapchain& GetSwapchain() { return s_Instance->m_Swapchain; }
+		static VkSemaphore& GetActiveRenderCompleteSemaphore() { return s_Instance->m_RenderCompleteSemaphores[s_Instance->m_CurrentFrame]; }
+		static VkFence& GetActivePreviousFrameFence() { return s_Instance->m_PreviousFrameFinishedFences[s_Instance->m_CurrentFrame]; }
 	private:
 		void CreateSyncronizationObjects();
 	private:
-		inline static VulkanRenderer* s_Context = nullptr;
+		inline static VulkanRenderer* s_Instance = nullptr;
 
 		VulkanSwapchain m_Swapchain;
 

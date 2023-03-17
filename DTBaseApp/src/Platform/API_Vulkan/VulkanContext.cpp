@@ -101,6 +101,7 @@ namespace DT
 	void VulkanContext::CreateVulkanInstance()
 	{
 		// enumerate available instance extensions
+
 		uint32 extensionCount;
 		VK_CALL(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr));
 		m_AvailableInstanceExtensions.resize(extensionCount);
