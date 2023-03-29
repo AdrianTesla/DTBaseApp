@@ -13,7 +13,7 @@ namespace DT
 
 		m_Window = Window::Create(m_Specification.Window);
 		m_Window->SetEventCallBack(BIND_FUNC(OnEvent));
-
+		
 		m_RendererContext = RendererContext::Create(m_Window);
 		m_RendererContext->Init();
 

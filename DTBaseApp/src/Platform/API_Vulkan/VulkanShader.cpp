@@ -62,7 +62,9 @@ namespace DT
 	void VulkanShader::Destroy()
 	{
 		VkDevice device = VulkanContext::GetCurrentVulkanDevice();
-		for (size_t i = 0u; i < m_PipelineShaderStages.size(); i++)
+		for (size_t i = 0u; i < m_PipelineShaderStages.size(); i++) {
 			vkDestroyShaderModule(device, m_PipelineShaderStages[i].module, nullptr);
+			m_PipelineShaderStages[i].module = VK_NULL_HANDLE;
+		}
 	}
 }

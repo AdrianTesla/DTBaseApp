@@ -6,11 +6,6 @@
 #include "Platform/API_Vulkan/VulkanRenderer.h"
 #include <stb_image.h>
 
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -38,12 +33,11 @@ namespace DT
 		Ref<VulkanShader> shader = Ref<VulkanShader>::Create(shaderSpec);
 
 		PipelineSpecification specification{};
-		specification.Shader = shader;
+		specification.Shader      = shader;
 		specification.PolygonMode = PolygonMode::Fill;
-		specification.Topology = PrimitiveTopology::TriangleList;
-		specification.Culling = FaceCulling::Back;
+		specification.Topology    = PrimitiveTopology::TriangleList;
+		specification.Culling     = FaceCulling::Back;
 		m_Pipeline = Ref<VulkanPipeline>::Create(specification);
-		m_ComputePipeline = Ref<VulkanComputePipeline>::Create();
 
 		CreateCommandBuffers();
 		CreateBuffers();

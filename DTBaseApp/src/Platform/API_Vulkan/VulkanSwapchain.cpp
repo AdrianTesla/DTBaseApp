@@ -74,8 +74,6 @@ namespace DT
 
 		DestroyDynamicResources();
 
-		m_LogCreation = false;
-
 		GetSupportDetails();
 		SelectSurfaceFormat();
 		SelectPresentMode();
@@ -91,7 +89,8 @@ namespace DT
 		CreateSwapchainRenderPass();
 		CreateSwapchainFramebuffers();
 
-		LOG_WARN("Recreated swapchain with size ({}, {}) ({} ms)", m_Width, m_Height, timer.ElapsedMilliseconds());
+		LOG_WARN("Created swapchain with size ({}, {}) ({} ms)", m_Width, m_Height, timer.ElapsedMilliseconds());
+		m_LogCreation = false;
 	}
 
 
@@ -659,8 +658,7 @@ namespace DT
 		if ((aquireResult == VK_SUCCESS) || (aquireResult == VK_SUBOPTIMAL_KHR))
 			return true;
 
-		if (aquireResult == VK_ERROR_OUT_OF_DATE_KHR)
-		{
+		if (aquireResult == VK_ERROR_OUT_OF_DATE_KHR) {
 			Invalidate();
 			return false;
 		}

@@ -28,6 +28,7 @@ using int64 = int64_t;
 #include "Ref.h"
 #include "FileSystem.h"
 #include "Buffer.h"
+#include "Math.h"
 
 #define BIND_FUNC(x)                                        \
 [this](auto&&... args) -> decltype(auto) 					\

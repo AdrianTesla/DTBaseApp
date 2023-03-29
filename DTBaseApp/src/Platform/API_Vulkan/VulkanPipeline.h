@@ -10,7 +10,7 @@ namespace DT
 		Ref<VulkanShader> Shader;
 		PolygonMode       PolygonMode = PolygonMode::Fill;
 		PrimitiveTopology Topology    = PrimitiveTopology::TriangleList;
-		FaceCulling       Culling     = FaceCulling::Back;
+		FaceCulling       Culling     = FaceCulling::None;
 	};
 
 	class VulkanPipeline : public RefCounted

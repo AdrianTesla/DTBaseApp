@@ -71,7 +71,8 @@ namespace DT
 	enum class PrimitiveTopology
 	{
 		TriangleList,
-		LineList
+		LineList,
+		PointList
 	};
 
 	enum class FaceCulling

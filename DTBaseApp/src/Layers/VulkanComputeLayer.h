@@ -15,15 +15,8 @@ namespace DT
 		virtual void OnEvent(Event& event) override;
 		virtual void OnDetach() override;
 	private:
-		VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
-		InFlight<VkDescriptorSet> m_DescriptorSets{};
-
-		Ref<VulkanComputePipeline> m_ComputePipeline;
-
-		InFlight<VulkanBuffer> m_ParticleBuffer{};
-		uint64 m_ParticleBufferSize;
-		InFlight<VkCommandBuffer> m_GraphicsCommandBuffers;
-
-		Ref<VulkanUniformBuffer> m_UniformBuffer;
+		InFlight<VkCommandBuffer> m_CommandBuffers;
+		Ref<VulkanVertexBuffer> m_VertexBuffer;
+		Ref<VulkanPipeline> m_Pipeline;
 	};
 }
