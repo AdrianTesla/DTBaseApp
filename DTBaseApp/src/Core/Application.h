@@ -1,6 +1,7 @@
 #pragma once
 #include "Layer.h"
 #include "Window.h"
+#include "Platform/GraphicsContext.h"
 
 namespace DT
 {
@@ -34,6 +35,7 @@ namespace DT
 
 		Window* m_Window = nullptr;
 		std::vector<Layer*> m_Layers;
+		GraphicsContext* m_GraphicsContext;
 
 		ApplicationSpecification m_Specification;
 		inline static Application* s_Instance = nullptr;

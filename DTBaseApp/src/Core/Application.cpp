@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "Layers/TestLayer.h"
 
+
 namespace DT
 {
 	Application::Application(const ApplicationSpecification& specification)
@@ -10,6 +11,8 @@ namespace DT
 
 		m_Window = Window::Create(m_Specification.WindowSpecification);
 		m_Window->SetEventCallBack(BIND_FUNC(OnEvent));
+		m_GraphicsContext = new GraphicsContext(m_Window);
+		m_GraphicsContext->Init();
 
 		if (std::filesystem::exists(m_Specification.WorkingDirectory))
 			std::filesystem::current_path(m_Specification.WorkingDirectory);
@@ -27,6 +30,7 @@ namespace DT
 			delete layer;
 		}
 
+		delete m_GraphicsContext;
 		delete m_Window;
 	}
 
@@ -55,8 +59,12 @@ namespace DT
 
 	void Application::RenderPhase()
 	{
+		m_GraphicsContext->BeginFrame();
+
 		for (Layer* layer : m_Layers)
-			layer->OnRender();
+			layer->OnRender(); 
+
+		m_GraphicsContext->Present();
 	}
 
 	void Application::OnEvent(Event& event)

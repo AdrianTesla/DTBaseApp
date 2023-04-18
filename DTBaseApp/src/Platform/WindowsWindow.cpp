@@ -1,6 +1,9 @@
 #include "WindowsWindow.h"
 #include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 #include "Core/Core.h"
+#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 namespace DT
@@ -186,6 +189,11 @@ namespace DT
 	{
 		const GLFWvidmode* videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 		return { videoMode->width,videoMode->height };
+	}
+
+	void* WindowsWindow::GetNativeWindow() const
+	{
+		return (void*)glfwGetWin32Window(m_GLFWWindow);
 	}
 
 	void WindowsWindow::EnumerateDisplayModes()

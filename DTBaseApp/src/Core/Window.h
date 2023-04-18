@@ -40,6 +40,7 @@ namespace DT
 		virtual int32 GetMouseY() const = 0;
 		virtual std::string GetClipboardString() const = 0;
 		virtual Extent GetDisplayResolution() const = 0;
+		virtual void* GetNativeWindow() const = 0;
 
 		virtual void SetFixedAspectRatio(int32 numerator, int32 denominator) = 0;
 		virtual void SetMousePosition(int32 x, int32 y) = 0;
