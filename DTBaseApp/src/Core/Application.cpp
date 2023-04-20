@@ -61,6 +61,8 @@ namespace DT
 	{
 		m_GraphicsContext->BeginFrame();
 
+		m_GraphicsContext->DrawTriangle();
+
 		for (Layer* layer : m_Layers)
 			layer->OnRender(); 
 
