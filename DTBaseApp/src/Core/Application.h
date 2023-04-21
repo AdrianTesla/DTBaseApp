@@ -1,7 +1,7 @@
 #pragma once
 #include "Layer.h"
 #include "Window.h"
-#include "Platform/GraphicsContext.h"
+#include "Renderer/GraphicsContext.h"
 
 namespace DT
 {
