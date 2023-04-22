@@ -21,13 +21,15 @@ namespace DT
 
 		static ID3D11Device* GetDevice() { return s_Instance->m_Device.Get(); }
 		static ID3D11DeviceContext* GetContext() { return s_Instance->m_Context.Get(); }
+		static ID3D11RenderTargetView* GetSwapchainRTV() { return s_Instance->m_RenderTargetView.Get(); }
+		static IDXGISwapChain* GetSwapchain() { return s_Instance->m_Swapchain.Get(); };
 	private:
 		Microsoft::WRL::ComPtr<IDXGISwapChain> m_Swapchain;
 		Microsoft::WRL::ComPtr<ID3D11Device> m_Device;
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_Context;
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
-		std::shared_ptr<VertexBuffer> m_VertexBuffer;
-		std::shared_ptr<Pipeline> m_Pipeline;
+		Ref<VertexBuffer> m_VertexBuffer;
+		Ref<Pipeline> m_Pipeline;
 
 		const Window* m_Window;
 		inline static GraphicsContext* s_Instance = nullptr;

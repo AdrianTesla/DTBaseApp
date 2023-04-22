@@ -8,7 +8,6 @@ namespace DT
 	public:
 		Pipeline();
 		void Bind();
-
 	private:
 		Microsoft::WRL::ComPtr<ID3D11VertexShader> m_VertexShader;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> m_PixelShader;

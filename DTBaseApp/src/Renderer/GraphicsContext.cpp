@@ -66,8 +66,8 @@ namespace DT
 		vertices[2] = { -0.3f,-0.4f };
 
 		//Upload vertices on GPU
-		m_VertexBuffer = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
-		m_Pipeline = std::make_shared<Pipeline>();
+		m_VertexBuffer = CreateRef<VertexBuffer>(vertices, sizeof(vertices));
+		m_Pipeline = CreateRef<Pipeline>();
 	}
 
 	void GraphicsContext::Present()
@@ -97,7 +97,7 @@ namespace DT
 		viewport.MaxDepth = 1.0f;
 
 		m_Context->RSSetViewports(1u, &viewport);
-		m_VertexBuffer->Bind(sizeof(Vertex));
+		m_VertexBuffer->Bind((uint32)sizeof(Vertex));
 		m_Pipeline->Bind();
 		m_Context->OMSetRenderTargets(1u, m_RenderTargetView.GetAddressOf(), nullptr);
 

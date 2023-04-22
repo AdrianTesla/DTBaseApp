@@ -1,5 +1,7 @@
 #pragma once
+#pragma warning(push, 1)
 #include "spdlog/spdlog.h"
+#pragma warning(pop)
 
 namespace DT
 {

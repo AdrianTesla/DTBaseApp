@@ -20,7 +20,8 @@ project "DTBaseApp"
 		"%{wks.location}/DTBaseApp/src",
 		"%{IncludeDir.glfw}",
 		"%{IncludeDir.spdlog}",
-		"%{IncludeDir.stb}"
+		"%{IncludeDir.stb}",
+		"%{IncludeDir.glm}"
 	}
 
 	libdirs 

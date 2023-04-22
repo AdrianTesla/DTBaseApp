@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "Layers/TestLayer.h"
+#include "Renderer/Renderer.h"
 
 
 namespace DT
@@ -13,6 +14,8 @@ namespace DT
 		m_Window->SetEventCallBack(BIND_FUNC(OnEvent));
 		m_GraphicsContext = new GraphicsContext(m_Window);
 		m_GraphicsContext->Init();
+
+		Renderer::Init();
 
 		if (std::filesystem::exists(m_Specification.WorkingDirectory))
 			std::filesystem::current_path(m_Specification.WorkingDirectory);
@@ -29,7 +32,7 @@ namespace DT
 			layer->OnDetach();
 			delete layer;
 		}
-
+		Renderer::Shutdown();
 		delete m_GraphicsContext;
 		delete m_Window;
 	}

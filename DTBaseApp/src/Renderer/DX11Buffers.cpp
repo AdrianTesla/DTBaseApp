@@ -2,10 +2,10 @@
 
 namespace DT
 {
-	VertexBuffer::VertexBuffer(const void* vertices, uint32 size)
+	VertexBuffer::VertexBuffer(const void* vertices, uint64 size)
 	{
 		D3D11_BUFFER_DESC vertexBufferDescriptor{};
-		vertexBufferDescriptor.ByteWidth = size;
+		vertexBufferDescriptor.ByteWidth = (uint32)size;
 		vertexBufferDescriptor.Usage = D3D11_USAGE_DEFAULT;
 		vertexBufferDescriptor.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		vertexBufferDescriptor.CPUAccessFlags = 0u;
