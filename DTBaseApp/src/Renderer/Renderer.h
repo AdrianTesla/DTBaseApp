@@ -15,6 +15,8 @@ namespace DT
 		static void BeginRenderPass(Ref<RenderPass> renderPass);
 		static void EndRenderPass(); 
 
+		static void OnResize(uint32 width, uint32 height);
+
 		static void DrawTriangle();
 	private:
 		inline static RendererAPI* s_RendererAPI = nullptr;

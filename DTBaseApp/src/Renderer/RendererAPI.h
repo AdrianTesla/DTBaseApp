@@ -15,6 +15,8 @@ namespace DT
 		virtual void BeginRenderPass(Ref<RenderPass> renderPass) = 0;
 		virtual void EndRenderPass() = 0;
 
+		virtual void OnResize(uint32 width, uint32 height) = 0;
+
 		virtual void DrawTriangle() = 0;
 	};
 }

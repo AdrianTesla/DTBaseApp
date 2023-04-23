@@ -66,6 +66,11 @@ namespace DT
 	{
 	}
 
+	void DX11Renderer::OnResize(uint32 width, uint32 height)
+	{
+		GraphicsContext::OnResize(width, height);
+	}
+
 	void DX11Renderer::DrawTriangle()
 	{
 		//Set Viewport

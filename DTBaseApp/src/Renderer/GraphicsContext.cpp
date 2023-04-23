@@ -50,6 +50,18 @@ namespace DT
 		
 		ID3D11Texture2D* pBackBuffer;
 		DXCALL(m_Swapchain->GetBuffer(0u, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer));
-		DXCALL(m_Device->CreateRenderTargetView(pBackBuffer, nullptr, &m_RenderTargetView))
+		DXCALL(m_Device->CreateRenderTargetView(pBackBuffer, nullptr, &m_RenderTargetView));
+		pBackBuffer->Release();
+	}
+
+	void GraphicsContext::OnResize(uint32 width, uint32 height)
+	{
+		s_Instance->m_RenderTargetView->Release();
+		DXCALL(s_Instance->m_Swapchain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0));
+		
+		ID3D11Texture2D* pBackBuffer;
+		DXCALL(s_Instance->m_Swapchain->GetBuffer(0u, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer));
+		DXCALL(s_Instance->m_Device->CreateRenderTargetView(pBackBuffer, nullptr, s_Instance->m_RenderTargetView.GetAddressOf()));
+		pBackBuffer->Release();
 	}
 }

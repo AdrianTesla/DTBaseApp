@@ -10,7 +10,7 @@ namespace DT
 		m_Framebuffer = CreateRef<Framebuffer>(speciFICAtion);
 
 		RenderPassSpecification renderPassSpecification{};
-		renderPassSpecification.ClearColor = { 0.7f, 0.3f,0.6f,1.0f };
+		renderPassSpecification.ClearColor = { 0.2f, 0.0f,0.4f,1.0f };
 		renderPassSpecification.TargetFrameBuffer = m_Framebuffer;
 		m_RenderPass = CreateRef<RenderPass>(renderPassSpecification);
 	}

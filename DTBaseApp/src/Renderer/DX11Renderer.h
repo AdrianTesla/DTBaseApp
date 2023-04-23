@@ -16,6 +16,8 @@ namespace DT
 		virtual void BeginRenderPass(Ref<RenderPass> renderPass) override;
 		virtual void EndRenderPass() override;
 
+		virtual void OnResize(uint32 width, uint32 height) override;
+
 		virtual void DrawTriangle() override;
 	private:
 		ID3D11DeviceContext* m_Context = nullptr;

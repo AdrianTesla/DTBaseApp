@@ -84,5 +84,12 @@ namespace DT
 			m_AppRunning = false;
 			return false;
 		});
+
+		dispatcher.Dispatch<WindowResizeEvent>([&](WindowResizeEvent& e)
+		{
+			Renderer::OnResize((uint32)e.GetWidth(), (uint32)e.GetHeight());
+			FramebufferPool::OnResize((uint32)e.GetWidth(), (uint32)e.GetHeight());
+			return false;
+		});
 	}
 }

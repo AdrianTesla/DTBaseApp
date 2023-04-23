@@ -17,6 +17,7 @@ namespace DT
 		static ID3D11DeviceContext* GetContext() { return s_Instance->m_Context.Get(); }
 		static ID3D11RenderTargetView* GetSwapchainRTV() { return s_Instance->m_RenderTargetView.Get(); }
 		static IDXGISwapChain* GetSwapchain() { return s_Instance->m_Swapchain.Get(); };
+		static void OnResize(uint32 width, uint32 height);
 	private:
 		Microsoft::WRL::ComPtr<IDXGISwapChain> m_Swapchain;
 		Microsoft::WRL::ComPtr<ID3D11Device> m_Device;
