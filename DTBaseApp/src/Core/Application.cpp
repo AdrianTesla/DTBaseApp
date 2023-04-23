@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "Layers/TestLayer.h"
 #include "Renderer/Renderer.h"
+#include "Layers/RenderingTestLayer.h"
 
 
 namespace DT
@@ -23,7 +24,7 @@ namespace DT
 
 		LOG_INFO("Working Directory: {}", std::filesystem::current_path().string());
 
-		PushLayer(new TestLayer);
+		PushLayer(new RenderingTestLayer);
 	}
 
 	Application::~Application()
