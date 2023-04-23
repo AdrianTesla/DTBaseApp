@@ -16,5 +16,7 @@ namespace DT
 		static void EndRenderPass(); 
 
 		static void DrawTriangle();
+	private:
+		inline static RendererAPI* s_RendererAPI = nullptr;
 	};
 }

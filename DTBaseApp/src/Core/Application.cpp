@@ -12,6 +12,7 @@ namespace DT
 
 		m_Window = Window::Create(m_Specification.WindowSpecification);
 		m_Window->SetEventCallBack(BIND_FUNC(OnEvent));
+
 		m_GraphicsContext = new GraphicsContext(m_Window);
 		m_GraphicsContext->Init();
 
@@ -32,6 +33,7 @@ namespace DT
 			layer->OnDetach();
 			delete layer;
 		}
+
 		Renderer::Shutdown();
 		delete m_GraphicsContext;
 		delete m_Window;
@@ -62,14 +64,12 @@ namespace DT
 
 	void Application::RenderPhase()
 	{
-		m_GraphicsContext->BeginFrame();
-
-		m_GraphicsContext->DrawTriangle();
+		Renderer::BeginFrame();
 
 		for (Layer* layer : m_Layers)
 			layer->OnRender(); 
 
-		m_GraphicsContext->Present();
+		Renderer::EndFrame();
 	}
 
 	void Application::OnEvent(Event& event)

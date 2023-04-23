@@ -1,17 +1,9 @@
 #include "Core/Application.h"
 #include "GraphicsContext.h"
 #pragma comment (lib,"d3d11.lib")
-#include "DX11Buffers.h"
-#include "Pipeline.h"
 
 namespace DT
 {
-	struct Vertex
-	{
-		float x;
-		float y;
-	};
-
 	GraphicsContext::GraphicsContext(const Window* window)
 	{
 		m_Window = window;
@@ -59,49 +51,5 @@ namespace DT
 		ID3D11Texture2D* pBackBuffer;
 		DXCALL(m_Swapchain->GetBuffer(0u, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer));
 		DXCALL(m_Device->CreateRenderTargetView(pBackBuffer, nullptr, &m_RenderTargetView))
-
-		Vertex vertices[3];
-		vertices[0] = { 0.0f,0.5f };
-		vertices[1] = { 0.3f,-0.4f };
-		vertices[2] = { -0.3f,-0.4f };
-
-		//Upload vertices on GPU
-		m_VertexBuffer = CreateRef<VertexBuffer>(vertices, sizeof(vertices));
-		m_Pipeline = CreateRef<Pipeline>();
-	}
-
-	void GraphicsContext::Present()
-	{
-		DXCALL(m_Swapchain->Present(1u, 0u));
-	}
-
-	void GraphicsContext::BeginFrame()
-	{
-		float windowColor[4];
-		windowColor[0] = 0.0f; //R
-		windowColor[1] = 0.0f; //G
-		windowColor[2] = 0.0f; //B
-		windowColor[3] = 1.0f; //A
-		m_Context->ClearRenderTargetView(m_RenderTargetView.Get(), windowColor);
-	}
-
-	void GraphicsContext::DrawTriangle()
-	{
-		//Set Viewport
-		D3D11_VIEWPORT viewport{};
-		viewport.TopLeftX = 0.0f;
-		viewport.TopLeftY = 0.0f;
-		viewport.Width = (float)Application::Get().GetWindow().GetWidth();
-		viewport.Height = (float)Application::Get().GetWindow().GetHeight();
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
-
-		m_Context->RSSetViewports(1u, &viewport);
-		m_VertexBuffer->Bind((uint32)sizeof(Vertex));
-		m_Pipeline->Bind();
-		m_Context->OMSetRenderTargets(1u, m_RenderTargetView.GetAddressOf(), nullptr);
-
-		//Draw Triangle
-		m_Context->Draw(3u, 0u);
 	}
 }
