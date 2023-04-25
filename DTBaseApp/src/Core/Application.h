@@ -32,6 +32,7 @@ namespace DT
 		void RenderPhase();
 	private:
 		bool m_AppRunning = true;
+		bool m_AppMinimized = false;
 
 		Window* m_Window = nullptr;
 		std::vector<Layer*> m_Layers;

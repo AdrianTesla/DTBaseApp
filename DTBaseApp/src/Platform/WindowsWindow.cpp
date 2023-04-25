@@ -1,8 +1,9 @@
 #include "WindowsWindow.h"
 #include <GLFW/glfw3.h>
+#include "Core/Core.h"
+
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
-#include "Core/Core.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
@@ -11,7 +12,7 @@ namespace DT
 	static bool s_GLFWInitialized = false;
 	static uint32 s_ActiveWindowsCount = 0u;
 
-	Window* Window::Create(const WindowSpecification& specification)
+    Window* Window::Create(const WindowSpecification& specification)
 	{
 		return new WindowsWindow(specification);
 	}
@@ -23,36 +24,56 @@ namespace DT
 		{
 			int result = glfwInit();
 			ASSERT(result);
-			LOG_TRACE("GLFW Version {}", glfwGetVersionString());
-
 			s_GLFWInitialized = true;
+
+			LOG_TRACE("Initialized GLFW. Version {}", glfwGetVersionString());
 		}
 
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		m_GLFWWindow = glfwCreateWindow(m_Specification.Width, m_Specification.Height, m_Specification.Title.c_str(), nullptr, nullptr);
-		s_ActiveWindowsCount++;
-
-		m_WindowData.Width = m_Specification.Width;
-		m_WindowData.Height = m_Specification.Height;
-
+		CreateAndSpawnWindow();
 		InstallGLFWCallbacks();
+	}
 
-		if (m_Specification.StartMaximized)
-			Maximize();
+	void WindowsWindow::CreateAndSpawnWindow()
+	{
+		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
+
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+		glfwWindowHint(GLFW_RED_BITS, videoMode->redBits);
+		glfwWindowHint(GLFW_GREEN_BITS, videoMode->greenBits);
+		glfwWindowHint(GLFW_BLUE_BITS, videoMode->blueBits);
+		glfwWindowHint(GLFW_REFRESH_RATE, videoMode->refreshRate);
+		glfwWindowHint(GLFW_MAXIMIZED, (int)m_Specification.StartMaximized);
+		glfwWindowHint(GLFW_RESIZABLE, (int)m_Specification.IsResizable);
+		glfwWindowHint(GLFW_FLOATING, (int)m_Specification.AlwaysOnTop);
+		glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_TRUE);
+
+		if (m_Specification.StartFullscreen)
+			m_GLFWWindow = glfwCreateWindow(videoMode->width, videoMode->height, m_Specification.Title.c_str(), monitor, nullptr);
+		else
+			m_GLFWWindow = glfwCreateWindow(m_Specification.Width, m_Specification.Height, m_Specification.Title.c_str(), nullptr, nullptr);
+
 		if (m_Specification.StartCentered)
 			CenterWindow();
-		if (m_Specification.StartFullscreen)
-			ToFullscreen();
 
-		SetResizable(m_Specification.IsResizable);
-		SetDecorated(m_Specification.IsDecorated);
-		SetOpacity(m_Specification.StartOpacity);
+		if (!m_Specification.IsDecorated)
+			SetDecorated(false);
+
+		if (m_Specification.Opacity != 1.0f)
+			SetOpacity(m_Specification.Opacity);
+
 		SetIcon(m_Specification.IconPath);
+
+		glfwGetWindowSize(m_GLFWWindow, &m_WindowData.Width, &m_WindowData.Height);
+
+		s_ActiveWindowsCount++;
 	}
 
 	WindowsWindow::~WindowsWindow()
 	{
+		glfwDestroyWindow(m_GLFWWindow);
 		s_ActiveWindowsCount--;
+
 		if (s_ActiveWindowsCount == 0u)
 			glfwTerminate();
 	}
@@ -62,6 +83,17 @@ namespace DT
 		m_WindowData.Callback = callback; 
 	}
 
+	void* WindowsWindow::GetPlatformWindow() const
+	{
+		return m_GLFWWindow;
+	}
+
+	void* WindowsWindow::GetNativeWindow() const
+	{
+		HWND hWnd = glfwGetWin32Window(m_GLFWWindow);
+		return (void*)hWnd;
+	}
+
 	void WindowsWindow::ProcessEvents()
 	{
 		glfwPollEvents();
@@ -69,14 +101,14 @@ namespace DT
 
 	int32 WindowsWindow::GetWidth() const
 	{
-		int width;
+		int32 width;
 		glfwGetWindowSize(m_GLFWWindow, &width, nullptr);
 		return width;
 	}
 
 	int32 WindowsWindow::GetHeight() const
 	{
-		int height;
+		int32 height;
 		glfwGetWindowSize(m_GLFWWindow, nullptr, &height);
 		return height;
 	}
@@ -88,12 +120,47 @@ namespace DT
 
 	void WindowsWindow::ToFullscreen()
 	{
-		glfwSetWindowMonitor(m_GLFWWindow, glfwGetPrimaryMonitor(), 0, 0, 1280, 720, GLFW_DONT_CARE);
+		if (m_WindowData.Fullscreen)
+			return;
+
+		if ((m_WindowData.Width == 0) || (m_WindowData.Height == 0))
+		{
+			m_WindowData.PreviousWidth = m_Specification.Width;
+			m_WindowData.PreviousHeight = m_Specification.Height;
+		}
+		else
+		{
+			m_WindowData.PreviousWidth = m_WindowData.Width;
+			m_WindowData.PreviousHeight = m_WindowData.Height;
+		}
+
+		int32 posX, posY;
+		glfwGetWindowPos(m_GLFWWindow, &posX, &posY);
+		m_WindowData.PreviousPosX = posX;
+		m_WindowData.PreviousPosY = posY;
+
+		GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
+		glfwSetWindowMonitor(m_GLFWWindow, primaryMonitor, 0, 0, videoMode->width, videoMode->height, videoMode->refreshRate);
+		glfwSetWindowAttrib(m_GLFWWindow, GLFW_DECORATED, GLFW_FALSE);
+	
+		WindowToFullscreenEvent e;
+		m_WindowData.Callback(e);
+		m_WindowData.Fullscreen = true;
 	}
 
 	void WindowsWindow::ToWindowed()
 	{
-		glfwSetWindowMonitor(m_GLFWWindow, nullptr, 0, 0, 1280, 720, GLFW_DONT_CARE);
+		if (!m_WindowData.Fullscreen)
+			return;
+
+		glfwSetWindowMonitor(m_GLFWWindow, nullptr, 0, 0, m_WindowData.PreviousWidth, m_WindowData.PreviousHeight, GLFW_DONT_CARE);
+		glfwSetWindowAttrib(m_GLFWWindow, GLFW_DECORATED, (int)m_Specification.IsDecorated);
+		glfwSetWindowPos(m_GLFWWindow, m_WindowData.PreviousPosX, m_WindowData.PreviousPosY);
+
+		WindowToWindowedEvent e;
+		m_WindowData.Callback(e);
+		m_WindowData.Fullscreen = false;
 	}
 
 	void WindowsWindow::SetFixedAspectRatio(int32 numerator, int32 denominator)
@@ -145,6 +212,11 @@ namespace DT
 		glfwSetWindowAttrib(m_GLFWWindow, GLFW_RESIZABLE, isResizable ? GLFW_TRUE : GLFW_FALSE);
 	}
 
+	void WindowsWindow::SetAlwaysOnTop(bool alwaysOnTop)
+	{
+		glfwSetWindowAttrib(m_GLFWWindow, GLFW_FLOATING, (int)alwaysOnTop);
+	}
+
 	void WindowsWindow::SetSize(int32 width, int32 height)
 	{
 		glfwSetWindowSize(m_GLFWWindow, width, height);
@@ -159,12 +231,14 @@ namespace DT
 	{
 		const GLFWvidmode* videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
-		int windowWidth, windowHeight;
+		int32 windowWidth, windowHeight;
 		glfwGetWindowSize(m_GLFWWindow, &windowWidth, &windowHeight);
 
 		int32 x = (videoMode->width - windowWidth) / 2;
 		int32 y = (videoMode->height - windowHeight) / 2;
 		glfwSetWindowPos(m_GLFWWindow, x, y);
+
+		LOG_TRACE("Window centered");
 	}
 
 	void WindowsWindow::SetSizeLimits(int32 minWidth, int32 minHeight, int32 maxWidth, int32 maxHeight)
@@ -174,15 +248,22 @@ namespace DT
 
 	void WindowsWindow::SetIcon(const std::filesystem::path& iconPath)
 	{
-		if (!std::filesystem::exists(iconPath))
-			return;
+		if (std::filesystem::exists(iconPath))
+		{
+			GLFWimage image;
+			image.pixels = stbi_load(iconPath.string().c_str(), &image.width, &image.height, nullptr, 4);
+			glfwSetWindowIcon(m_GLFWWindow, 1, &image);
+			stbi_image_free(image.pixels);
+		}
+		else
+		{
+			LOG_WARN("Could not load window icon! {}", iconPath.string());
+		}
+	}
 
-		GLFWimage icon;
-		int width, height, channels;
-		icon.pixels = stbi_load(iconPath.string().c_str(), &width, &height, &channels, 4);
-		icon.width = width;
-		icon.height = height;
-		glfwSetWindowIcon(m_GLFWWindow, 1, &icon);
+	void WindowsWindow::Minimize()
+	{
+		glfwIconifyWindow(m_GLFWWindow);
 	}
 
 	Extent WindowsWindow::GetDisplayResolution() const
@@ -191,9 +272,9 @@ namespace DT
 		return { videoMode->width,videoMode->height };
 	}
 
-	void* WindowsWindow::GetNativeWindow() const
+	bool WindowsWindow::IsFullscreen() const
 	{
-		return (void*)glfwGetWin32Window(m_GLFWWindow);
+		return m_WindowData.Fullscreen;
 	}
 
 	void WindowsWindow::EnumerateDisplayModes()
@@ -279,6 +360,29 @@ namespace DT
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
 			KeyTypedEvent e(key);
+			data.Callback(e);
+		});
+
+		// window maximized callback
+		glfwSetWindowMaximizeCallback(m_GLFWWindow, [](GLFWwindow* window, int maximized)
+		{
+			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			
+			if (maximized == GLFW_TRUE) {
+				WindowMaximizedEvent e;
+				data.Callback(e);
+			} else {
+				WindowRestoredDownEvent e;
+				data.Callback(e);
+			}
+		});
+
+		// window maximized callback
+		glfwSetWindowIconifyCallback(m_GLFWWindow, [](GLFWwindow* window, int iconified)
+		{
+			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			
+			WindowIconifiedEvent e((bool)iconified);
 			data.Callback(e);
 		});
 

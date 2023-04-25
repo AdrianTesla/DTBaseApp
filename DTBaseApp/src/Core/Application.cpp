@@ -53,7 +53,10 @@ namespace DT
 		{
 			m_Window->ProcessEvents();
 			UpdatePhase(timer.Mark());
-			RenderPhase();
+			if (!m_AppMinimized)
+			{
+				RenderPhase();
+			}
 		}
 	}
 
@@ -82,6 +85,12 @@ namespace DT
 		dispatcher.Dispatch<WindowClosedEvent>([&](WindowClosedEvent& e)
 		{
 			m_AppRunning = false;
+			return false;
+		});
+
+		dispatcher.Dispatch<WindowIconifiedEvent>([&](WindowIconifiedEvent& e)
+		{
+			m_AppMinimized = e.Minimized();
 			return false;
 		});
 

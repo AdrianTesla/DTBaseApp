@@ -5,7 +5,6 @@
 
 namespace DT
 {
-	/**** event base class: they are BLOCKING ****/
 	class Event
 	{
 	public:
@@ -41,11 +40,11 @@ namespace DT
 			WindowExitSize     ,
 			WindowFocus        ,
 			WindowMoved        ,
-			AppTick            ,
-			AppUpdate          ,
-			AppRender          ,
-			AppToFullScreen    ,
-			AppToWindowed      ,
+			WindowRestoreDown  ,
+			WindowMaximize     ,
+			WindowIconify      ,
+			WindowToFullscreen ,
+			WindowToWindowed   ,
 			KeyPressed         ,
 			KeyReleased        ,
 			KeyTyped           ,
@@ -119,7 +118,6 @@ namespace DT
 			ss << "MouseMovedEvent Mouse Pos: [" << m_MouseX << ", " << m_MouseY << "]";
 			return ss.str();
 		}
-
 		IMPLEMENT_CLASS_TYPE(MouseMoved)
 		IMPLEMENT_CATEGORIES(CategoryInput | CategoryMouse)
 	private:
@@ -305,6 +303,7 @@ namespace DT
 			: m_NewWidth(newWidth), m_NewHeight(newHeight)
 		{}
 
+		bool IsDegenerate() const { return (m_NewWidth == 0) || (m_NewHeight == 0); }
 		int32 GetWidth() const { return m_NewWidth; }
 		int32 GetHeight() const { return m_NewHeight; }
 
@@ -331,31 +330,60 @@ namespace DT
 		IMPLEMENT_CATEGORIES(CategoryApplication)
 	};
 
-	class AppTickEvent : public Event
+	class WindowRestoredDownEvent : public Event
 	{
 	public:
-		AppTickEvent() = default;
+		WindowRestoredDownEvent() = default;
 	public:
-		IMPLEMENT_CLASS_TYPE(AppTick)
+		IMPLEMENT_CLASS_TYPE(WindowRestoreDown)
 		IMPLEMENT_CATEGORIES(CategoryApplication)
 	};
 
-	class AppUpdateEvent : public Event
+	class WindowMaximizedEvent : public Event
 	{
 	public:
-		AppUpdateEvent() = default;
+		WindowMaximizedEvent() = default;
 	public:
-		IMPLEMENT_CLASS_TYPE(AppUpdate)
+		IMPLEMENT_CLASS_TYPE(WindowMaximize)
 		IMPLEMENT_CATEGORIES(CategoryApplication)
 	};
 
-	class AppRenderEvent : public Event
+	class WindowToFullscreenEvent : public Event
 	{
 	public:
-		AppRenderEvent() = default;
+		WindowToFullscreenEvent() = default;
 	public:
-		IMPLEMENT_CLASS_TYPE(AppRender)
+		IMPLEMENT_CLASS_TYPE(WindowToFullscreen)
 		IMPLEMENT_CATEGORIES(CategoryApplication)
+	};
+
+	class WindowToWindowedEvent : public Event
+	{
+	public:
+		WindowToWindowedEvent() = default;
+	public:
+		IMPLEMENT_CLASS_TYPE(WindowToWindowed)
+		IMPLEMENT_CATEGORIES(CategoryApplication)
+	};
+
+	class WindowIconifiedEvent : public Event
+	{
+	public:
+		WindowIconifiedEvent(bool iconified)
+			: m_Iconified(iconified)
+		{}
+		bool Minimized() const { return m_Iconified; }
+		bool Maximized() const { return !m_Iconified; }
+
+		virtual std::string ToString() const override
+		{
+			return std::format("WindowIconified: {0}", m_Iconified);
+		}
+	public:
+		IMPLEMENT_CLASS_TYPE(WindowIconify)
+		IMPLEMENT_CATEGORIES(CategoryApplication)
+	private:
+		bool m_Iconified;
 	};
 
 	class WindowFocusEvent : public Event
@@ -365,6 +393,7 @@ namespace DT
 			: m_Focused(focused)
 		{}
 		bool IsFocused() const { return m_Focused; }
+		bool LostFocus() const { return !m_Focused; }
 	public:
 		IMPLEMENT_CLASS_TYPE(WindowFocus)
 		IMPLEMENT_CATEGORIES(CategoryApplication)
