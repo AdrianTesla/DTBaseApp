@@ -1,4 +1,4 @@
-float4 main() : SV_Target
+float4 main(float4 color : VertexColor) : SV_Target
 {
-    return float4(0.8f, 0.0f, 0.4f, 1.0f);
+    return color;
 }

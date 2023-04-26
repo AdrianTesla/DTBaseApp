@@ -2,6 +2,8 @@
 #include "Core/Layer.h"
 #include "Renderer/Framebuffer.h"
 #include "Renderer/RenderPass.h"
+#include "Renderer/DX11Buffers.h"
+#include "Renderer/Pipeline.h"
 
 namespace DT
 {
@@ -16,5 +18,6 @@ namespace DT
 	private:
 		Ref<Framebuffer> m_Framebuffer;
 		Ref<RenderPass> m_RenderPass;
+		float m_Time = 0.0f;
 	};
 }

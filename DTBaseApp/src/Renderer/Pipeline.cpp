@@ -6,14 +6,22 @@ namespace DT
 {
 	Pipeline::Pipeline()
 	{
-		D3D11_INPUT_ELEMENT_DESC inputElementDescriptor{};
-		inputElementDescriptor.AlignedByteOffset = 0u;
-		inputElementDescriptor.Format = DXGI_FORMAT_R32G32_FLOAT;
-		inputElementDescriptor.InputSlot = 0u;
-		inputElementDescriptor.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-		inputElementDescriptor.InstanceDataStepRate = 0u;
-		inputElementDescriptor.SemanticIndex = 0u;
-		inputElementDescriptor.SemanticName = "VertexPosition";
+		D3D11_INPUT_ELEMENT_DESC inputElementDescriptor[2];
+		inputElementDescriptor[0].AlignedByteOffset = 0u;
+		inputElementDescriptor[0].Format = DXGI_FORMAT_R32G32_FLOAT;
+		inputElementDescriptor[0].InputSlot = 0u;
+		inputElementDescriptor[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		inputElementDescriptor[0].InstanceDataStepRate = 0u;
+		inputElementDescriptor[0].SemanticIndex = 0u;
+		inputElementDescriptor[0].SemanticName = "VertexPosition";
+
+		inputElementDescriptor[1].AlignedByteOffset = 8u;
+		inputElementDescriptor[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		inputElementDescriptor[1].InputSlot = 0u;
+		inputElementDescriptor[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		inputElementDescriptor[1].InstanceDataStepRate = 0u;
+		inputElementDescriptor[1].SemanticIndex = 0u;
+		inputElementDescriptor[1].SemanticName = "VertexColor";
 
 		//Load, create and set Vertex Shader
 		ID3DBlob* vertexShaderBytecode;
@@ -27,7 +35,7 @@ namespace DT
 		pixelShaderBytecode->Release();
 
 		//Create Input Layout and validate with Vertex Shader 
-		GraphicsContext::GetDevice()->CreateInputLayout(&inputElementDescriptor, 1u, vertexShaderBytecode->GetBufferPointer(), vertexShaderBytecode->GetBufferSize(), &m_InputLayout);
+		GraphicsContext::GetDevice()->CreateInputLayout(inputElementDescriptor, 2u, vertexShaderBytecode->GetBufferPointer(), vertexShaderBytecode->GetBufferSize(), &m_InputLayout);
 		vertexShaderBytecode->Release();
 	}
 

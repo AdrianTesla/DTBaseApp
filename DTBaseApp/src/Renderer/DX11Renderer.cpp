@@ -53,6 +53,17 @@ namespace DT
 
 	void DX11Renderer::BeginRenderPass(Ref<RenderPass> renderPass)
 	{
+		//TODO! //Usa le dimensioni del framebuffer e non della finestra!
+		D3D11_VIEWPORT viewport{};
+		viewport.TopLeftX = 0.0f;
+		viewport.TopLeftY = 0.0f;
+		viewport.Width = (float)Application::Get().GetWindow().GetWidth();
+		viewport.Height = (float)Application::Get().GetWindow().GetHeight();
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+
+		m_Context->RSSetViewports(1u, &viewport);
+
 		renderPass->GetSpecification().TargetFrameBuffer->Bind();
 		float clearColor[4];
 		clearColor[0] = renderPass->GetSpecification().ClearColor.r; //R
@@ -69,6 +80,11 @@ namespace DT
 	void DX11Renderer::OnResize(uint32 width, uint32 height)
 	{
 		GraphicsContext::OnResize(width, height);
+	}
+
+	void DX11Renderer::Draw(uint32 vertexCount)
+	{
+		m_Context->Draw(vertexCount, 0u);
 	}
 
 	void DX11Renderer::DrawTriangle()
