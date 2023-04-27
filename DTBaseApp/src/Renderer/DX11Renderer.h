@@ -19,7 +19,6 @@ namespace DT
 		virtual void OnResize(uint32 width, uint32 height) override;
 
 		virtual void Draw(uint32 vertexCount) override;
-		virtual void DrawTriangle() override;
 	private:
 		ID3D11DeviceContext* m_Context = nullptr;
 		ID3D11Device* m_Device = nullptr;

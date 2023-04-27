@@ -18,7 +18,6 @@ namespace DT
 		static void OnResize(uint32 width, uint32 height);
 
 		static void Draw(uint32 vertexCount);
-		static void DrawTriangle();
 	private:
 		inline static RendererAPI* s_RendererAPI = nullptr;
 	};

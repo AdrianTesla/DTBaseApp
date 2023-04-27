@@ -47,10 +47,4 @@ namespace DT
 	{
 		s_RendererAPI->Draw(vertexCount);
 	}
-
-	void Renderer::DrawTriangle()
-	{
-		s_RendererAPI->DrawTriangle();
-	}
-
 }

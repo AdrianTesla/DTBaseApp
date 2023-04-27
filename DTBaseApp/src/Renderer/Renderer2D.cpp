@@ -38,7 +38,11 @@ namespace DT
 	void Renderer2D::Init()
 	{
 		s_Data = new Renderer2DData();
-		s_Data->QuadPipeline = CreateRef<Pipeline>();
+		PipelineSpecification quadPipelineSpec{};
+		quadPipelineSpec.VertexShaderPath = "TriangleVS.cso";
+		quadPipelineSpec.PixelShaderPath = "TrianglePS.cso";
+
+		s_Data->QuadPipeline = CreateRef<Pipeline>(quadPipelineSpec);
 		s_Data->QuadVertexBuffer = CreateRef<VertexBuffer>(1'000'000u);
 		s_Data->CameraUniformBuffer = CreateRef<UniformBuffer>(sizeof(UBCamera));
 

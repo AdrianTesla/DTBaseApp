@@ -18,7 +18,5 @@ namespace DT
 		virtual void OnResize(uint32 width, uint32 height) = 0;
 
 		virtual void Draw(uint32 vertexCount) = 0;
-	    
-		virtual void DrawTriangle() = 0;
 	};
 }
