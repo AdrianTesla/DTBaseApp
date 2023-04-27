@@ -42,4 +42,35 @@ namespace DT
 		memcpy(mappedMemory.pData, vertices, size);
 		GraphicsContext::GetContext()->Unmap(m_VertexBuffer.Get(), 0u);
 	}
+
+
+	UniformBuffer::UniformBuffer(uint64 size)
+	{
+		D3D11_BUFFER_DESC uniformBufferDescriptor{};
+		uniformBufferDescriptor.ByteWidth = (uint32)size;
+		uniformBufferDescriptor.Usage = D3D11_USAGE_DYNAMIC;
+		uniformBufferDescriptor.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		uniformBufferDescriptor.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		uniformBufferDescriptor.MiscFlags = 0u;
+		uniformBufferDescriptor.StructureByteStride = 0u;
+		DXCALL(GraphicsContext::GetDevice()->CreateBuffer(&uniformBufferDescriptor, nullptr, &m_UniformBuffer));
+	}
+	
+	void UniformBuffer::BindVS(uint32 slot)
+	{
+		GraphicsContext::GetContext()->VSSetConstantBuffers(slot, 1u, m_UniformBuffer.GetAddressOf());
+	}
+
+	void UniformBuffer::BindPS(uint32 slot)
+	{
+		GraphicsContext::GetContext()->PSSetConstantBuffers(slot, 1u, m_UniformBuffer.GetAddressOf());
+	}
+
+	void UniformBuffer::SetData(const void* data, uint64 size)
+	{
+		D3D11_MAPPED_SUBRESOURCE mappedMemory{};
+		DXCALL(GraphicsContext::GetContext()->Map(m_UniformBuffer.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &mappedMemory));
+		memcpy(mappedMemory.pData, data, size);
+		GraphicsContext::GetContext()->Unmap(m_UniformBuffer.Get(), 0u);
+	}
 }

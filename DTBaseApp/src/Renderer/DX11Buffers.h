@@ -14,4 +14,16 @@ namespace DT
 	private:
 		Microsoft::WRL::ComPtr<ID3D11Buffer> m_VertexBuffer;
 	};
+
+	class UniformBuffer
+	{
+	public:
+		UniformBuffer(uint64 size);
+
+		void BindVS(uint32 slot);
+		void BindPS(uint32 slot);
+		void SetData(const void* data, uint64 size);
+	private:
+		Microsoft::WRL::ComPtr<ID3D11Buffer> m_UniformBuffer;
+	};
 }

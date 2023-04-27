@@ -4,9 +4,15 @@
 #include "Renderer/DX11Buffers.h"
 #include "Renderer/Pipeline.h"
 #include "Renderer/Renderer.h"
+#include "Core/Application.h"
 
 namespace DT
 {
+	struct UBCamera
+	{
+		glm::mat4 ProjectionMatrix;
+	};
+
 	struct QuadVertex
 	{
 		glm::vec2 Position;
@@ -17,11 +23,14 @@ namespace DT
 	{
 		Ref<VertexBuffer> QuadVertexBuffer;
 		Ref<Pipeline> QuadPipeline;
+		Ref<UniformBuffer> CameraUniformBuffer;
 
 		QuadVertex* QuadVertexBufferBase = nullptr;
 		QuadVertex* QuadVertexBufferPtr = nullptr;
 
 		uint32 QuadVertexCount = 0u;
+
+		UBCamera Camera;
 	};
 
 	static Renderer2DData* s_Data = nullptr;
@@ -31,6 +40,7 @@ namespace DT
 		s_Data = new Renderer2DData();
 		s_Data->QuadPipeline = CreateRef<Pipeline>();
 		s_Data->QuadVertexBuffer = CreateRef<VertexBuffer>(1'000'000u);
+		s_Data->CameraUniformBuffer = CreateRef<UniformBuffer>(sizeof(UBCamera));
 
 		s_Data->QuadVertexBufferBase = new QuadVertex[125'000];
 	}
@@ -43,6 +53,10 @@ namespace DT
 
 	void Renderer2D::BeginScene()
 	{
+		float aspect = Application::Get().GetWindow().GetWidth() / (float)Application::Get().GetWindow().GetHeight();
+		s_Data->Camera.ProjectionMatrix = glm::ortho(-aspect, aspect, -1.0f, 1.0f);
+		s_Data->CameraUniformBuffer->SetData(&s_Data->Camera, sizeof(UBCamera));
+		s_Data->CameraUniformBuffer->BindVS(0u);
 		StartBatch();
 	}
 

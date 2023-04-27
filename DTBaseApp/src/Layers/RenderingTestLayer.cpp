@@ -20,7 +20,7 @@ namespace DT
 		m_Framebuffer = CreateRef<Framebuffer>(speciFICAtion);
 
 		RenderPassSpecification renderPassSpecification{};
-		renderPassSpecification.ClearColor = { 0.2f, 0.0f,0.4f,1.0f };
+		renderPassSpecification.ClearColor = { 0.3f, 0.9f, 0.0f, 1.0f };
 		renderPassSpecification.TargetFrameBuffer = m_Framebuffer;
 		m_RenderPass = CreateRef<RenderPass>(renderPassSpecification);
 	}
@@ -33,18 +33,14 @@ namespace DT
 
 	void RenderingTestLayer::OnRender()
 	{
-
 		Renderer::BeginRenderPass(m_RenderPass);
 
 		Renderer2D::BeginScene();
-		
-		float y = 0.0f;
 
-		for (uint32 i = 0u; i < 10u; i++)
-		{
-			Renderer2D::DrawQuad({ 0.0f, y }, 0.5f, 0.03f, {0.2f, 0.8f, y , 1.0f});
-			y = y + 0.1f;
-		}
+		float h = (0.5f + 0.5f * std::sin(3 * m_Time)) * 0.2f;
+		Renderer2D::DrawQuad({ 0.5f, 0.5f }, 0.2f, 0.2f, { 0.0f, 0.4f, 0.9f, 1.0f });
+		Renderer2D::DrawQuad({ -0.5f, 0.5f }, 0.2f, h, { 0.0f, 0.4f, 0.9f, 1.0f });
+		Renderer2D::DrawQuad({ 0.0f, -0.5f }, 1.0f, 0.2f, { 0.0f, 0.4f, 0.9f, 1.0f });
 
 		Renderer2D::EndScene();
 
