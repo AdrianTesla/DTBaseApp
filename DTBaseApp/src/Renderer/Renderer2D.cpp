@@ -124,12 +124,31 @@ namespace DT
 		Flush();
 	}
 
-	void Renderer2D::DrawQuad(const glm::vec2& center, float width, float height, const glm::vec4& color)
+	void Renderer2D::DrawQuad(const glm::vec2& position, float width, float height, const glm::vec4& color)
 	{
-		glm::vec2 v0 = { center.x - width / 2.0f , center.y + height / 2.0f };
-		glm::vec2 v1 = { center.x + width / 2.0f , center.y + height / 2.0f };
-		glm::vec2 v2 = { center.x + width / 2.0f , center.y - height / 2.0f };
-		glm::vec2 v3 = { center.x - width / 2.0f , center.y - height / 2.0f };
+		glm::vec2 v0 = { position.x - width / 2.0f, position.y + height / 2.0f };
+		glm::vec2 v1 = { position.x + width / 2.0f, position.y + height / 2.0f };
+		glm::vec2 v2 = { position.x + width / 2.0f, position.y - height / 2.0f };
+		glm::vec2 v3 = { position.x - width / 2.0f, position.y - height / 2.0f };
+		DrawTriangle(v0, v1, v2, color);
+		DrawTriangle(v0, v2, v3, color);
+	}
+
+	void Renderer2D::DrawRotatedQuad(const glm::vec2& position, float width, float height, float angle, const glm::vec4& color)
+	{
+		float cosAngle = std::cos(angle);
+		float sinAngle = std::sin(angle);
+		float halfWidth = 0.5f * width;
+		float halfHeight = 0.5f * height;
+
+		glm::vec2 v0 = { -halfWidth * cosAngle - halfHeight * sinAngle, -halfWidth * sinAngle + halfHeight * cosAngle };
+		glm::vec2 v1 = { halfWidth * cosAngle - halfHeight * sinAngle, halfWidth * sinAngle + halfHeight * cosAngle };
+		glm::vec2 v2 = -v0 + position;
+		glm::vec2 v3 = -v1 + position;
+
+		v0 += position;
+		v1 += position;
+
 		DrawTriangle(v0, v1, v2, color);
 		DrawTriangle(v0, v2, v3, color);
 	}
@@ -203,6 +222,20 @@ namespace DT
 		s_Data->CircleBatch.VertexBufferPtr++;
 
 		s_Data->CircleBatch.VertexCount += 6u;
+	}
+
+	void Renderer2D::DrawLine(const glm::vec2& startPos, const glm::vec2& endPos, float thickness, const glm::vec4& color)
+	{
+		glm::vec2 direction = glm::normalize(endPos - startPos) * (thickness * 0.5f);
+		direction = { -direction.y, direction.x };
+
+		glm::vec2 v0 = startPos + direction;
+		glm::vec2 v1 = endPos + direction;
+		glm::vec2 v2 = endPos - direction;
+		glm::vec2 v3 = startPos - direction;
+
+		DrawTriangle(v0, v1, v2, color);
+		DrawTriangle(v0, v2, v3, color);
 	}
 
 	void Renderer2D::StartBatch()

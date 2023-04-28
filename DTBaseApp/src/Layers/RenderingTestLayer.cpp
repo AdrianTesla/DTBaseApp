@@ -28,7 +28,7 @@ namespace DT
 	void RenderingTestLayer::OnUpdate(float dt)
 	{
 		m_Time = m_Time + dt;
-		m_RenderPass->GetSpecification().ClearColor = { 0.5f * Animate(2.0f), 0.1f, 0.5f * Animate(1.0f), 1.0f};
+		m_RenderPass->GetSpecification().ClearColor = { 0.5f * Animate(0.5f), 0.0f, 0.5f * Animate(0.3f), 1.0f};
 	}
 
 	void RenderingTestLayer::OnRender()
@@ -40,8 +40,17 @@ namespace DT
 		Renderer2D::DrawQuad({ 0.5f, 0.5f }, 0.2f, 0.2f, { 0.0f, 0.4f, 0.9f, 1.0f });
 		Renderer2D::DrawQuad({ -0.5f, 0.5f }, 0.2f, 0.5f * Animate(0.2f), {0.0f, 0.4f, 0.9f, 1.0f});
 		Renderer2D::DrawQuad({ 0.0f, -0.5f }, 1.0f, 0.2f, { 0.0f, 0.4f, 0.9f, 1.0f });
+		
+		Renderer2D::DrawRotatedQuad({ 0.0f,0.0f}, 1.5f, 0.2f, glm::radians(m_Time * 7.0f), {1.0f, 0.5f,0.4f, 0.5f});
+		Renderer2D::DrawRotatedQuad({ 0.0f,0.0f}, 1.5f, 0.2f, glm::radians(-m_Time * 7.0f), {1.0f, 0.5f,0.4f, 0.5f});
+		
+		Renderer2D::DrawCircle({ 0.0f,0.0f }, 0.1f, Animate(0.2f), 0.05f, {Animate(1.0f), 0.8f, 0.9f, 0.5f});
+		Renderer2D::DrawCircle({ 0.5f,0.7f }, 0.1f, Animate(0.2f), 0.05f, {Animate(1.0f), 0.8f, 0.9f, 0.5f});
+		Renderer2D::DrawCircle({ -0.7f,0.2f }, 0.1f, Animate(0.2f), 0.05f, {Animate(1.0f), 0.8f, 0.9f, 0.5f});
 
-		Renderer2D::DrawCircle({ 0.0f,0.0f }, Animate(0.5f), 0.1f, 0.05f, {Animate(1.0f), 0.8f, 0.9f, 0.5f});
+		Renderer2D::DrawLine({ 0.0f,0.0f }, { 0.5f, 0.7f }, m_Time * 0.001f, { 1.0f, 1.0f, 0.0f, 0.7f });
+		Renderer2D::DrawLine({ 0.5f,0.7f }, { -0.7f, 0.2f }, m_Time * 0.001f, { 1.0f, 1.0f, 0.0f, 0.7f });
+		Renderer2D::DrawLine({ -0.7f,0.2f }, { 0.0f, 0.0f }, m_Time * 0.001f, { 1.0f, 1.0f, 0.0f, 0.7f });
 
 		Renderer2D::EndScene();
 
