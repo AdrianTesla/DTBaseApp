@@ -14,7 +14,7 @@ namespace DT
 	{
 	public:
 		RenderPass(const RenderPassSpecification& specification);
-		const RenderPassSpecification& GetSpecification() const { return m_Specification; }
+		RenderPassSpecification& GetSpecification() { return m_Specification; }
 	private:
 		RenderPassSpecification m_Specification;
 	};

@@ -15,6 +15,10 @@ namespace DT
 		virtual void OnRender() override;
 		virtual void OnEvent(Event& event) override;
 		virtual void OnDetach() override;
+		float Animate(float speed = 1.0f)
+		{
+			return 0.5f + 0.5f * std::sin(2.0f * glm::pi<float>() * speed * m_Time);
+		}
 	private:
 		Ref<Framebuffer> m_Framebuffer;
 		Ref<RenderPass> m_RenderPass;
