@@ -1,5 +1,6 @@
 #include "Core/Application.h"
 #include "GraphicsContext.h"
+#include "Framebuffer.h"
 #pragma comment (lib,"d3d11.lib")
 
 namespace DT
@@ -54,8 +55,13 @@ namespace DT
 		pBackBuffer->Release();
 	}
 
-	void GraphicsContext::OnResize(uint32 width, uint32 height)
+	bool GraphicsContext::OnResize(int32 width, int32 height)
 	{
+		if (width < 1 || height < 1)
+		{
+			return false;
+		}
+
 		s_Instance->m_RenderTargetView->Release();
 		DXCALL(s_Instance->m_Swapchain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0));
 		
@@ -63,5 +69,8 @@ namespace DT
 		DXCALL(s_Instance->m_Swapchain->GetBuffer(0u, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer));
 		DXCALL(s_Instance->m_Device->CreateRenderTargetView(pBackBuffer, nullptr, s_Instance->m_RenderTargetView.GetAddressOf()));
 		pBackBuffer->Release();
+
+		FramebufferPool::OnResize(width, height);
+		return true;
 	}
 }

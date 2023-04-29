@@ -22,7 +22,7 @@ namespace DT
 		GraphicsContext::GetContext()->OMSetRenderTargets(1u, &m_RenderTargetView, nullptr);
 	}
 
-	void Framebuffer::OnResize(uint32 width, uint32 height)
+	void Framebuffer::OnResize(int32 width, int32 height)
 	{
 		m_RenderTargetView = GraphicsContext::GetSwapchainRTV();
 	}

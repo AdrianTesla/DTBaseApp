@@ -27,11 +27,27 @@ namespace DT
 
 	void DX11Renderer::BeginFrame()
 	{
+		if (m_ShouldResize)
+		{
+			GraphicsContext::OnResize(m_NewWidth, m_NewHeight);
+		}
 	}
 
 	void DX11Renderer::EndFrame()
 	{
-		DXCALL(m_Swapchain->Present(1u, 0u));
+		HRESULT hr = m_Swapchain->Present(1u, 0u);
+
+		if (hr != S_OK)
+		{
+			if (hr == DXGI_ERROR_DEVICE_REMOVED)
+			{
+				OnResize(m_NewWidth, m_NewHeight);
+			}
+			else
+			{
+				DXCALL(hr);
+			}
+		}
 	}
 
 	void DX11Renderer::BeginRenderPass(Ref<RenderPass> renderPass)
@@ -60,9 +76,11 @@ namespace DT
 	{
 	}
 
-	void DX11Renderer::OnResize(uint32 width, uint32 height)
+	void DX11Renderer::OnResize(int32 width, int32 height)
 	{
-		GraphicsContext::OnResize(width, height);
+		m_ShouldResize = true;
+		m_NewWidth = width;
+		m_NewHeight = height;
 	}
 
 	void DX11Renderer::Draw(uint32 vertexCount)

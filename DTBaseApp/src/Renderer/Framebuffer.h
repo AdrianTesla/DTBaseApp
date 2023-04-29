@@ -13,7 +13,7 @@ namespace DT
 	public:
 		Framebuffer(const FramebufferSpecification& specification);
 		void Bind();
-		void OnResize(uint32 width, uint32 height);
+		void OnResize(int32 width, int32 height);
 		ID3D11RenderTargetView* GetRTV() const { return m_RenderTargetView; }
 	private:
 		ID3D11RenderTargetView* m_RenderTargetView = nullptr;
@@ -27,7 +27,7 @@ namespace DT
 		{
 			s_Framebuffers.emplace_back(framebuffer);
 		}
-		static void OnResize(uint32 width, uint32 height)
+		static void OnResize(int32 width, int32 height)
 		{
 			for (auto& framebuffer : s_Framebuffers)
 			{

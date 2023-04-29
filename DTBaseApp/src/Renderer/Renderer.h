@@ -15,7 +15,7 @@ namespace DT
 		static void BeginRenderPass(Ref<RenderPass> renderPass);
 		static void EndRenderPass(); 
 
-		static void OnResize(uint32 width, uint32 height);
+		static void OnResize(int32 width, int32 height);
 
 		static void Draw(uint32 vertexCount);
 	private:

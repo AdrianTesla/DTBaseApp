@@ -16,12 +16,16 @@ namespace DT
 		virtual void BeginRenderPass(Ref<RenderPass> renderPass) override;
 		virtual void EndRenderPass() override;
 
-		virtual void OnResize(uint32 width, uint32 height) override;
+		virtual void OnResize(int32 width, int32 height) override;
 
 		virtual void Draw(uint32 vertexCount) override;
 	private:
 		ID3D11DeviceContext* m_Context = nullptr;
 		ID3D11Device* m_Device = nullptr;
 		IDXGISwapChain* m_Swapchain = nullptr;	
+
+		bool m_ShouldResize = false;
+		int32 m_NewWidth = 0;
+		int32 m_NewHeight = 0;
 	};
 }

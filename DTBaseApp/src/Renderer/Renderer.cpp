@@ -38,7 +38,7 @@ namespace DT
 		s_RendererAPI->EndRenderPass();
 	}
 
-	void Renderer::OnResize(uint32 width, uint32 height)
+	void Renderer::OnResize(int32 width, int32 height)
 	{
 		s_RendererAPI->OnResize(width, height);
 	}

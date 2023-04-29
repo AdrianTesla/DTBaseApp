@@ -5,12 +5,6 @@
 
 namespace DT
 {
-	struct Vertex
-	{
-		float x;
-		float y;
-	};
-
 	void RenderingTestLayer::OnAttach()
 	{
 		Application::Get().GetWindow().SetSizeLimits(100,100,16'000,9'000);
