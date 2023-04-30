@@ -265,8 +265,8 @@ namespace DT
 
 		glm::vec2 v0 = { -halfWidth * cosAngle - halfHeight * sinAngle, -halfWidth * sinAngle + halfHeight * cosAngle };
 		glm::vec2 v1 = { halfWidth * cosAngle - halfHeight * sinAngle, halfWidth * sinAngle + halfHeight * cosAngle };
-		glm::vec2 v2 = -v0 + position;
-		glm::vec2 v3 = -v1 + position;
+		glm::vec2 v2 = - v0 + position;
+		glm::vec2 v3 = - v1 + position;
 
 		v0 += position;
 		v1 += position;

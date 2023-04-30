@@ -24,5 +24,12 @@ namespace DT
 		Ref<Framebuffer> m_Framebuffer;
 		Ref<RenderPass> m_RenderPass;
 		float m_Time = 0.0f;
+		float m_Thickness = 0.3f;
+		float m_CircleThickness = 0.3f;
+		float m_Angle = 0.0f;
+		float m_Fade = 0.0f;
+		float m_Radius = 0.2f;
+		glm::vec2 m_Position = { 0.0f, 0.0f };
+		glm::vec4 m_Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	};
 }

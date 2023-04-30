@@ -47,9 +47,10 @@ namespace DT
 		//Renderer2D::DrawLine({ 0.5f,0.7f }, { -0.7f, 0.2f }, m_Time * 0.001f, { 1.0f, 1.0f, 0.0f, 0.7f });
 		//Renderer2D::DrawLine({ -0.7f,0.2f }, { 0.0f, 0.0f }, m_Time * 0.001f, { 1.0f, 1.0f, 0.0f, 0.7f });
 
-		Renderer2D::DrawRect({ 0.0f, 0.0f }, 0.5f, 0.3f, 0.06f, { 1.0f, 1.0f, 0.8f, 1.0f });
-		Renderer2D::DrawRotatedQuad({ 1.0f, 0.5f }, 0.5f, 0.3f, 0.8f * Animate(0.5f), { 1.0f, 0.7f, 0.0f, 1.0f });
-		Renderer2D::DrawRotatedRect({ 1.0f, 0.5f }, 0.5f, 0.3f, 0.05f, 0.8f * Animate(0.5f), { 1.0f, 0.1f, 0.2f, 1.0f });
+		Renderer2D::DrawRect({ 0.0f, 0.0f }, 0.5f, 0.3f, m_Thickness, { 1.0f, 1.0f, 0.8f, 1.0f });
+		Renderer2D::DrawRotatedQuad({ 1.0f, 0.5f }, 0.5f, 0.3f, m_Angle, { 1.0f, 0.7f, 0.0f, 1.0f });
+		Renderer2D::DrawRotatedRect({ 1.0f, 0.5f }, 0.5f, 0.3f, m_Thickness, m_Angle, { 1.0f, 0.1f, 0.2f, 1.0f });
+		Renderer2D::DrawCircle(m_Position, m_Radius, m_CircleThickness, m_Fade, m_Color);
 
 		Renderer2D::EndScene();
 
@@ -58,6 +59,20 @@ namespace DT
 
 	void RenderingTestLayer::OnUIRender()
 	{
+		ImGui::Begin("test");
+		ImGui::Button("Premimi");
+		ImGui::ColorButton("Ciao", { 0.2f, 0.3f, 0.5f, 0.7f });
+		ImGui::Separator();
+		ImGui::SliderFloat("Thickness", &m_Thickness, 0.0f, 0.1f);
+		ImGui::SliderAngle("Angle", &m_Angle, 0.0f, 180.0f);
+		ImGui::Separator();
+		ImGui::SliderFloat("Circle thickness", &m_CircleThickness, 0.0f, 1.0f);
+		ImGui::SliderFloat("Fade", &m_Fade, 0.0f, 1.0f);
+		ImGui::SliderFloat2("Position", glm::value_ptr(m_Position), -1.0f, 1.0f);
+		ImGui::SliderFloat("Radius", &m_Radius, 0.0f, 1.0f);
+		ImGui::Separator();
+		ImGui::ColorEdit4("Color", glm::value_ptr(m_Color), ImGuiColorEditFlags_PickerHueWheel);
+		ImGui::End();
 	}
 
 	void RenderingTestLayer::OnEvent(Event& event)
