@@ -18,6 +18,8 @@ namespace DT
 		renderPassSpecification.ClearColor = { Animate(1.0f), 0.1f, 0.4f, 1.0f};
 		renderPassSpecification.TargetFrameBuffer = m_Framebuffer;
 		m_RenderPass = CreateRef<RenderPass>(renderPassSpecification);
+
+		m_Texture = CreateRef<Texture2D>("assets/textures/Piramide.png");
 	}
 
 	void RenderingTestLayer::OnUpdate(float dt)
@@ -72,6 +74,8 @@ namespace DT
 		ImGui::SliderFloat("Radius", &m_Radius, 0.0f, 1.0f);
 		ImGui::Separator();
 		ImGui::ColorEdit4("Color", glm::value_ptr(m_Color), ImGuiColorEditFlags_PickerHueWheel);
+		ImGui::Separator();
+		ImGui::Image(m_Texture->GetShaderResourceView(), { 300.0f, 200.0f });
 		ImGui::End();
 	}
 

@@ -38,6 +38,11 @@ namespace DT
 		T* VertexBufferPtr = nullptr;
 
 		uint32 VertexCount = 0u;
+
+		constexpr uint32 MaxVerts()
+		{
+			return MaxVertices;
+		}
 		
 		void Init()
 		{
@@ -126,6 +131,9 @@ namespace DT
 
 	void Renderer2D::DrawQuad(const glm::vec2& position, float width, float height, const glm::vec4& color)
 	{
+		if (s_Data->QuadBatch.VertexCount >= s_Data->QuadBatch.MaxVerts())
+			s_Data->QuadBatch.NextBatch();
+
 		glm::vec2 v0 = { position.x - width / 2.0f, position.y + height / 2.0f };
 		glm::vec2 v1 = { position.x + width / 2.0f, position.y + height / 2.0f };
 		glm::vec2 v2 = { position.x + width / 2.0f, position.y - height / 2.0f };
@@ -136,6 +144,9 @@ namespace DT
 
 	void Renderer2D::DrawRotatedQuad(const glm::vec2& position, float width, float height, float angle, const glm::vec4& color)
 	{
+		if (s_Data->QuadBatch.VertexCount >= s_Data->QuadBatch.MaxVerts())
+			s_Data->QuadBatch.NextBatch();
+
 		float cosAngle = std::cos(angle);
 		float sinAngle = std::sin(angle);
 		float halfWidth = 0.5f * width;
@@ -172,6 +183,9 @@ namespace DT
 
 	void Renderer2D::DrawCircle(const glm::vec2& position, float radius, float thickness, float fade, const glm::vec4& color)
 	{
+		if (s_Data->CircleBatch.VertexCount >= s_Data->CircleBatch.MaxVerts())
+			s_Data->CircleBatch.NextBatch();
+
 		glm::vec2 v0 = { position.x - radius, position.y + radius };
 		glm::vec2 v1 = { position.x + radius, position.y + radius };
 		glm::vec2 v2 = { position.x + radius, position.y - radius };
@@ -226,6 +240,9 @@ namespace DT
 
 	void Renderer2D::DrawLine(const glm::vec2& startPos, const glm::vec2& endPos, float thickness, const glm::vec4& color)
 	{
+		if (s_Data->QuadBatch.VertexCount >= s_Data->QuadBatch.MaxVerts())
+			s_Data->QuadBatch.NextBatch();
+
 		glm::vec2 direction = glm::normalize(endPos - startPos) * (thickness * 0.5f);
 		direction = { -direction.y, direction.x };
 
@@ -280,6 +297,11 @@ namespace DT
 		DrawLine(v1 - o1, v2 + o1, thickness, color);
 		DrawLine(v2 - o2, v3 + o2, thickness, color);
 		DrawLine(v3 - o3, v0 + o3, thickness, color);
+	}
+
+	void Renderer2D::DrawTexturedQuad(const glm::vec2& position, float width, float height, const Ref<Texture2D>& texture, const glm::vec4& color)
+	{
+		//TODO!!
 	}
 
 	void Renderer2D::StartBatch()
