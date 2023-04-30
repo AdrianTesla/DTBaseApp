@@ -24,7 +24,7 @@ namespace DT
 		Ref<Framebuffer> m_Framebuffer;
 		Ref<RenderPass> m_RenderPass;
 		float m_Time = 0.0f;
-		float m_Thickness = 0.3f;
+		float m_Thickness = 0.05f;
 		float m_CircleThickness = 0.3f;
 		float m_Angle = 0.0f;
 		float m_Fade = 0.0f;
