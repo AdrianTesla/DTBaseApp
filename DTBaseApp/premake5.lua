@@ -12,7 +12,8 @@ project "DTBaseApp"
 	{
 		"src/**.h",
 		"src/**.cpp",
-		"%{wks.location}/vendor/stb/**.h"
+		"%{wks.location}/vendor/stb/**.h",
+		"src/Renderer/Shaders/**.hlsl"
 	}
 
 	includedirs
@@ -21,21 +22,32 @@ project "DTBaseApp"
 		"%{IncludeDir.glfw}",
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.stb}",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.imgui}"
 	}
 
 	libdirs 
 	{
+		"%{wks.location}/vendor/imgui/bin/Debug-windows-x86_64/ImGui/ImGai.lib"
 	}
 
 	links
 	{
-		"GLFW"
+		"GLFW",
+		"ImGui"
 	}
 
 	postbuildcommands 
 	{
 	}
+
+	filter "files:**VS.hlsl"
+		shadertype "Vertex"
+        shadermodel "4.0"
+
+	filter "files:**PS.hlsl"
+		shadertype "Pixel"
+        shadermodel "4.0"
 
 	filter "system:windows"
 		systemversion "latest"

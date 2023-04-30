@@ -13,6 +13,7 @@ namespace DT
 		virtual void OnAttach() override;
 		virtual void OnUpdate(float dt) override;
 		virtual void OnRender() override;
+		virtual void OnUIRender() override;
 		virtual void OnEvent(Event& event) override;
 		virtual void OnDetach() override;
 		float Animate(float speed = 1.0f)

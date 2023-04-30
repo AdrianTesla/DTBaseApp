@@ -238,6 +238,50 @@ namespace DT
 		DrawTriangle(v0, v2, v3, color);
 	}
 
+	void Renderer2D::DrawRect(const glm::vec2& position, float width, float height, float thickness, const glm::vec4& color)
+	{
+		glm::vec2 v0 = { position.x - width / 2.0f, position.y + height / 2.0f };
+		glm::vec2 v1 = { position.x + width / 2.0f, position.y + height / 2.0f };
+		glm::vec2 v2 = { position.x + width / 2.0f, position.y - height / 2.0f };
+		glm::vec2 v3 = { position.x - width / 2.0f, position.y - height / 2.0f };
+
+		glm::vec2 o0 = glm::normalize(v1 - v0) * (thickness * 0.5f);
+		glm::vec2 o1 = glm::normalize(v2 - v1) * (thickness * 0.5f);
+		glm::vec2 o2 = glm::normalize(v3 - v2) * (thickness * 0.5f);
+		glm::vec2 o3 = glm::normalize(v0 - v3) * (thickness * 0.5f);
+
+		DrawLine(v0 - o0, v1 + o0, thickness, color);
+		DrawLine(v1 - o1, v2 + o1, thickness, color);
+		DrawLine(v2 - o2, v3 + o2, thickness, color);
+		DrawLine(v3 - o3, v0 + o3, thickness, color);
+	}
+
+	void Renderer2D::DrawRotatedRect(const glm::vec2& position, float width, float height, float thickness, float angle, const glm::vec4& color)
+	{
+		float cosAngle = std::cos(angle);
+		float sinAngle = std::sin(angle);
+		float halfWidth = 0.5f * width;
+		float halfHeight = 0.5f * height;
+
+		glm::vec2 v0 = { -halfWidth * cosAngle - halfHeight * sinAngle, -halfWidth * sinAngle + halfHeight * cosAngle };
+		glm::vec2 v1 = { halfWidth * cosAngle - halfHeight * sinAngle, halfWidth * sinAngle + halfHeight * cosAngle };
+		glm::vec2 v2 = -v0 + position;
+		glm::vec2 v3 = -v1 + position;
+
+		v0 += position;
+		v1 += position;
+
+		glm::vec2 o0 = glm::normalize(v1 - v0) * (thickness * 0.5f);
+		glm::vec2 o1 = glm::normalize(v2 - v1) * (thickness * 0.5f);
+		glm::vec2 o2 = glm::normalize(v3 - v2) * (thickness * 0.5f);
+		glm::vec2 o3 = glm::normalize(v0 - v3) * (thickness * 0.5f);
+
+		DrawLine(v0 - o0, v1 + o0, thickness, color);
+		DrawLine(v1 - o1, v2 + o1, thickness, color);
+		DrawLine(v2 - o2, v3 + o2, thickness, color);
+		DrawLine(v3 - o3, v0 + o3, thickness, color);
+	}
+
 	void Renderer2D::StartBatch()
 	{
 		s_Data->QuadBatch.Start();

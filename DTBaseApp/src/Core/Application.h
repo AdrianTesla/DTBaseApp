@@ -2,6 +2,7 @@
 #include "Layer.h"
 #include "Window.h"
 #include "Renderer/GraphicsContext.h"
+#include "Layers/ImguiLayer.h"
 
 namespace DT
 {
@@ -9,6 +10,7 @@ namespace DT
 	{
 		WindowSpecification WindowSpecification;
 		std::filesystem::path WorkingDirectory;
+		bool EnableImgui = true;
 	};
 
 	class Application
@@ -36,6 +38,7 @@ namespace DT
 
 		Window* m_Window = nullptr;
 		std::vector<Layer*> m_Layers;
+		ImguiLayer* m_ImguiLayer = nullptr;
 		GraphicsContext* m_GraphicsContext;
 
 		ApplicationSpecification m_Specification;

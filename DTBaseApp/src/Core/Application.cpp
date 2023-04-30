@@ -25,6 +25,12 @@ namespace DT
 		LOG_INFO("Working Directory: {}", std::filesystem::current_path().string());
 
 		PushLayer(new RenderingTestLayer);
+
+		if (m_Specification.EnableImgui)
+		{
+			m_ImguiLayer = new ImguiLayer;
+			PushLayer(m_ImguiLayer);
+		}
 	}
 
 	Application::~Application()
@@ -70,8 +76,17 @@ namespace DT
 	{
 		Renderer::BeginFrame();
 
+		if (m_Specification.EnableImgui)
+			m_ImguiLayer->BeginFrame();
+
 		for (Layer* layer : m_Layers)
+		{
 			layer->OnRender(); 
+			layer->OnUIRender();
+		}
+			
+		if (m_Specification.EnableImgui)
+			m_ImguiLayer->EndFrame();
 
 		Renderer::EndFrame();
 	}

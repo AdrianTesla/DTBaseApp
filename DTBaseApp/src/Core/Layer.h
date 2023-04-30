@@ -14,6 +14,7 @@ namespace DT
 		virtual void OnDetach() {}
 		virtual void OnUpdate(float dt) {}
 		virtual void OnRender() {}
+		virtual void OnUIRender() {}
 		virtual void OnEvent(Event& event) {}
 	};
 }

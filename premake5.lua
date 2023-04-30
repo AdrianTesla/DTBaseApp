@@ -21,4 +21,5 @@ include "DTBaseApp"
 
 group "Dependencies"
 	include "vendor/glfw"
+	include "vendor/imgui"
 group ""
