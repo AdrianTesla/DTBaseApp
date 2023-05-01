@@ -20,7 +20,8 @@ namespace DT
 		static void DrawLine(const glm::vec2& startPos, const glm::vec2& endPos, float thickness, const glm::vec4& color);
 		static void DrawRect(const glm::vec2& position, float width, float height, float thickness, const glm::vec4& color);
 		static void DrawRotatedRect(const glm::vec2& position, float width, float height, float thickness, float angle, const glm::vec4& color);
-		static void DrawTexturedQuad(const glm::vec2& position, float width, float height, const Ref<Texture2D>& texture, const glm::vec4& color);
+		static void DrawTexturedQuad(const glm::vec2& position, float width, float height, const Ref<Texture2D>& texture, float tiling, const glm::vec4& color);
+		static void DrawRotatedTexQuad(const glm::vec2& position, float width, float height, const Ref<Texture2D>& texture, float tiling,float angle, const glm::vec4& color);
 	private:
 		static void StartBatch();
 		static void NextBatch();

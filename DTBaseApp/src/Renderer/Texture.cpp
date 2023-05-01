@@ -40,4 +40,9 @@ namespace DT
 	{
 		GraphicsContext::GetContext()->PSSetShaderResources(slot, 1u, m_ShaderResourceView.GetAddressOf());
 	}
+
+	bool Texture2D::Compare(const Ref<Texture2D>& texture2D) const
+	{
+		return m_ShaderResourceView == texture2D->m_ShaderResourceView;
+	}
 }

@@ -31,6 +31,9 @@ namespace DT
 		float m_Angle = 0.0f;
 		float m_Fade = 0.0f;
 		float m_Radius = 0.2f;
+		float m_Width = 0.5f;
+		float m_Height = 0.5f;
+		float m_Tiling = 1.0f;
 		glm::vec2 m_Position = { 0.0f, 0.0f };
 		glm::vec4 m_Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	};

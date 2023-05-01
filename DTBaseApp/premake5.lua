@@ -28,7 +28,6 @@ project "DTBaseApp"
 
 	libdirs 
 	{
-		"%{wks.location}/vendor/imgui/bin/Debug-windows-x86_64/ImGui/ImGai.lib"
 	}
 
 	links
@@ -40,6 +39,9 @@ project "DTBaseApp"
 	postbuildcommands 
 	{
 	}
+
+	filter "files:**.hlsl"
+		shaderobjectfileoutput("src/Renderer/Shaders/ShaderBinaries/" .. "%{file.basename}" .. ".cso");
 
 	filter "files:**VS.hlsl"
 		shadertype "Vertex"
