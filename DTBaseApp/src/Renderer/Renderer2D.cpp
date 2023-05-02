@@ -36,6 +36,7 @@ namespace DT
 		glm::vec2 TexCoord;
 		glm::vec4 Color;
 		float Tiling;
+		int32 TextureIndex;
 	};
 
 	template<typename T, uint32 MaxVertices>
@@ -91,6 +92,8 @@ namespace DT
 		Batch<CircleVertex, 60'000u> CircleBatch;
 		Batch<TexQuadVertex, 60'000u> TexQuadBatch;
 
+		Renderer2DStatistics Statistics;
+
 		Ref<Texture2D> Textures[32];
 		Ref<Sampler> Sampler;
 		uint32 TextureCount = 0u;
@@ -141,6 +144,8 @@ namespace DT
 
 	void Renderer2D::BeginScene()
 	{
+		ResetStatistics();
+
 		float aspect = Application::Get().GetWindow().GetWidth() / (float)Application::Get().GetWindow().GetHeight();
 		s_Data->Camera.ProjectionMatrix = glm::ortho(-aspect, aspect, -1.0f, 1.0f);
 		s_Data->CameraUniformBuffer->SetData(&s_Data->Camera, sizeof(UBCamera));
@@ -203,6 +208,8 @@ namespace DT
 		s_Data->QuadBatch.VertexBufferPtr++;
 
 		s_Data->QuadBatch.VertexCount += 3u;
+
+		s_Data->Statistics.PolygonCount++;
 	}
 
 	void Renderer2D::DrawCircle(const glm::vec2& position, float radius, float thickness, float fade, const glm::vec4& color)
@@ -260,6 +267,8 @@ namespace DT
 		s_Data->CircleBatch.VertexBufferPtr++;
 
 		s_Data->CircleBatch.VertexCount += 6u;
+
+		s_Data->Statistics.PolygonCount += 2u;
 	}
 
 	void Renderer2D::DrawLine(const glm::vec2& startPos, const glm::vec2& endPos, float thickness, const glm::vec4& color)
@@ -359,18 +368,21 @@ namespace DT
 		s_Data->TexQuadBatch.VertexBufferPtr->TexCoord = { 0.0f, 0.0f };
 		s_Data->TexQuadBatch.VertexBufferPtr->Color = color;
 		s_Data->TexQuadBatch.VertexBufferPtr->Tiling = tiling;
+		s_Data->TexQuadBatch.VertexBufferPtr->TextureIndex = textureIndex;
 		s_Data->TexQuadBatch.VertexBufferPtr++;
 
 		s_Data->TexQuadBatch.VertexBufferPtr->Position = v1;
 		s_Data->TexQuadBatch.VertexBufferPtr->TexCoord = { 1.0f, 0.0f };
 		s_Data->TexQuadBatch.VertexBufferPtr->Color = color;
 		s_Data->TexQuadBatch.VertexBufferPtr->Tiling = tiling;
+		s_Data->TexQuadBatch.VertexBufferPtr->TextureIndex = textureIndex;
 		s_Data->TexQuadBatch.VertexBufferPtr++;
 
 		s_Data->TexQuadBatch.VertexBufferPtr->Position = v2;
 		s_Data->TexQuadBatch.VertexBufferPtr->TexCoord = { 1.0f, 1.0f };
 		s_Data->TexQuadBatch.VertexBufferPtr->Color = color;
 		s_Data->TexQuadBatch.VertexBufferPtr->Tiling = tiling;
+		s_Data->TexQuadBatch.VertexBufferPtr->TextureIndex = textureIndex;
 		s_Data->TexQuadBatch.VertexBufferPtr++;
 
 		//Second Triangle 
@@ -378,21 +390,26 @@ namespace DT
 		s_Data->TexQuadBatch.VertexBufferPtr->TexCoord = { 0.0f, 0.0f };
 		s_Data->TexQuadBatch.VertexBufferPtr->Color = color;
 		s_Data->TexQuadBatch.VertexBufferPtr->Tiling = tiling;
+		s_Data->TexQuadBatch.VertexBufferPtr->TextureIndex = textureIndex;
 		s_Data->TexQuadBatch.VertexBufferPtr++;
 
 		s_Data->TexQuadBatch.VertexBufferPtr->Position = v2;
 		s_Data->TexQuadBatch.VertexBufferPtr->TexCoord = { 1.0f, 1.0f };
 		s_Data->TexQuadBatch.VertexBufferPtr->Color = color;
 		s_Data->TexQuadBatch.VertexBufferPtr->Tiling = tiling;
+		s_Data->TexQuadBatch.VertexBufferPtr->TextureIndex = textureIndex;
 		s_Data->TexQuadBatch.VertexBufferPtr++;
 
 		s_Data->TexQuadBatch.VertexBufferPtr->Position = v3;
 		s_Data->TexQuadBatch.VertexBufferPtr->TexCoord = { 0.0f, 1.0f };
 		s_Data->TexQuadBatch.VertexBufferPtr->Color = color;
 		s_Data->TexQuadBatch.VertexBufferPtr->Tiling = tiling;
+		s_Data->TexQuadBatch.VertexBufferPtr->TextureIndex = textureIndex;
 		s_Data->TexQuadBatch.VertexBufferPtr++;
 
 		s_Data->TexQuadBatch.VertexCount += 6u;
+
+		s_Data->Statistics.PolygonCount += 2u;
 	}
 
 	void Renderer2D::DrawRotatedTexQuad(const glm::vec2& position, float width, float height, const Ref<Texture2D>& texture, float tiling, float angle, const glm::vec4& color)
@@ -439,18 +456,21 @@ namespace DT
 		s_Data->TexQuadBatch.VertexBufferPtr->TexCoord = { 0.0f, 0.0f };
 		s_Data->TexQuadBatch.VertexBufferPtr->Color = color;
 		s_Data->TexQuadBatch.VertexBufferPtr->Tiling = tiling;
+		s_Data->TexQuadBatch.VertexBufferPtr->TextureIndex = textureIndex;
 		s_Data->TexQuadBatch.VertexBufferPtr++;
 
 		s_Data->TexQuadBatch.VertexBufferPtr->Position = v1;
 		s_Data->TexQuadBatch.VertexBufferPtr->TexCoord = { 1.0f, 0.0f };
 		s_Data->TexQuadBatch.VertexBufferPtr->Color = color;
 		s_Data->TexQuadBatch.VertexBufferPtr->Tiling = tiling;
+		s_Data->TexQuadBatch.VertexBufferPtr->TextureIndex = textureIndex;
 		s_Data->TexQuadBatch.VertexBufferPtr++;
 
 		s_Data->TexQuadBatch.VertexBufferPtr->Position = v2;
 		s_Data->TexQuadBatch.VertexBufferPtr->TexCoord = { 1.0f, 1.0f };
 		s_Data->TexQuadBatch.VertexBufferPtr->Color = color;
 		s_Data->TexQuadBatch.VertexBufferPtr->Tiling = tiling;
+		s_Data->TexQuadBatch.VertexBufferPtr->TextureIndex = textureIndex;
 		s_Data->TexQuadBatch.VertexBufferPtr++;
 
 		//Second Triangle 
@@ -458,21 +478,26 @@ namespace DT
 		s_Data->TexQuadBatch.VertexBufferPtr->TexCoord = { 0.0f, 0.0f };
 		s_Data->TexQuadBatch.VertexBufferPtr->Color = color;
 		s_Data->TexQuadBatch.VertexBufferPtr->Tiling = tiling;
+		s_Data->TexQuadBatch.VertexBufferPtr->TextureIndex = textureIndex;
 		s_Data->TexQuadBatch.VertexBufferPtr++;
 
 		s_Data->TexQuadBatch.VertexBufferPtr->Position = v2;
 		s_Data->TexQuadBatch.VertexBufferPtr->TexCoord = { 1.0f, 1.0f };
 		s_Data->TexQuadBatch.VertexBufferPtr->Color = color;
 		s_Data->TexQuadBatch.VertexBufferPtr->Tiling = tiling;
+		s_Data->TexQuadBatch.VertexBufferPtr->TextureIndex = textureIndex;
 		s_Data->TexQuadBatch.VertexBufferPtr++;
 
 		s_Data->TexQuadBatch.VertexBufferPtr->Position = v3;
 		s_Data->TexQuadBatch.VertexBufferPtr->TexCoord = { 0.0f, 1.0f };
 		s_Data->TexQuadBatch.VertexBufferPtr->Color = color;
 		s_Data->TexQuadBatch.VertexBufferPtr->Tiling = tiling;
+		s_Data->TexQuadBatch.VertexBufferPtr->TextureIndex = textureIndex;
 		s_Data->TexQuadBatch.VertexBufferPtr++;
 
 		s_Data->TexQuadBatch.VertexCount += 6u;
+
+		s_Data->Statistics.PolygonCount += 2u;
 	}
 
 	void Renderer2D::StartBatch()
@@ -490,23 +515,41 @@ namespace DT
 
 	void Renderer2D::ResetStatistics()
 	{
+		memset(&s_Data->Statistics, 0, sizeof(s_Data->Statistics));
 	}
 
 	void Renderer2D::Flush()
 	{
-		s_Data->QuadBatch.Flush();
-		Renderer::Draw(s_Data->QuadBatch.VertexCount);
+		if (s_Data->QuadBatch.VertexCount > 0u)
+		{
+			s_Data->QuadBatch.Flush();
+			Renderer::Draw(s_Data->QuadBatch.VertexCount);
+			s_Data->Statistics.DrawCalls++;
+		}
 
-		s_Data->CircleBatch.Flush();
-		Renderer::Draw(s_Data->CircleBatch.VertexCount);
+		if (s_Data->CircleBatch.VertexCount > 0u)
+		{
+			s_Data->CircleBatch.Flush();
+			Renderer::Draw(s_Data->CircleBatch.VertexCount);
+			s_Data->Statistics.DrawCalls++;
+		}
 
-		s_Data->TexQuadBatch.Flush();
-		s_Data->Sampler->Bind(0u);
+		if (s_Data->TexQuadBatch.VertexCount > 0u)
+		{
+			s_Data->TexQuadBatch.Flush();
+			s_Data->Sampler->Bind(0u);
 
-		for (uint32 i = 0u; i < s_Data->TextureCount; i++)
+			for (uint32 i = 0u; i < s_Data->TextureCount; i++)
 			s_Data->Textures[i]->Bind(i);
 
-		Renderer::Draw(s_Data->TexQuadBatch.VertexCount);
+			Renderer::Draw(s_Data->TexQuadBatch.VertexCount);
+			s_Data->Statistics.DrawCalls++;
+		}
+
 	}
 
+	Renderer2DStatistics& Renderer2D::GetStatistics()
+	{
+		return s_Data->Statistics;
+	}
 }

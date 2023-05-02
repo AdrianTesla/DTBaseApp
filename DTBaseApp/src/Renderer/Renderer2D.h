@@ -4,6 +4,12 @@
 
 namespace DT
 {
+	struct Renderer2DStatistics
+	{
+		uint32 DrawCalls;
+		uint32 PolygonCount;
+	};
+
 	class Renderer2D
 	{
 	public:
@@ -22,6 +28,8 @@ namespace DT
 		static void DrawRotatedRect(const glm::vec2& position, float width, float height, float thickness, float angle, const glm::vec4& color);
 		static void DrawTexturedQuad(const glm::vec2& position, float width, float height, const Ref<Texture2D>& texture, float tiling, const glm::vec4& color);
 		static void DrawRotatedTexQuad(const glm::vec2& position, float width, float height, const Ref<Texture2D>& texture, float tiling,float angle, const glm::vec4& color);
+
+		static Renderer2DStatistics& GetStatistics();
 	private:
 		static void StartBatch();
 		static void NextBatch();

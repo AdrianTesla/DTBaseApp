@@ -24,16 +24,17 @@ namespace DT
 	private:
 		Ref<Framebuffer> m_Framebuffer;
 		Ref<RenderPass> m_RenderPass;
-		Ref<Texture2D> m_Texture;
+		Ref<Texture2D> m_Textures[2];
 		float m_Time = 0.0f;
 		float m_Thickness = 0.02f;
 		float m_CircleThickness = 0.1f;
 		float m_Angle = 0.0f;
 		float m_Fade = 0.0f;
 		float m_Radius = 0.2f;
-		float m_Width = 0.5f;
-		float m_Height = 0.5f;
+		float m_Width = 0.05f;
+		float m_Height = 0.05f;
 		float m_Tiling = 1.0f;
+		float m_Spacing = 0.230f;
 		glm::vec2 m_Position = { 0.0f, 0.0f };
 		glm::vec4 m_Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	};

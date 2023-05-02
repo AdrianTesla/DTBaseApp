@@ -4,6 +4,7 @@ struct VSIn
     float2 TexCoord : TexCoord;
     float4 Color : Color;
     float Tiling : Tiling;
+    int TexIndex : TexIndex;
 };
 
 struct VSOut
@@ -11,6 +12,7 @@ struct VSOut
     float2 TexCoord : TexCoord;
     float4 Color : Color;
     float Tiling : Tiling;
+    int TexIndex : TexIndex;
     float4 Position : SV_Position;
 };
 
@@ -25,6 +27,7 @@ VSOut main(VSIn i)
     output.TexCoord = i.TexCoord;
     output.Color = i.Color;
     output.Tiling = i.Tiling;
+    output.TexIndex = i.TexIndex;
     output.Position = mul(ProjectionMatrix, float4(i.Position.x, i.Position.y, 0.0f, 1.0f));
     return output;
 };

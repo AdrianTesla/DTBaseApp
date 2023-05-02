@@ -19,7 +19,8 @@ namespace DT
 		renderPassSpecification.TargetFrameBuffer = m_Framebuffer;
 		m_RenderPass = CreateRef<RenderPass>(renderPassSpecification);
 
-		m_Texture = CreateRef<Texture2D>("assets/textures/M_FloorTiles1_Inst_0_BaseColor.png");
+		m_Textures[0] = CreateRef<Texture2D>("assets/textures/M_FloorTiles1_Inst_0_BaseColor.png");
+		m_Textures[1] = CreateRef<Texture2D>("assets/textures/PBRPack/pbr14/albedo.png");
 	}
 
 	void RenderingTestLayer::OnUpdate(float dt)
@@ -48,13 +49,24 @@ namespace DT
 		Renderer2D::DrawLine({ 0.0f,0.0f }, { 0.5f, 0.7f }, m_Time * 0.001f, { 1.0f, 1.0f, 0.0f, 0.7f });
 		Renderer2D::DrawLine({ 0.5f,0.7f }, { -0.7f, 0.2f }, m_Time * 0.001f, { 1.0f, 1.0f, 0.0f, 0.7f });
 		Renderer2D::DrawLine({ -0.7f,0.2f }, { 0.0f, 0.0f }, m_Time * 0.001f, { 1.0f, 1.0f, 0.0f, 0.7f });
-
+		
 		Renderer2D::DrawRect({0.0f, 0.0f}, m_Width, m_Height, m_Thickness, { 1.0f, 1.0f, 0.8f, 1.0f });
 		Renderer2D::DrawRotatedQuad({ 1.0f, 0.5f }, 0.5f, 0.3f, m_Angle, { 1.0f, 0.7f, 0.0f, 1.0f });
 		Renderer2D::DrawRotatedRect({ 1.0f, 0.5f }, 0.5f, 0.3f, m_Thickness, m_Angle, { 1.0f, 0.1f, 0.2f, 1.0f });
 		Renderer2D::DrawCircle(m_Position, m_Radius, m_CircleThickness, m_Fade, m_Color);
-		Renderer2D::DrawTexturedQuad({ 0.0f, 0.0f }, m_Width, m_Height, m_Texture, m_Tiling, m_Color);
-		Renderer2D::DrawRotatedTexQuad({ 0.5f,0.5f }, m_Width, m_Height, m_Texture, m_Tiling, Animate(1.0f), m_Color);
+		Renderer2D::DrawTexturedQuad({ 0.0f, 0.0f }, m_Width, m_Height, m_Textures[0], m_Tiling, m_Color);
+		Renderer2D::DrawRotatedTexQuad({ 0.5f,0.5f }, m_Width, m_Height, m_Textures[1], m_Tiling, Animate(1.0f), m_Color);
+
+		for (uint32 i = 0u; i < 50u; i++)
+		{
+			for (uint32 j = 0u; j < 50u; j++)
+			{
+				glm::vec2 position;
+				position.x = -0.8f + i * m_Spacing;
+				position.y = -0.8f + j * m_Spacing;
+				Renderer2D::DrawTexturedQuad(position, m_Width, m_Height, m_Textures[(i + j) % 2u], m_Tiling, m_Color);
+			}
+		}
 
 		Renderer2D::EndScene();
 
@@ -80,6 +92,10 @@ namespace DT
 		ImGui::ColorEdit4("Color", glm::value_ptr(m_Color), ImGuiColorEditFlags_PickerHueWheel);
 		ImGui::Separator();
 		ImGui::SliderFloat("Tiling", &m_Tiling, 0.0f, 5.0f);
+		ImGui::SliderFloat("Spacing", &m_Spacing, 0.0f, 0.5f);
+		ImGui::Text("DrawCalls: %d", Renderer2D::GetStatistics().DrawCalls);
+		ImGui::Text("Polygon Count: %d", Renderer2D::GetStatistics().PolygonCount);
+		ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
 		ImGui::End();
 	}
 
