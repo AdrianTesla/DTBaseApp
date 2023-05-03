@@ -5,6 +5,7 @@
 #include "Renderer/DX11Buffers.h"
 #include "Renderer/Pipeline.h"
 #include "Renderer/Texture.h"
+#include "Renderer/ParticleSystem.h"
 
 namespace DT
 {
@@ -29,13 +30,17 @@ namespace DT
 		float m_Thickness = 0.02f;
 		float m_CircleThickness = 0.1f;
 		float m_Angle = 0.0f;
-		float m_Fade = 0.0f;
+		float m_Fade = 0.5f;
 		float m_Radius = 0.2f;
 		float m_Width = 0.05f;
 		float m_Height = 0.05f;
 		float m_Tiling = 1.0f;
 		float m_Spacing = 0.230f;
+		bool m_UseMouse = false;
 		glm::vec2 m_Position = { 0.0f, 0.0f };
 		glm::vec4 m_Color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		
+		ParticleSystem m_ParticleSystem;
+		ParticleProperties m_Properties;
 	};
 }
