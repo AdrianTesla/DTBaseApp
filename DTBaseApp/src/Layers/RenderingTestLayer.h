@@ -37,6 +37,7 @@ namespace DT
 		float m_Tiling = 1.0f;
 		float m_Spacing = 0.230f;
 		bool m_UseMouse = false;
+		bool m_ImGuiEnabled = true;
 		glm::vec2 m_Position = { 0.0f, 0.0f };
 		glm::vec4 m_Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		

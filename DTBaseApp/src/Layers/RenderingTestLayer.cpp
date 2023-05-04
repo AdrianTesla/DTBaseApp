@@ -96,47 +96,65 @@ namespace DT
 
 	void RenderingTestLayer::OnUIRender()
 	{
-		ImGui::Begin("Particle System");
-		ImGui::Checkbox("Use mouse", &m_UseMouse);
+		if (m_ImGuiEnabled)
+		{
+			ImGui::Begin("Particle System");
+			ImGui::Checkbox("Use mouse", &m_UseMouse);
 
-		if(!m_UseMouse)
-			ImGui::DragFloat2("Emit Position", glm::value_ptr(m_Properties.Position), 0.005f);
+			if (!m_UseMouse)
+				ImGui::DragFloat2("Emit Position", glm::value_ptr(m_Properties.Position), 0.005f);
 
-		ImGui::DragFloat2("Emit Velocity", glm::value_ptr(m_Properties.Velocity), 0.005f);
-		ImGui::SliderFloat("Velocity Variation", &m_Properties.VelocityVariation, 0.0f, 2.0f);
-		ImGui::SliderFloat("Ang. Velocity Variation", &m_Properties.RotationVariation, -10.0f, 10.0f);
-		ImGui::Separator();
-		ImGui::SliderFloat("Lifetime", &m_Properties.Lifetime, 0.0f, 1.5f);
-		ImGui::Separator();
-		ImGui::SliderFloat("Fade", &m_Fade, 0.0f, 1.5f);
-		ImGui::ColorEdit4("Start Color", glm::value_ptr(m_Properties.StartColor), ImGuiColorEditFlags_PickerHueWheel);
-		ImGui::ColorEdit4("End Color", glm::value_ptr(m_Properties.EndColor), ImGuiColorEditFlags_PickerHueWheel);
-		ImGui::End();
+			ImGui::DragFloat2("Emit Velocity", glm::value_ptr(m_Properties.Velocity), 0.005f);
+			ImGui::SliderFloat("Velocity Variation", &m_Properties.VelocityVariation, 0.0f, 2.0f);
+			ImGui::SliderFloat("Ang. Velocity Variation", &m_Properties.RotationVariation, -10.0f, 10.0f);
+			ImGui::Separator();
+			ImGui::SliderFloat("Lifetime", &m_Properties.Lifetime, 0.0f, 10.0f);
+			ImGui::Separator();
+			ImGui::SliderFloat("Fade", &m_Fade, 0.0f, 1.5f);
+			ImGui::ColorEdit4("Start Color", glm::value_ptr(m_Properties.StartColor), ImGuiColorEditFlags_PickerHueWheel);
+			ImGui::ColorEdit4("End Color", glm::value_ptr(m_Properties.EndColor), ImGuiColorEditFlags_PickerHueWheel);
+			ImGui::SliderFloat("Start Size", &m_Properties.StartSize, 0.0f, 0.2f);
+			ImGui::SliderFloat("End Size", &m_Properties.EndSize, 0.0f, 0.2f);
+			ImGui::End();
 
-		ImGui::Begin("test");
-		//ImGui::ColorButton("Colore di merda di imgui", { 0.2f, 0.3f, 0.5f, 0.7f });
-		//ImGui::Separator();
-		//ImGui::SliderFloat("Thickness", &m_Thickness, 0.0f, 0.1f);
-		//ImGui::SliderAngle("Angle", &m_Angle, 0.0f, 180.0f);
-		//ImGui::SliderFloat("Width", &m_Width, 0.0f, 1.5f);
-		//ImGui::SliderFloat("Height", &m_Height, 0.0f, 1.5f);
-		//ImGui::Separator();
-		//ImGui::SliderFloat("Circle thickness", &m_CircleThickness, 0.0f, 1.0f);
-		//ImGui::SliderFloat2("Position", glm::value_ptr(m_Position), -1.0f, 1.0f);
-		//ImGui::SliderFloat("Radius", &m_Radius, 0.0f, 1.0f);
-		//ImGui::Separator();
-		//ImGui::ColorEdit4("Color", glm::value_ptr(m_Color), ImGuiColorEditFlags_PickerHueWheel);
-		//ImGui::Separator();
-		//ImGui::SliderFloat("Tiling", &m_Tiling, 0.0f, 5.0f);
-		//ImGui::SliderFloat("Spacing", &m_Spacing, 0.0f, 0.5f);
-		ImGui::Text("DrawCalls: %d", Renderer2D::GetStatistics().DrawCalls);
-		ImGui::Text("Polygon Count: %d", Renderer2D::GetStatistics().PolygonCount);
-		ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
-		ImGui::End();
+			ImGui::Begin("test");
+			//ImGui::ColorButton("Colore di merda di imgui", { 0.2f, 0.3f, 0.5f, 0.7f });
+			//ImGui::Separator();
+			//ImGui::SliderFloat("Thickness", &m_Thickness, 0.0f, 0.1f);
+			//ImGui::SliderAngle("Angle", &m_Angle, 0.0f, 180.0f);
+			//ImGui::SliderFloat("Width", &m_Width, 0.0f, 1.5f);
+			//ImGui::SliderFloat("Height", &m_Height, 0.0f, 1.5f);
+			//ImGui::Separator();
+			//ImGui::SliderFloat("Circle thickness", &m_CircleThickness, 0.0f, 1.0f);
+			//ImGui::SliderFloat2("Position", glm::value_ptr(m_Position), -1.0f, 1.0f);
+			//ImGui::SliderFloat("Radius", &m_Radius, 0.0f, 1.0f);
+			//ImGui::Separator();
+			//ImGui::ColorEdit4("Color", glm::value_ptr(m_Color), ImGuiColorEditFlags_PickerHueWheel);
+			//ImGui::Separator();
+			//ImGui::SliderFloat("Tiling", &m_Tiling, 0.0f, 5.0f);
+			//ImGui::SliderFloat("Spacing", &m_Spacing, 0.0f, 0.5f);
+			ImGui::Text("DrawCalls: %d", Renderer2D::GetStatistics().DrawCalls);
+			ImGui::Text("Polygon Count: %d", Renderer2D::GetStatistics().PolygonCount);
+			ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
+			ImGui::End();
+		}
 	}
 
 	void RenderingTestLayer::OnEvent(Event& event)
 	{
+		Event::Dispatcher dispatcher(event);
+		dispatcher.Dispatch<KeyPressedEvent>([&](KeyPressedEvent& key)
+		{
+			switch (key.GetKeyCode())
+			{
+				case Key::I:
+				{
+					m_ImGuiEnabled = !m_ImGuiEnabled;
+					break;
+				}
+			}
+			return false;
+		});
 	}
 
 	void RenderingTestLayer::OnDetach()

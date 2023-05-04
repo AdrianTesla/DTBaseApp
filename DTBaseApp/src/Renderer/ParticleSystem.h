@@ -12,6 +12,8 @@ namespace DT
 		float VelocityVariation = 1.0f;
 		float Lifetime = 1.0f;
 		float RotationVariation = 1.0f;
+		float StartSize = 0.02f;
+		float EndSize = 0.01f;
 
 		glm::vec4 StartColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 		glm::vec4 EndColor = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -36,6 +38,9 @@ namespace DT
 			float Lifetime;
 			float Angle;
 			float AngularVelocity;
+			float CurrentSize;
+			float StartSize;
+			float EndSize;
 		};
 	private:
 		std::vector<Particle> m_Particles;

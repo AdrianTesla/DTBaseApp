@@ -3,6 +3,28 @@
 
 namespace DT
 {
+	enum class ImageFormat
+	{
+		RGBA8,
+		RGBA16F,
+		R11G11B10F
+	};
+
+	struct ImageSpecification
+	{
+		uint32 Width;
+		uint32 Height;
+		ImageFormat Format = ImageFormat::RGBA8;
+	};
+
+	class Image2D
+	{
+	public:
+		Image2D(const ImageSpecification& specification);
+	private:
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> m_Image;
+	};
+
 	class Texture2D
 	{
 	public:

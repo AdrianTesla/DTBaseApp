@@ -45,4 +45,8 @@ namespace DT
 	{
 		return m_ShaderResourceView == texture2D->m_ShaderResourceView;
 	}
+
+	Image2D::Image2D(const ImageSpecification& specification)
+	{
+	}
 }
