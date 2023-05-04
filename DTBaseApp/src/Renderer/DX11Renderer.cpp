@@ -40,13 +40,7 @@ namespace DT
 		if (hr != S_OK)
 		{
 			if (hr == DXGI_ERROR_DEVICE_REMOVED)
-			{
 				OnResize(m_NewWidth, m_NewHeight);
-			}
-			else
-			{
-				DXCALL(hr);
-			}
 		}
 	}
 
@@ -64,12 +58,8 @@ namespace DT
 		m_Context->RSSetViewports(1u, &viewport);
 
 		renderPass->GetSpecification().TargetFrameBuffer->Bind();
-		float clearColor[4];
-		clearColor[0] = renderPass->GetSpecification().ClearColor.r; //R
-		clearColor[1] = renderPass->GetSpecification().ClearColor.g; //G
-		clearColor[2] = renderPass->GetSpecification().ClearColor.b; //B
-		clearColor[3] = renderPass->GetSpecification().ClearColor.a; //A
-		m_Context->ClearRenderTargetView(renderPass->GetSpecification().TargetFrameBuffer->GetRTV(), clearColor);
+		float* clearColor = glm::value_ptr(renderPass->GetSpecification().ClearColor);
+		m_Context->ClearRenderTargetView(renderPass->GetSpecification().TargetFrameBuffer->GetColorAttachment(), clearColor);
 	}
 
 	void DX11Renderer::EndRenderPass()

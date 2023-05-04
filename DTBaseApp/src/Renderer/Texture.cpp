@@ -3,6 +3,29 @@
 
 namespace DT
 {
+	Image2D::Image2D(const ImageSpecification& specification)
+		: m_Specification(specification)
+	{
+		D3D11_TEXTURE2D_DESC textureDescriptor{};
+		textureDescriptor.Width = specification.Width;
+		textureDescriptor.Height = specification.Height;
+		textureDescriptor.MipLevels = 1u;
+		textureDescriptor.ArraySize = 1u;
+		textureDescriptor.Format = Utils::ToDXGIFormat(specification.Format);
+		textureDescriptor.SampleDesc.Count = 1u;
+		textureDescriptor.SampleDesc.Quality = 0u;
+		textureDescriptor.Usage = D3D11_USAGE_DEFAULT;
+		textureDescriptor.CPUAccessFlags = 0u;
+		textureDescriptor.MiscFlags = 0u;
+
+		if(specification.Usage == ImageUsage::Texture)
+			textureDescriptor.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		else
+			textureDescriptor.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+		
+		DXCALL(GraphicsContext::GetDevice()->CreateTexture2D(&textureDescriptor, nullptr, &m_Image));
+	}
+
 	Texture2D::Texture2D(const std::filesystem::path& filepath)
 	{
 		int32 width;
@@ -46,7 +69,4 @@ namespace DT
 		return m_ShaderResourceView == texture2D->m_ShaderResourceView;
 	}
 
-	Image2D::Image2D(const ImageSpecification& specification)
-	{
-	}
 }
