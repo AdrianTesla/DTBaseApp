@@ -46,20 +46,7 @@ namespace DT
 
 	void DX11Renderer::BeginRenderPass(Ref<RenderPass> renderPass)
 	{
-		//TODO! //Usa le dimensioni del framebuffer e non della finestra!
-		D3D11_VIEWPORT viewport{};
-		viewport.TopLeftX = 0.0f;
-		viewport.TopLeftY = 0.0f;
-		viewport.Width = (float)Application::Get().GetWindow().GetWidth();
-		viewport.Height = (float)Application::Get().GetWindow().GetHeight();
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
-
-		m_Context->RSSetViewports(1u, &viewport);
-
-		renderPass->GetSpecification().TargetFrameBuffer->Bind();
-		float* clearColor = glm::value_ptr(renderPass->GetSpecification().ClearColor);
-		m_Context->ClearRenderTargetView(renderPass->GetSpecification().TargetFrameBuffer->GetColorAttachment(), clearColor);
+		renderPass->Begin();
 	}
 
 	void DX11Renderer::EndRenderPass()

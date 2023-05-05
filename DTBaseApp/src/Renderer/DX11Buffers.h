@@ -23,6 +23,8 @@ namespace DT
 		void BindVS(uint32 slot);
 		void BindPS(uint32 slot);
 		void SetData(const void* data, uint64 size);
+
+		ID3D11Buffer* GetBuffer() const { return m_UniformBuffer.Get(); }
 	private:
 		Microsoft::WRL::ComPtr<ID3D11Buffer> m_UniformBuffer;
 	};

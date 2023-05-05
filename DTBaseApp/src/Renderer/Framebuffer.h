@@ -1,6 +1,7 @@
 #pragma once
 #include "GraphicsContext.h"
 #include "Texture.h"
+#include "Core/Math.h"
 
 namespace DT
 {
@@ -18,12 +19,15 @@ namespace DT
 	public:
 		Framebuffer(const FramebufferSpecification& specification);
 		void Bind();
-		void OnResize(int32 width, int32 height);
+		void Resize(int32 width, int32 height, bool force = false);
+		void ClearAttachment(const glm::vec4& color);
 		ID3D11RenderTargetView* GetColorAttachment() const;
+		const FramebufferSpecification& GetSpecification() const { return m_Specification; }
 	private:
-		ID3D11RenderTargetView* m_RenderTargetView = nullptr;
-		FramebufferSpecification m_Specification;
+		uint32 m_Width = 0u;
+		uint32 m_Height = 0u;
 		Ref<Image2D> m_ColorAttachment;
+		FramebufferSpecification m_Specification;
 	};
 
 	class FramebufferPool
@@ -37,7 +41,8 @@ namespace DT
 		{
 			for (auto& framebuffer : s_Framebuffers)
 			{
-				framebuffer->OnResize(width, height);
+				if (framebuffer->GetSpecification().Width == 0u || framebuffer->GetSpecification().Height == 0u)
+					framebuffer->Resize(width, height);
 			}
 		}
 	private:

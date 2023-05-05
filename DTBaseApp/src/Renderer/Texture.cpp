@@ -17,13 +17,30 @@ namespace DT
 		textureDescriptor.Usage = D3D11_USAGE_DEFAULT;
 		textureDescriptor.CPUAccessFlags = 0u;
 		textureDescriptor.MiscFlags = 0u;
+		textureDescriptor.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
-		if(specification.Usage == ImageUsage::Texture)
-			textureDescriptor.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		else
-			textureDescriptor.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+		if(specification.Usage == ImageUsage::Attachment)
+			textureDescriptor.BindFlags |= D3D11_BIND_RENDER_TARGET;
 		
 		DXCALL(GraphicsContext::GetDevice()->CreateTexture2D(&textureDescriptor, nullptr, &m_Image));
+
+		//Create shader resource view 
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDescriptor{};
+		srvDescriptor.Format = textureDescriptor.Format;
+		srvDescriptor.Texture2D.MipLevels = 1u;
+		srvDescriptor.Texture2D.MostDetailedMip = 0u;
+		srvDescriptor.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		DXCALL(GraphicsContext::GetDevice()->CreateShaderResourceView(m_Image.Get(), &srvDescriptor, &m_ShaderResourceView));
+
+		//Create Render target view 
+		if (specification.Usage == ImageUsage::Attachment)
+		{
+			D3D11_RENDER_TARGET_VIEW_DESC rtvDescriptor{};
+			rtvDescriptor.Format = textureDescriptor.Format;
+			rtvDescriptor.Texture2D.MipSlice = 0u;
+			rtvDescriptor.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+			DXCALL(GraphicsContext::GetDevice()->CreateRenderTargetView(m_Image.Get(), &rtvDescriptor, &m_RenderTargetView));
+		}
 	}
 
 	Texture2D::Texture2D(const std::filesystem::path& filepath)

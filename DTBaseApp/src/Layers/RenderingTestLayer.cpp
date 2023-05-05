@@ -17,8 +17,8 @@ namespace DT
 
 		RenderPassSpecification renderPassSpecification{};
 		renderPassSpecification.ClearColor = { Animate(1.0f), 0.1f, 0.4f, 1.0f};
-		renderPassSpecification.TargetFrameBuffer = m_Framebuffer;
 		m_RenderPass = CreateRef<RenderPass>(renderPassSpecification);
+		m_RenderPass->SetOutput(m_Framebuffer);
 
 		//m_Textures[0] = CreateRef<Texture2D>("assets/textures/M_FloorTiles1_Inst_0_BaseColor.png");
 		//m_Textures[1] = CreateRef<Texture2D>("assets/textures/PBRPack/pbr14/albedo.png");

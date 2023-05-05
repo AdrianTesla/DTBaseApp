@@ -29,9 +29,13 @@ namespace DT
 	public:
 		Image2D(const ImageSpecification& specification);
 		ID3D11Texture2D* GetResource() const { return m_Image.Get(); }
+		ID3D11RenderTargetView* GetRTV() const { return m_RenderTargetView.Get(); }
+		ID3D11ShaderResourceView* GetSRV() const { return m_ShaderResourceView.Get(); }
 		const ImageSpecification& GetSpecification() const { return m_Specification; }
 	private:
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> m_Image;
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_ShaderResourceView;
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
 		ImageSpecification m_Specification;
 	};
 
@@ -61,6 +65,7 @@ namespace DT
 				return DXGI_FORMAT_R11G11B10_FLOAT;
 			}
 			ASSERT(false);
+			return DXGI_FORMAT_UNKNOWN;
 		}
 	}
 }

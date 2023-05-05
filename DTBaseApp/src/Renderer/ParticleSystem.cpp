@@ -64,8 +64,8 @@ namespace DT
 		for (uint32 i = 0u; i < m_AliveParticles; i++)
 		{
 			Particle& particle = m_Particles[i];
-			Renderer2D::DrawRotatedQuad(particle.Position, particle.CurrentSize, particle.CurrentSize, particle.Angle, particle.CurrentColor);
-			//Renderer2D::DrawCircle(particle.Position, 0.03f, 1.0f, fade, 1.0f - particle.CurrentColor);
+			//Renderer2D::DrawRotatedQuad(particle.Position, particle.CurrentSize, particle.CurrentSize, particle.Angle, particle.CurrentColor);
+			Renderer2D::DrawCircle(particle.Position, particle.CurrentSize, 1.0f, fade, particle.CurrentColor);
 		}
 	}
 }
