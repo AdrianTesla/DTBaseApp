@@ -24,7 +24,7 @@ namespace DT
 
 		LOG_INFO("Working Directory: {}", std::filesystem::current_path().string());
 
-		PushLayer(new RenderingTestLayer);
+		PushLayer(new TestLayer);
 
 		if (m_Specification.EnableImgui)
 		{

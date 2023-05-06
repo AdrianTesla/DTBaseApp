@@ -33,6 +33,8 @@ namespace DT
 
 	void ImguiLayer::EndFrame()
 	{
+		auto rtv = GraphicsContext::GetSwapchainRTV();
+		GraphicsContext::GetContext()->OMSetRenderTargets(1u, &rtv, nullptr);
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 	}

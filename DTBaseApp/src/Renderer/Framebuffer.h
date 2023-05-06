@@ -21,12 +21,12 @@ namespace DT
 		void Bind();
 		void Resize(int32 width, int32 height, bool force = false);
 		void ClearAttachment(const glm::vec4& color);
-		ID3D11RenderTargetView* GetColorAttachment() const;
+		Ref<Image2D> GetImage() const { return m_ColorImage; }
 		const FramebufferSpecification& GetSpecification() const { return m_Specification; }
 	private:
 		uint32 m_Width = 0u;
 		uint32 m_Height = 0u;
-		Ref<Image2D> m_ColorAttachment;
+		Ref<Image2D> m_ColorImage;
 		FramebufferSpecification m_Specification;
 	};
 

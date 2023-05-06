@@ -17,14 +17,9 @@ namespace DT
 		m_InputUniformBuffers[name] = { uniformBuffer, slot };
 	}
 
-	void RenderPass::SetOutput(const Ref<Framebuffer>& framebuffer)
-	{
-		m_TargetFramebuffer = framebuffer;
-	}
-
 	Ref<Framebuffer> RenderPass::GetOutput() const
 	{
-		return m_TargetFramebuffer;
+		return m_Specification.TargetFramebuffer;
 	}
 
 	Ref<Image2D> RenderPass::GetInputImage(const std::string& name) const
@@ -43,9 +38,9 @@ namespace DT
 	{
 		m_Specification.Pipeline->Bind();
 		if (explicitClear)
-			m_TargetFramebuffer->ClearAttachment(m_Specification.ClearColor);
+			m_Specification.TargetFramebuffer->ClearAttachment(m_Specification.ClearColor);
 
-		m_TargetFramebuffer->Bind();
+		m_Specification.TargetFramebuffer->Bind();
 
 		for (auto&& [name, image] : m_InputImages)
 		{

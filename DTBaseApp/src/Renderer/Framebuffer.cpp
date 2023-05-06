@@ -36,7 +36,7 @@ namespace DT
 		if (m_Specification.SwapchainTarget)
 			rtv = GraphicsContext::GetSwapchainRTV();
 		else
-			rtv = m_ColorAttachment->GetRTV();
+			rtv = m_ColorImage->GetRTV();
 
 		GraphicsContext::GetContext()->OMSetRenderTargets(1u, &rtv, nullptr);
 	}
@@ -57,24 +57,23 @@ namespace DT
 
 		m_Width = newWidth;
 		m_Height = newHeight;
+
 		ImageSpecification imageSpecification{};
 		imageSpecification.Format = m_Specification.Format;
 		imageSpecification.Width = m_Width;
 		imageSpecification.Height = m_Height;
 		imageSpecification.Usage = ImageUsage::Attachment;
-		m_ColorAttachment = CreateRef<Image2D>(imageSpecification);
+		m_ColorImage = CreateRef<Image2D>(imageSpecification);
 	}
 
 	void Framebuffer::ClearAttachment(const glm::vec4& color)
 	{
-		GraphicsContext::GetContext()->ClearRenderTargetView(GetColorAttachment(), glm::value_ptr(color));
-	}
-
-	ID3D11RenderTargetView* Framebuffer::GetColorAttachment() const
-	{
+		ID3D11RenderTargetView* rtv;
 		if (m_Specification.SwapchainTarget)
-			return GraphicsContext::GetSwapchainRTV();
+			rtv = GraphicsContext::GetSwapchainRTV();
 		else
-			return m_ColorAttachment->GetRTV();
+			rtv = m_ColorImage->GetRTV();
+
+		GraphicsContext::GetContext()->ClearRenderTargetView(rtv, glm::value_ptr(color));
 	}
 }
