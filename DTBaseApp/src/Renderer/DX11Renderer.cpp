@@ -44,9 +44,9 @@ namespace DT
 		}
 	}
 
-	void DX11Renderer::BeginRenderPass(Ref<RenderPass> renderPass)
+	void DX11Renderer::BeginRenderPass(Ref<RenderPass> renderPass, bool explicitClear)
 	{
-		renderPass->Begin();
+		renderPass->Begin(explicitClear);
 	}
 
 	void DX11Renderer::EndRenderPass()

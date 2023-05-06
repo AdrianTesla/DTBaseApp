@@ -9,26 +9,12 @@ namespace DT
 {
 	void TestLayer::OnAttach()
 	{
-		PipelineSpecification geoPipelineSpec{};
-		geoPipelineSpec.PixelShaderPath = "QuadPS.cso";
-		geoPipelineSpec.VertexShaderPath = "QuadVS.cso";
-
 		FramebufferSpecification geoFramebufferSpec{};
 		geoFramebufferSpec.Format = ImageFormat::RGBA8;
-		geoFramebufferSpec.SwapchainTarget = false;
+		geoFramebufferSpec.SwapchainTarget = true;
 		m_GeoFramebuffer = CreateRef<Framebuffer>(geoFramebufferSpec);
 
-		RenderPassSpecification geoPassSpecification{};
-		geoPassSpecification.ClearColor = { 0.3f, 0.5f, 0.2f, 1.0f };
-		geoPassSpecification.Pipeline = CreateRef<Pipeline>(geoPipelineSpec);
-		geoPassSpecification.TargetFramebuffer = m_GeoFramebuffer;
-		m_GeoRenderPass = CreateRef<RenderPass>(geoPassSpecification);
-
-		RenderPassSpecification compositePassSpec{};
-		compositePassSpec.ClearColor = { 0.2f, 0.2f, 0.7f, 1.0f };
-		compositePassSpec.Pipeline = CreateRef<Pipeline>(geoPipelineSpec);
-		compositePassSpec.TargetFramebuffer = CreateRef<Framebuffer>(FramebufferSpecification{});
-		m_CompositeRenderPass = CreateRef<RenderPass>(compositePassSpec);
+		Renderer2D::SetTargetFramebuffer(m_GeoFramebuffer);
 	}
 
 	void TestLayer::OnUpdate(float dt)
@@ -45,17 +31,15 @@ namespace DT
 
 	void TestLayer::OnRender()
 	{
-		Renderer::BeginRenderPass(m_GeoRenderPass);
-		Renderer::EndRenderPass();
-
-		Renderer::BeginRenderPass(m_CompositeRenderPass);
-		Renderer::EndRenderPass();
+		Renderer2D::BeginScene();
+		Renderer2D::DrawCircle({ 0.0f, 0.0f }, 0.7f, 0.1f, 0.5f, { 0.7f, 0.2f, 0.2f, 1.0f });
+		Renderer2D::EndScene();
 	}
 
 	void TestLayer::OnUIRender()
 	{
 		ImGui::Begin("Test");
-		ImGui::Image(m_GeoFramebuffer->GetImage()->GetSRV(), { 160.0f, 90.0f });
+		//ImGui::Image(m_GeoFramebuffer->GetImage()->GetSRV(), { 160.0f, 90.0f });
 		ImGui::End();
 	}
 }

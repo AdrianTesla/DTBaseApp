@@ -49,7 +49,7 @@ namespace DT
 
 	void RenderingTestLayer::OnRender()
 	{
-		Renderer::BeginRenderPass(m_RenderPass);
+		Renderer::BeginRenderPass(m_RenderPass, true);
 
 		Renderer2D::BeginScene();
 

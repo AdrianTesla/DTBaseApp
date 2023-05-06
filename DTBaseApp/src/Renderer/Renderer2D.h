@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Math.h"
 #include "Texture.h"
+#include "Framebuffer.h"
 
 namespace DT
 {
@@ -28,6 +29,8 @@ namespace DT
 		static void DrawRotatedRect(const glm::vec2& position, float width, float height, float thickness, float angle, const glm::vec4& color);
 		static void DrawTexturedQuad(const glm::vec2& position, float width, float height, const Ref<Texture2D>& texture, float tiling, const glm::vec4& color);
 		static void DrawRotatedTexQuad(const glm::vec2& position, float width, float height, const Ref<Texture2D>& texture, float tiling,float angle, const glm::vec4& color);
+
+		static void SetTargetFramebuffer(const Ref<Framebuffer>& framebuffer);
 
 		static Renderer2DStatistics& GetStatistics();
 	private:

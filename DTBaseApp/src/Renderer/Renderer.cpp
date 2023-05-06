@@ -28,9 +28,9 @@ namespace DT
 		s_RendererAPI->EndFrame();
 	}
 
-	void Renderer::BeginRenderPass(Ref<RenderPass> renderPass)
+	void Renderer::BeginRenderPass(Ref<RenderPass> renderPass, bool explicitClear)
 	{
-		s_RendererAPI->BeginRenderPass(renderPass);
+		s_RendererAPI->BeginRenderPass(renderPass, explicitClear);
 	}
 
 	void Renderer::EndRenderPass()

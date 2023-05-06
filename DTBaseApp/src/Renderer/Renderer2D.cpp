@@ -43,7 +43,7 @@ namespace DT
 	struct Batch
 	{
 		Ref<VertexBuffer> VertexBuffer;
-		Ref<Pipeline> Pipeline;
+		Ref<RenderPass> RenderPass;
 
 		T* VertexBufferBase = nullptr;
 		T* VertexBufferPtr = nullptr;
@@ -82,7 +82,9 @@ namespace DT
 		{
 			VertexBuffer->SetData(VertexBufferBase, sizeof(T) * VertexCount);
 			VertexBuffer->Bind(sizeof(T));
-			Pipeline->Bind();
+			Renderer::BeginRenderPass(RenderPass, false);
+			Renderer::Draw(VertexCount);
+			Renderer::EndRenderPass();
 		}
 	};
 
@@ -113,21 +115,30 @@ namespace DT
 		quadPipelineSpec.VertexShaderPath = "QuadVS.cso";
 		quadPipelineSpec.PixelShaderPath = "QuadPS.cso";
 		quadPipelineSpec.BlendingEnabled = true;
-		s_Data->QuadBatch.Pipeline = CreateRef<Pipeline>(quadPipelineSpec);
+
+		RenderPassSpecification quadPassSpec{};
+		quadPassSpec.Pipeline = CreateRef<Pipeline>(quadPipelineSpec);
+		s_Data->QuadBatch.RenderPass = CreateRef<RenderPass>(quadPassSpec);
 		s_Data->QuadBatch.Init();
 		
 		PipelineSpecification circlePipelineSpec{};
 		circlePipelineSpec.VertexShaderPath = "CircleVS.cso";
 		circlePipelineSpec.PixelShaderPath = "CirclePS.cso";
 		circlePipelineSpec.BlendingEnabled = true;
-		s_Data->CircleBatch.Pipeline = CreateRef<Pipeline>(circlePipelineSpec);
+
+		RenderPassSpecification circlePassSpec{};
+		circlePassSpec.Pipeline = CreateRef<Pipeline>(circlePipelineSpec);
+		s_Data->CircleBatch.RenderPass = CreateRef<RenderPass>(circlePassSpec);
 		s_Data->CircleBatch.Init();
 
 		PipelineSpecification texQuadPipelineSpec{};
 		texQuadPipelineSpec.VertexShaderPath = "TexQuadVS.cso";
 		texQuadPipelineSpec.PixelShaderPath = "TexQuadPS.cso";
 		texQuadPipelineSpec.BlendingEnabled = true;
-		s_Data->TexQuadBatch.Pipeline = CreateRef<Pipeline>(texQuadPipelineSpec);
+
+		RenderPassSpecification texQuadPassSpec{};
+		texQuadPassSpec.Pipeline = CreateRef<Pipeline>(texQuadPipelineSpec);
+		s_Data->TexQuadBatch.RenderPass = CreateRef<RenderPass>(texQuadPassSpec);
 		s_Data->TexQuadBatch.Init();
 
 		s_Data->Sampler = CreateRef<Sampler>(true);
@@ -500,6 +511,13 @@ namespace DT
 		s_Data->Statistics.PolygonCount += 2u;
 	}
 
+	void Renderer2D::SetTargetFramebuffer(const Ref<Framebuffer>& framebuffer)
+	{
+		s_Data->QuadBatch.RenderPass->GetSpecification().TargetFramebuffer = framebuffer;
+		s_Data->CircleBatch.RenderPass->GetSpecification().TargetFramebuffer = framebuffer;
+		s_Data->TexQuadBatch.RenderPass->GetSpecification().TargetFramebuffer = framebuffer;
+	}
+
 	void Renderer2D::StartBatch()
 	{
 		s_Data->QuadBatch.Start();
@@ -523,26 +541,23 @@ namespace DT
 		if (s_Data->QuadBatch.VertexCount > 0u)
 		{
 			s_Data->QuadBatch.Flush();
-			Renderer::Draw(s_Data->QuadBatch.VertexCount);
 			s_Data->Statistics.DrawCalls++;
 		}
 
 		if (s_Data->CircleBatch.VertexCount > 0u)
 		{
 			s_Data->CircleBatch.Flush();
-			Renderer::Draw(s_Data->CircleBatch.VertexCount);
 			s_Data->Statistics.DrawCalls++;
 		}
 
 		if (s_Data->TexQuadBatch.VertexCount > 0u)
 		{
-			s_Data->TexQuadBatch.Flush();
 			s_Data->Sampler->Bind(0u);
 
 			for (uint32 i = 0u; i < s_Data->TextureCount; i++)
 			s_Data->Textures[i]->Bind(i);
 
-			Renderer::Draw(s_Data->TexQuadBatch.VertexCount);
+			s_Data->TexQuadBatch.Flush();
 			s_Data->Statistics.DrawCalls++;
 		}
 

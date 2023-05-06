@@ -12,7 +12,7 @@ namespace DT
 		static void BeginFrame();
 		static void EndFrame();
 
-		static void BeginRenderPass(Ref<RenderPass> renderPass);
+		static void BeginRenderPass(Ref<RenderPass> renderPass, bool explicitClear);
 		static void EndRenderPass(); 
 
 		static void OnResize(int32 width, int32 height);

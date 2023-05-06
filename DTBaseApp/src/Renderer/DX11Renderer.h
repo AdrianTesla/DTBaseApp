@@ -13,7 +13,7 @@ namespace DT
 		virtual void BeginFrame() override;
 		virtual void EndFrame() override;
 
-		virtual void BeginRenderPass(Ref<RenderPass> renderPass) override;
+		virtual void BeginRenderPass(Ref<RenderPass> renderPass, bool explicitClear) override;
 		virtual void EndRenderPass() override;
 
 		virtual void OnResize(int32 width, int32 height) override;

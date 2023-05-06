@@ -12,7 +12,7 @@ namespace DT
 		virtual void BeginFrame() = 0;
 		virtual void EndFrame() = 0;
 
-		virtual void BeginRenderPass(Ref<RenderPass> renderPass) = 0;
+		virtual void BeginRenderPass(Ref<RenderPass> renderPass, bool explicitClear) = 0;
 		virtual void EndRenderPass() = 0;
 
 		virtual void OnResize(int32 width, int32 height) = 0;
