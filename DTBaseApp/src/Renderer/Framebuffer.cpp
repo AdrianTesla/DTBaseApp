@@ -8,9 +8,6 @@ namespace DT
 	{
 		FramebufferPool::AddFramebuffer(this);
 
-		if (specification.SwapchainTarget)
-			return;
-
 		if (specification.Width == 0u || specification.Height == 0u)
 		{
 			int32 windowWidth = Application::Get().GetWindow().GetWidth();

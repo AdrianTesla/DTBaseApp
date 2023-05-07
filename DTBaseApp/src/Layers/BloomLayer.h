@@ -9,7 +9,7 @@
 
 namespace DT
 {
-	class TestLayer : public Layer
+	class BloomLayer : public Layer
 	{
 	public:
 		virtual void OnAttach() override;
@@ -19,10 +19,10 @@ namespace DT
 		virtual void OnRender() override;
 		virtual void OnUIRender() override;
 	private:
-		Ref<RenderPass> m_GeoRenderPass;
-		Ref<Framebuffer> m_GeoFramebuffer;
+		float m_Time = 0.0f;
+		glm::vec4 m_Color = { 1.0f, 0.0f, 0.0f, 1.0f };
+		float m_Emission = 1.0f;
 
-		Ref<RenderPass> m_CompositeRenderPass;
-		Ref<RenderPass> m_ClearRenderPass;
+		Ref<Framebuffer> m_GeoFramebuffer;
 	};
 }

@@ -36,7 +36,9 @@ namespace DT
 
 	void RenderPass::Begin(bool explicitClear)
 	{
-		m_Specification.Pipeline->Bind();
+		if(m_Specification.Pipeline)
+			m_Specification.Pipeline->Bind();
+
 		if (explicitClear)
 			m_Specification.TargetFramebuffer->ClearAttachment(m_Specification.ClearColor);
 

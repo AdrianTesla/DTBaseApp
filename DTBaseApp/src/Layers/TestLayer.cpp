@@ -15,6 +15,11 @@ namespace DT
 		m_GeoFramebuffer = CreateRef<Framebuffer>(geoFramebufferSpec);
 
 		Renderer2D::SetTargetFramebuffer(m_GeoFramebuffer);
+
+		RenderPassSpecification clearPassSpec{};
+		clearPassSpec.ClearColor = { 0.2f, 0.2f, 0.8f, 1.0f };
+		clearPassSpec.TargetFramebuffer = m_GeoFramebuffer;
+		m_ClearRenderPass = CreateRef<RenderPass>(clearPassSpec);
 	}
 
 	void TestLayer::OnUpdate(float dt)
@@ -31,6 +36,9 @@ namespace DT
 
 	void TestLayer::OnRender()
 	{
+		Renderer::BeginRenderPass(m_ClearRenderPass, true);
+		Renderer::EndRenderPass();
+
 		Renderer2D::BeginScene();
 		Renderer2D::DrawCircle({ 0.0f, 0.0f }, 0.7f, 0.1f, 0.5f, { 0.7f, 0.2f, 0.2f, 1.0f });
 		Renderer2D::EndScene();

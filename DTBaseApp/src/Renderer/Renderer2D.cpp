@@ -150,6 +150,7 @@ namespace DT
 	{
 		s_Data->QuadBatch.Shutdown();
 		s_Data->CircleBatch.Shutdown();
+		s_Data->TexQuadBatch.Shutdown();
 		delete s_Data;
 	}
 
@@ -555,7 +556,7 @@ namespace DT
 			s_Data->Sampler->Bind(0u);
 
 			for (uint32 i = 0u; i < s_Data->TextureCount; i++)
-			s_Data->Textures[i]->Bind(i);
+				s_Data->Textures[i]->Bind(i);
 
 			s_Data->TexQuadBatch.Flush();
 			s_Data->Statistics.DrawCalls++;

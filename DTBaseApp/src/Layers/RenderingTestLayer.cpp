@@ -21,6 +21,8 @@ namespace DT
 
 		//m_Textures[0] = CreateRef<Texture2D>("assets/textures/M_FloorTiles1_Inst_0_BaseColor.png");
 		//m_Textures[1] = CreateRef<Texture2D>("assets/textures/PBRPack/pbr14/albedo.png");
+
+		Renderer2D::SetTargetFramebuffer(m_Framebuffer);
 	}
 
 	void RenderingTestLayer::OnUpdate(float dt)
@@ -49,8 +51,7 @@ namespace DT
 
 	void RenderingTestLayer::OnRender()
 	{
-		Renderer::BeginRenderPass(m_RenderPass, true);
-
+		m_Framebuffer->ClearAttachment({ 0.2f, 0.1f, 0.6f, 1.0f });
 		Renderer2D::BeginScene();
 
 		//Renderer2D::DrawQuad({ 0.5f, 0.5f }, 0.2f, 0.2f, { 0.0f, 0.4f, 0.9f, 1.0f });
@@ -89,8 +90,6 @@ namespace DT
 		m_ParticleSystem.OnRender(m_Fade);
 
 		Renderer2D::EndScene();
-
-		Renderer::EndRenderPass();
 	}
 
 	void RenderingTestLayer::OnUIRender()

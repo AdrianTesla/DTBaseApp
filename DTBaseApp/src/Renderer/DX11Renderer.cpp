@@ -30,6 +30,7 @@ namespace DT
 		if (m_ShouldResize)
 		{
 			GraphicsContext::OnResize(m_NewWidth, m_NewHeight);
+			m_ShouldResize = false;
 		}
 	}
 
