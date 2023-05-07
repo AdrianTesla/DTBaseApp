@@ -48,7 +48,7 @@ namespace DT
 		}
 
 		uint32 newWidth = (uint32)(width * m_Specification.Scale);
-		uint32 newHeight = (uint32)(width * m_Specification.Scale);
+		uint32 newHeight = (uint32)(height * m_Specification.Scale);
 		if (!force && newWidth == m_Width && newHeight == m_Height)
 			return;
 

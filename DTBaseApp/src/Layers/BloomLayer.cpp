@@ -10,8 +10,29 @@ namespace DT
 	void BloomLayer::OnAttach()
 	{
 		FramebufferSpecification geoFramebufferSpec{};
-		geoFramebufferSpec.SwapchainTarget = true;
+		geoFramebufferSpec.SwapchainTarget = false;
+		geoFramebufferSpec.Format = ImageFormat::RGBA16F;
 		m_GeoFramebuffer = CreateRef<Framebuffer>(geoFramebufferSpec);
+
+		FramebufferSpecification screenFramebufferSpec{};
+		screenFramebufferSpec.SwapchainTarget = true;
+		m_ScreenFramebuffer = CreateRef<Framebuffer>(screenFramebufferSpec);
+
+		FramebufferSpecification stage0FramebufferSpec{};
+		stage0FramebufferSpec.SwapchainTarget = false;
+		stage0FramebufferSpec.Format = ImageFormat::RGBA16F;
+		stage0FramebufferSpec.Scale = 0.5f;
+		m_BloomStage0 = CreateRef<Framebuffer>(stage0FramebufferSpec);
+
+		PipelineSpecification downscalePipelineSpec{};
+		downscalePipelineSpec.BlendingEnabled = false;
+		downscalePipelineSpec.VertexShaderPath = "DownscaleVS.cso";
+		downscalePipelineSpec.PixelShaderPath = "DownscalePS.cso";
+
+		RenderPassSpecification stage0PassSpec{};
+		stage0PassSpec.TargetFramebuffer = m_BloomStage0;
+		stage0PassSpec.Pipeline = CreateRef<Pipeline>(downscalePipelineSpec);
+		m_BloomPass0 = CreateRef<RenderPass>(stage0PassSpec);
 
 		Renderer2D::SetTargetFramebuffer(m_GeoFramebuffer);
 	}
@@ -32,9 +53,19 @@ namespace DT
 	void BloomLayer::OnRender()
 	{
 		m_GeoFramebuffer->ClearAttachment({ 0.0f, 0.0f, 0.0f, 1.0f });
+		m_ScreenFramebuffer->ClearAttachment({ 0.0f, 0.0f, 0.0f, 1.0f });
 		Renderer2D::BeginScene();
-		Renderer2D::DrawRotatedQuad({ 0.0f, 0.0f }, 0.5f, 0.5f, m_Time, m_Color * m_Emission);
+		glm::vec4 color = m_Color;
+		color.r *= m_Emission;
+		color.g *= m_Emission;
+		color.b *= m_Emission;
+		Renderer2D::DrawRotatedQuad({ 0.0f, 0.0f }, 0.5f, 0.5f, m_Time, color);
 		Renderer2D::EndScene();
+
+		//begin bloom post processing 
+		Renderer::BeginRenderPass(m_BloomPass0, true);
+		Renderer::DrawFullscreenQuad();
+		Renderer::EndRenderPass();
 	}
 
 	void BloomLayer::OnUIRender()
@@ -42,6 +73,18 @@ namespace DT
 		ImGui::Begin("Bloom");
 		ImGui::ColorEdit4("Color", glm::value_ptr(m_Color), ImGuiColorEditFlags_PickerHueWheel);
 		ImGui::DragFloat("Emission", &m_Emission, 0.005f, 0.0f, 100.0f);
+		ImGui::End();
+
+		ImGui::Begin("Testing");
+		float w = m_GeoFramebuffer->GetWidth() * 0.5f;
+		float h = m_GeoFramebuffer->GetHeight() * 0.5f;
+		ImGui::Image(m_GeoFramebuffer->GetImage()->GetSRV(), { w, h });
+		ImGui::End();
+
+		ImGui::Begin("bloom stage 0");
+		w = m_BloomStage0->GetWidth() * 0.5f;
+		h = m_BloomStage0->GetHeight() * 0.5f;
+		ImGui::Image(m_BloomStage0->GetImage()->GetSRV(), { w, h });
 		ImGui::End();
 	}
 }

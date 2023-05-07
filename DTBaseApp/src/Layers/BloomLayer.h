@@ -23,6 +23,11 @@ namespace DT
 		glm::vec4 m_Color = { 1.0f, 0.0f, 0.0f, 1.0f };
 		float m_Emission = 1.0f;
 
-		Ref<Framebuffer> m_GeoFramebuffer;
+		Ref<Framebuffer> m_ScreenFramebuffer;  //represents the screen
+		Ref<Framebuffer> m_GeoFramebuffer;     //represents the rendered geometry in HDR
+
+		//bloom stuff
+		Ref<Framebuffer> m_BloomStage0;
+		Ref<RenderPass> m_BloomPass0;
 	};
 }

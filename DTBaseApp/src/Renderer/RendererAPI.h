@@ -18,5 +18,6 @@ namespace DT
 		virtual void OnResize(int32 width, int32 height) = 0;
 
 		virtual void Draw(uint32 vertexCount) = 0;
+		virtual void DrawFullscreenQuad() = 0;
 	};
 }

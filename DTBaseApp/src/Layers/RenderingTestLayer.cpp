@@ -51,7 +51,7 @@ namespace DT
 
 	void RenderingTestLayer::OnRender()
 	{
-		m_Framebuffer->ClearAttachment({ 0.2f, 0.1f, 0.6f, 1.0f });
+		m_Framebuffer->ClearAttachment({ 0.0f, 0.0f, 0.0f, 1.0f });
 		Renderer2D::BeginScene();
 
 		//Renderer2D::DrawQuad({ 0.5f, 0.5f }, 0.2f, 0.2f, { 0.0f, 0.4f, 0.9f, 1.0f });

@@ -18,6 +18,7 @@ namespace DT
 		static void OnResize(int32 width, int32 height);
 
 		static void Draw(uint32 vertexCount);
+		static void DrawFullscreenQuad();
 	private:
 		inline static RendererAPI* s_RendererAPI = nullptr;
 	};

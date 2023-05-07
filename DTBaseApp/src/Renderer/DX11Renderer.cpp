@@ -7,6 +7,7 @@ namespace DT
 {
 	struct DX11RendererData
 	{
+		Ref<VertexBuffer> QuadVertexBuffer;
 	};
 
 	static DX11RendererData* s_RendererData = nullptr;
@@ -18,6 +19,16 @@ namespace DT
 		m_Swapchain = GraphicsContext::GetSwapchain();
 
 		s_RendererData = new DX11RendererData();
+
+		glm::vec2 vertices[6];
+		vertices[0] = { -1.0f, 1.0f };
+		vertices[1] = { 1.0f, 1.0f };
+		vertices[2] = { 1.0f, -1.0f };
+
+		vertices[3] = { -1.0f, 1.0f };
+		vertices[4] = { 1.0f, -1.0f };
+		vertices[5] = { -1.0f, -1.0f };
+		s_RendererData->QuadVertexBuffer = CreateRef<VertexBuffer>(vertices, sizeof(vertices));
 	}
 
 	void DX11Renderer::Shutdown()
@@ -64,5 +75,11 @@ namespace DT
 	void DX11Renderer::Draw(uint32 vertexCount)
 	{
 		m_Context->Draw(vertexCount, 0u);
+	}
+
+	void DX11Renderer::DrawFullscreenQuad()
+	{
+		s_RendererData->QuadVertexBuffer->Bind(sizeof(glm::vec2));
+		m_Context->Draw(6u, 0u);
 	}
 }

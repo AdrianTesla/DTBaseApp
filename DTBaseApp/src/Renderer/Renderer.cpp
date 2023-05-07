@@ -47,4 +47,9 @@ namespace DT
 	{
 		s_RendererAPI->Draw(vertexCount);
 	}
+
+	void Renderer::DrawFullscreenQuad()
+	{
+		s_RendererAPI->DrawFullscreenQuad();
+	}
 }
