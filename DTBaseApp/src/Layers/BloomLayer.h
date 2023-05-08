@@ -19,6 +19,8 @@ namespace DT
 		virtual void OnDetach() override;
 		virtual void OnRender() override;
 		virtual void OnUIRender() override;
+		void InitBloom();
+		void ExecuteBloom();
 	private:
 		float m_Time = 0.0f;
 		glm::vec4 m_Color = { 1.0f, 0.0f, 0.0f, 1.0f };
@@ -28,8 +30,10 @@ namespace DT
 		Ref<Framebuffer> m_GeoFramebuffer;     //represents the rendered geometry in HDR
 
 		//bloom stuff
-		Ref<Framebuffer> m_BloomStage0;
-		Ref<RenderPass> m_BloomPass0;
+		Ref<Framebuffer> m_BloomStages[16];
+		Ref<RenderPass> m_BloomDownscalePasses[16];
 		Ref<Sampler> m_Sampler;
+		uint32 m_StageCount = 8u;
+		int32 m_StageIndex = 0u;
 	};
 }

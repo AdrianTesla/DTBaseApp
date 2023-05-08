@@ -34,6 +34,10 @@ float3 downsample_filter_high(float2 uv, float2 texelSize)
 float4 main(PSIn input) : SV_Target
 {
     float4 color = float4(0.0f, 0.0f, 0.0f, 1.0f);
-    color.rgb = downsample_filter_high(input.TexCoord, 1.0f / float2(1280.0f / 2.0f, 720.0f / 2.0f));
+    uint width;
+    uint height;
+    PreviousStage.GetDimensions(width, height);
+    float2 texelSize = 1.0f / float2((float) width, (float)height);
+    color.rgb = downsample_filter_high(input.TexCoord, texelSize);
     return color;
 }

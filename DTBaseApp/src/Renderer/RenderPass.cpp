@@ -42,6 +42,8 @@ namespace DT
 		if (explicitClear)
 			m_Specification.TargetFramebuffer->ClearAttachment(m_Specification.ClearColor);
 
+		ID3D11ShaderResourceView* nullRTV = nullptr;
+		GraphicsContext::GetContext()->PSSetShaderResources(0u, 1u, &nullRTV);
 		m_Specification.TargetFramebuffer->Bind();
 
 		for (auto&& [name, image] : m_InputImages)
@@ -56,6 +58,5 @@ namespace DT
 
 	void RenderPass::End()
 	{
-		GraphicsContext::GetContext()->OMSetRenderTargets(1u, nullptr, nullptr);
 	}
 }
