@@ -6,6 +6,7 @@
 #include "Renderer/Pipeline.h"
 #include "Renderer/Texture.h"
 #include "Renderer/ParticleSystem.h"
+#include "Renderer/Sampler.h"
 
 namespace DT
 {
@@ -29,5 +30,6 @@ namespace DT
 		//bloom stuff
 		Ref<Framebuffer> m_BloomStage0;
 		Ref<RenderPass> m_BloomPass0;
+		Ref<Sampler> m_Sampler;
 	};
 }

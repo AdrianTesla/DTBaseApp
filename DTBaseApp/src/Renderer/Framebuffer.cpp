@@ -12,7 +12,7 @@ namespace DT
 		{
 			int32 windowWidth = Application::Get().GetWindow().GetWidth();
 			int32 windowHeight = Application::Get().GetWindow().GetHeight();
-			Resize((int32)(windowWidth * specification.Scale), (int32)(windowHeight * specification.Scale));
+			Resize(windowWidth, windowHeight);
 		}
 		else
 			Resize((int32)(specification.Width * specification.Scale), (int32)(specification.Height * specification.Scale));

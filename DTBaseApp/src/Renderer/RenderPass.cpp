@@ -56,5 +56,6 @@ namespace DT
 
 	void RenderPass::End()
 	{
+		GraphicsContext::GetContext()->OMSetRenderTargets(1u, nullptr, nullptr);
 	}
 }

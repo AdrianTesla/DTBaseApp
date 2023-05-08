@@ -33,6 +33,10 @@ namespace DT
 		stage0PassSpec.TargetFramebuffer = m_BloomStage0;
 		stage0PassSpec.Pipeline = CreateRef<Pipeline>(downscalePipelineSpec);
 		m_BloomPass0 = CreateRef<RenderPass>(stage0PassSpec);
+		m_BloomPass0->SetInput("Previous Stage", m_GeoFramebuffer->GetImage(), 0u);
+
+		m_Sampler = CreateRef<Sampler>(true);
+		m_Sampler->Bind(0);
 
 		Renderer2D::SetTargetFramebuffer(m_GeoFramebuffer);
 	}
@@ -75,15 +79,17 @@ namespace DT
 		ImGui::DragFloat("Emission", &m_Emission, 0.005f, 0.0f, 100.0f);
 		ImGui::End();
 
-		ImGui::Begin("Testing");
+		std::string title = std::format("GeoFramebuffer ({}, {})", m_GeoFramebuffer->GetWidth(), m_GeoFramebuffer->GetHeight());
+		ImGui::Begin(title.c_str());
 		float w = m_GeoFramebuffer->GetWidth() * 0.5f;
 		float h = m_GeoFramebuffer->GetHeight() * 0.5f;
 		ImGui::Image(m_GeoFramebuffer->GetImage()->GetSRV(), { w, h });
 		ImGui::End();
 
-		ImGui::Begin("bloom stage 0");
-		w = m_BloomStage0->GetWidth() * 0.5f;
-		h = m_BloomStage0->GetHeight() * 0.5f;
+		title = std::format("BloomStage0 ({}, {})", m_BloomStage0->GetWidth(), m_BloomStage0->GetHeight());
+		ImGui::Begin(title.c_str());
+		w = m_BloomStage0->GetWidth() * 2.0f;
+		h = m_BloomStage0->GetHeight() * 2.0f;
 		ImGui::Image(m_BloomStage0->GetImage()->GetSRV(), { w, h });
 		ImGui::End();
 	}
