@@ -104,14 +104,33 @@ namespace DT
         D3D11_BLEND_DESC blendStateDescriptor{};
         blendStateDescriptor.AlphaToCoverageEnable = false;
         blendStateDescriptor.IndependentBlendEnable = false;
-        blendStateDescriptor.RenderTarget[0u].BlendEnable = m_Specification.BlendingEnabled;
-        blendStateDescriptor.RenderTarget[0u].BlendOp = D3D11_BLEND_OP_ADD;
-        blendStateDescriptor.RenderTarget[0u].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-        blendStateDescriptor.RenderTarget[0u].RenderTargetWriteMask = 15u;
-        blendStateDescriptor.RenderTarget[0u].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-        blendStateDescriptor.RenderTarget[0u].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-        blendStateDescriptor.RenderTarget[0u].SrcBlendAlpha = D3D11_BLEND_ONE;
-        blendStateDescriptor.RenderTarget[0u].DestBlendAlpha = D3D11_BLEND_ZERO;
+        switch (m_Specification.BlendingMode)
+        {
+        case BlendingMode::None:
+            blendStateDescriptor.RenderTarget[0u].BlendEnable = false;
+            blendStateDescriptor.RenderTarget[0u].RenderTargetWriteMask = 15u;
+            break;
+        case BlendingMode::Alpha:
+            blendStateDescriptor.RenderTarget[0u].BlendEnable = true;
+            blendStateDescriptor.RenderTarget[0u].BlendOp = D3D11_BLEND_OP_ADD;
+            blendStateDescriptor.RenderTarget[0u].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+            blendStateDescriptor.RenderTarget[0u].RenderTargetWriteMask = 15u;
+            blendStateDescriptor.RenderTarget[0u].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+            blendStateDescriptor.RenderTarget[0u].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+            blendStateDescriptor.RenderTarget[0u].SrcBlendAlpha = D3D11_BLEND_ONE;
+            blendStateDescriptor.RenderTarget[0u].DestBlendAlpha = D3D11_BLEND_ZERO;
+            break;
+        case BlendingMode::Additive:
+            blendStateDescriptor.RenderTarget[0u].BlendEnable = true;
+            blendStateDescriptor.RenderTarget[0u].BlendOp = D3D11_BLEND_OP_ADD;
+            blendStateDescriptor.RenderTarget[0u].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+            blendStateDescriptor.RenderTarget[0u].RenderTargetWriteMask = 15u;
+            blendStateDescriptor.RenderTarget[0u].SrcBlend = D3D11_BLEND_ONE;
+            blendStateDescriptor.RenderTarget[0u].DestBlend = D3D11_BLEND_ONE;
+            blendStateDescriptor.RenderTarget[0u].SrcBlendAlpha = D3D11_BLEND_ONE;
+            blendStateDescriptor.RenderTarget[0u].DestBlendAlpha = D3D11_BLEND_ZERO;
+            break;
+        }
         DXCALL(GraphicsContext::GetDevice()->CreateBlendState(&blendStateDescriptor, &m_BlendState));
 	}
 

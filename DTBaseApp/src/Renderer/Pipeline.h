@@ -3,11 +3,18 @@
 
 namespace DT
 {
+	enum class BlendingMode
+	{
+		None,
+		Alpha,
+		Additive
+	};
+
 	struct PipelineSpecification
 	{
 		std::filesystem::path VertexShaderPath;
 		std::filesystem::path PixelShaderPath;
-		bool BlendingEnabled = false;
+		BlendingMode BlendingMode = BlendingMode::None;
 	};
 
 	class Pipeline

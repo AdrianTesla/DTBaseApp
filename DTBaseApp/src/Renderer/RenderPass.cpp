@@ -53,7 +53,10 @@ namespace DT
 		}
 
 		for (auto&& [name, uniformBuffer] : m_InputUniformBuffers)
+		{
 			uniformBuffer.first->BindVS(uniformBuffer.second);
+			uniformBuffer.first->BindPS(uniformBuffer.second);
+		}
 	}
 
 	void RenderPass::End()

@@ -32,8 +32,12 @@ namespace DT
 		//bloom stuff
 		Ref<Framebuffer> m_BloomStages[16];
 		Ref<RenderPass> m_BloomDownscalePasses[16];
+		Ref<RenderPass> m_BloomUpscalePasses[16];
+		Ref<RenderPass> m_CombinePass;         //geometry framebuffer -> screenFramebuffer
 		Ref<Sampler> m_Sampler;
 		uint32 m_StageCount = 8u;
-		int32 m_StageIndex = 0u;
+		int32 m_StageIndex = 7u;
+		Ref<UniformBuffer> m_UpscaleUB;
+		Ref<UniformBuffer> m_CombineUB;
 	};
 }

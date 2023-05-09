@@ -114,7 +114,7 @@ namespace DT
 		PipelineSpecification quadPipelineSpec{};
 		quadPipelineSpec.VertexShaderPath = "QuadVS.cso";
 		quadPipelineSpec.PixelShaderPath = "QuadPS.cso";
-		quadPipelineSpec.BlendingEnabled = true;
+		quadPipelineSpec.BlendingMode = BlendingMode::Alpha;
 
 		RenderPassSpecification quadPassSpec{};
 		quadPassSpec.Pipeline = CreateRef<Pipeline>(quadPipelineSpec);
@@ -124,7 +124,7 @@ namespace DT
 		PipelineSpecification circlePipelineSpec{};
 		circlePipelineSpec.VertexShaderPath = "CircleVS.cso";
 		circlePipelineSpec.PixelShaderPath = "CirclePS.cso";
-		circlePipelineSpec.BlendingEnabled = true;
+		circlePipelineSpec.BlendingMode = BlendingMode::Alpha;
 
 		RenderPassSpecification circlePassSpec{};
 		circlePassSpec.Pipeline = CreateRef<Pipeline>(circlePipelineSpec);
@@ -134,7 +134,7 @@ namespace DT
 		PipelineSpecification texQuadPipelineSpec{};
 		texQuadPipelineSpec.VertexShaderPath = "TexQuadVS.cso";
 		texQuadPipelineSpec.PixelShaderPath = "TexQuadPS.cso";
-		texQuadPipelineSpec.BlendingEnabled = true;
+		texQuadPipelineSpec.BlendingMode = BlendingMode::Alpha;
 
 		RenderPassSpecification texQuadPassSpec{};
 		texQuadPassSpec.Pipeline = CreateRef<Pipeline>(texQuadPipelineSpec);
