@@ -3,11 +3,14 @@ struct PSIn
     float2 TexCoord : TexCoord;
 };
 
-Texture2D BloomResult : register(t0);
+Texture2D OriginalImage : register(t0);
+Texture2D BloomLastStage : register(t1);
 SamplerState splr : register(s0);
+
 cbuffer CombineUB : register(b0)
 {
     float BloomIntensity;
+    float UpsampleScale;
 }
 
 float3 aces_tonemap(float3 color)
@@ -99,11 +102,40 @@ float3 tone_mapping_aces_filmic(float3 color)
     return srgb_color;
 }
 
+float3 upsample_filter_high(float2 uv)
+{
+    uint width;
+    uint height;
+    BloomLastStage.GetDimensions(width, height);
+    float2 texelSize = 1.0f / float2((float) width, (float) height);
+    
+  /* 9-tap bilinear upsampler (tent filter) */
+    float4 d = texelSize.xyxy * float4(1.0f, 1.0f, -1.0f, 0.0f) * UpsampleScale;
+
+    float3 s;
+    s = BloomLastStage.Sample(splr, uv - d.xy).rgb;
+    s += BloomLastStage.Sample(splr, uv - d.wy).rgb * 2.0f;
+    s += BloomLastStage.Sample(splr, uv - d.zy).rgb;
+    s += BloomLastStage.Sample(splr, uv + d.zw).rgb * 2.0f;
+    s += BloomLastStage.Sample(splr, uv).rgb * 4.0f;
+    s += BloomLastStage.Sample(splr, uv + d.xw).rgb * 2.0f;
+    s += BloomLastStage.Sample(splr, uv + d.zy).rgb;
+    s += BloomLastStage.Sample(splr, uv + d.wy).rgb * 2.0f;
+    s += BloomLastStage.Sample(splr, uv + d.xy).rgb; 
+
+    return s * (1.0f / 16.0f);
+}
+
 float4 main(PSIn input) : SV_Target
 {   
-    float4 color = BloomResult.Sample(splr, input.TexCoord);
-    color.rgb = aces_tonemap(color.rgb);
-    //color.rgb = tone_mapping_aces_filmic(color.rgb);
-    //color.rgb = ACESFitted(color.rgb);
-    return color;
+    float4 bloomedColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+    bloomedColor.rgb = upsample_filter_high(input.TexCoord);
+    
+    float4 originalColor = OriginalImage.Sample(splr, input.TexCoord);
+    float4 finalColor = originalColor + bloomedColor * BloomIntensity;
+    
+    //finalColor.rgb = aces_tonemap(finalColor.rgb);
+    //finalColor.rgb = tone_mapping_aces_filmic(finalColor.rgb);
+    finalColor.rgb = ACESFitted(finalColor.rgb * 2.0f);
+    return finalColor;
 };

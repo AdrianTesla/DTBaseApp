@@ -19,7 +19,7 @@ namespace DT
 
 	struct UpscaleUB
 	{
-		float SampleScale = 1.0f;
+		float SampleScale = 0.0f;
 		float pad[3];
 	};
 	static UpscaleUB s_UpscaleUB;
@@ -27,7 +27,8 @@ namespace DT
 	struct CombineUB
 	{
 		float BloomIntensity = 0.05f;
-		float pad[3];
+		float UpsampleScale = 0.0f;
+		float pad[2];
 	};
 	static CombineUB s_CombineUB;
 
@@ -81,11 +82,13 @@ namespace DT
 		ImGui::Begin("Bloom");
 		ImGui::ColorEdit4("Color", glm::value_ptr(m_Color), ImGuiColorEditFlags_PickerHueWheel);
 		ImGui::DragFloat("Emission", &m_Emission, 0.005f, 0.0f, 100.0f);
-		ImGui::SliderInt("Bloom Stage", &m_StageIndex, 0, m_StageCount - 1);
 		ImGui::SliderFloat("Radius", &m_Radius, 0.0f, 10.0f);
 		ImGui::SliderFloat("Threshold", &s_PrefilterUB.Threshold, 0.0f, 10.0f);
 		ImGui::SliderFloat("Knee", &s_PrefilterUB.Knee, 0.0f, 1.0f);
 		ImGui::SliderFloat("Clamp", &s_PrefilterUB.ClampIntensity, 0.0f, 1000.0f);
+		ImGui::SliderFloat("Intensity", &s_CombineUB.BloomIntensity, 0.0f, 0.1f);
+		ImGui::TextColored({ 0.2f, 0.3f, 0.7f, 1.0f }, "Stage Count %d", m_StageCount);
+		ImGui::DragFloat("Upsample Scale", &s_UpscaleUB.SampleScale, 0.01f);
 		ImGui::End();
 
 		//std::string title = std::format("Prefilter framebuffer ({}, {})", m_PrefilterFramebuffer->GetWidth(), m_PrefilterFramebuffer->GetHeight());
@@ -105,6 +108,12 @@ namespace DT
 
 	void BloomLayer::InitBloom()
 	{
+		/* determine the iteration count */
+		const float minDim = (float)std::min(m_GeoFramebuffer->GetWidth(), m_GeoFramebuffer->GetHeight());
+		const float maxIter = (m_Radius - 8.0f) + std::log(minDim) / std::log(2.0f);
+		const int maxIterInt = m_StageCount = (int)maxIter;
+		m_StageCount = 8u;
+
 		//Create prefilter pipeline
 		PipelineSpecification prefilterPipelineSpec{};
 		prefilterPipelineSpec.BlendingMode = BlendingMode::None;
@@ -144,8 +153,7 @@ namespace DT
 
 		//Create all the bloom stages 
 		float scale = 0.5f;
-		uint32 iterations = std::log2((float)m_GeoFramebuffer->GetHeight()) - 1.0f;
-		for (uint32 i = 0u; i < std::min(iterations,m_StageCount); i++)
+		for (uint32 i = 0u; i < m_StageCount; i++)
 		{
 			FramebufferSpecification framebufferSpec{};
 			framebufferSpec.SwapchainTarget = false;
@@ -184,26 +192,22 @@ namespace DT
 			m_BloomUpscalePasses[i]->SetInput(std::format("UpPass {}", i).c_str(), m_BloomStages[m_StageCount - 1u - i]->GetImage(), 0u);
 			m_BloomUpscalePasses[i]->SetInput("Scale {}", m_UpscaleUB, 0u);
 		}
-		RenderPassSpecification passSpec{};
-		passSpec.TargetFramebuffer = m_GeoFramebuffer;
-		passSpec.Pipeline = CreateRef<Pipeline>(upscalePipelineSpec);
-		m_BloomUpscalePasses[m_StageCount - 1] = CreateRef<RenderPass>(passSpec);
-		m_BloomUpscalePasses[m_StageCount - 1]->SetInput("Upscale parameters", m_UpscaleUB, 0u);
-		m_BloomUpscalePasses[m_StageCount - 1]->SetInput("Stage 0", m_BloomStages[0]->GetImage(), 0u);
 
-
+		//Create the combine pipeline
 		PipelineSpecification combinePipelineSpec{};
 		combinePipelineSpec.BlendingMode = BlendingMode::None;
 		combinePipelineSpec.VertexShaderPath = "CombineVS.cso";
 		combinePipelineSpec.PixelShaderPath = "CombinePS.cso";
 
+		//Create the combine render pass
 		RenderPassSpecification combinePassSpec{};
 		combinePassSpec.Pipeline = CreateRef<Pipeline>(combinePipelineSpec);
 		combinePassSpec.TargetFramebuffer = m_ScreenFramebuffer;
 		combinePassSpec.ClearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 		m_CombinePass = CreateRef<RenderPass>(combinePassSpec);
+		m_CombinePass->SetInput("Original image", m_GeoFramebuffer->GetImage(), 0u);
+		m_CombinePass->SetInput("Bloom Stage 0", m_BloomStages[0]->GetImage(), 1u);
 		m_CombinePass->SetInput("Combine parameters", m_CombineUB, 0u);
-		m_CombinePass->SetInput("Geometry framebuffer", m_GeoFramebuffer->GetImage(), 0u);
 
 		m_Sampler = CreateRef<Sampler>(true);
 		m_Sampler->Bind(0);
@@ -215,11 +219,12 @@ namespace DT
 
 		/* determine the iteration count */
 		const float minDim = (float)std::min(m_GeoFramebuffer->GetWidth(), m_GeoFramebuffer->GetHeight());
-		const float maxIter = (m_Radius - 8.0f) + log(minDim) / log(2);
+		const float maxIter = (m_Radius - 8.0f) + std::log(minDim) / std::log(2);
 		const int maxIterInt = m_StageCount = (int)maxIter;
 		m_StageCount = std::clamp(m_StageCount, 1u, 8u);
+		m_StageCount = 8u;
 
-		s_UpscaleUB.SampleScale = 0.5f + maxIter - (float)maxIterInt;
+		//s_UpscaleUB.SampleScale = 0.5f + maxIter - (float)maxIterInt;
 		s_PrefilterUB.CurveThreshold[0] = s_PrefilterUB.Threshold - s_PrefilterUB.Knee;
 		s_PrefilterUB.CurveThreshold[1] = s_PrefilterUB.Knee * 2.0f;
 		s_PrefilterUB.CurveThreshold[2] = 0.25f / std::max(1e-5f, s_PrefilterUB.Knee);
@@ -240,7 +245,7 @@ namespace DT
 		}
 
 		//Execute upscale passes
-		for (uint32 i = 0u; i < m_StageCount; i++)
+		for (uint32 i = 0u; i < m_StageCount - 1u; i++)
 		{
 			Renderer::BeginRenderPass(m_BloomUpscalePasses[i], false);
 			Renderer::DrawFullscreenQuad();
@@ -248,11 +253,10 @@ namespace DT
 		}
 
 		//Execute combine pass
-		CombineUB combineData{};
-		m_CombineUB->SetData(&combineData, sizeof(combineData));
+		s_CombineUB.UpsampleScale = s_UpscaleUB.SampleScale;
+		m_CombineUB->SetData(&s_CombineUB, sizeof(s_CombineUB));
 		Renderer::BeginRenderPass(m_CombinePass, true);
 		Renderer::DrawFullscreenQuad();
 		Renderer::EndRenderPass();
-
 	}
 }
