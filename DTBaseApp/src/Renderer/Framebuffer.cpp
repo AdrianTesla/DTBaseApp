@@ -7,15 +7,27 @@ namespace DT
 		: m_Specification(specification)
 	{
 		FramebufferPool::AddFramebuffer(this);
-
+		int32 width;
+		int32 height;
 		if (specification.Width == 0u || specification.Height == 0u)
 		{
-			int32 windowWidth = Application::Get().GetWindow().GetWidth();
-			int32 windowHeight = Application::Get().GetWindow().GetHeight();
-			Resize(windowWidth, windowHeight);
+			width = Application::Get().GetWindow().GetWidth();
+			height = Application::Get().GetWindow().GetHeight();
 		}
 		else
-			Resize((int32)(specification.Width * specification.Scale), (int32)(specification.Height * specification.Scale));
+		{
+			width = (uint32)(m_Specification.Width);
+			height = (uint32)(m_Specification.Height);
+		}
+
+		ImageSpecification imageSpecification{};
+		imageSpecification.Format = m_Specification.Format;
+		imageSpecification.Width = width;
+		imageSpecification.Height = height;
+		imageSpecification.Usage = ImageUsage::Attachment;
+		m_ColorImage = CreateRef<Image2D>(imageSpecification);
+
+		Resize(width, height);
 	}
 
 	void Framebuffer::Bind()
@@ -55,12 +67,7 @@ namespace DT
 		m_Width = newWidth;
 		m_Height = newHeight;
 
-		ImageSpecification imageSpecification{};
-		imageSpecification.Format = m_Specification.Format;
-		imageSpecification.Width = m_Width;
-		imageSpecification.Height = m_Height;
-		imageSpecification.Usage = ImageUsage::Attachment;
-		m_ColorImage = CreateRef<Image2D>(imageSpecification);
+		m_ColorImage->Resize(m_Width, m_Height);
 	}
 
 	void Framebuffer::ClearAttachment(const glm::vec4& color)

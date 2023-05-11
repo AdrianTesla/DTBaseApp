@@ -32,10 +32,16 @@ namespace DT
 		ID3D11RenderTargetView* GetRTV() const { return m_RenderTargetView.Get(); }
 		ID3D11ShaderResourceView* GetSRV() const { return m_ShaderResourceView.Get(); }
 		const ImageSpecification& GetSpecification() const { return m_Specification; }
+		void Resize(uint32 width, uint32 height);
+		uint32 GetWidth() const { return m_Width; }
+		uint32 GetHeight() const { return m_Height; }
+		void Invalidate();
 	private:
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> m_Image;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_ShaderResourceView;
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
+		uint32 m_Width = 0u;
+		uint32 m_Height = 0u;
 		ImageSpecification m_Specification;
 	};
 

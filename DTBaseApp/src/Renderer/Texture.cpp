@@ -6,12 +6,24 @@ namespace DT
 	Image2D::Image2D(const ImageSpecification& specification)
 		: m_Specification(specification)
 	{
+	}
+
+	void Image2D::Invalidate()
+	{
+		Resize(m_Specification.Width, m_Specification.Height);
+	}
+
+	void Image2D::Resize(uint32 width, uint32 height)
+	{
+		m_Width = width;
+		m_Height = height;
+
 		D3D11_TEXTURE2D_DESC textureDescriptor{};
-		textureDescriptor.Width = specification.Width;
-		textureDescriptor.Height = specification.Height;
+		textureDescriptor.Width = m_Width;
+		textureDescriptor.Height = m_Height;
 		textureDescriptor.MipLevels = 1u;
 		textureDescriptor.ArraySize = 1u;
-		textureDescriptor.Format = Utils::ToDXGIFormat(specification.Format);
+		textureDescriptor.Format = Utils::ToDXGIFormat(m_Specification.Format);
 		textureDescriptor.SampleDesc.Count = 1u;
 		textureDescriptor.SampleDesc.Quality = 0u;
 		textureDescriptor.Usage = D3D11_USAGE_DEFAULT;
@@ -19,9 +31,9 @@ namespace DT
 		textureDescriptor.MiscFlags = 0u;
 		textureDescriptor.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
-		if(specification.Usage == ImageUsage::Attachment)
+		if (m_Specification.Usage == ImageUsage::Attachment)
 			textureDescriptor.BindFlags |= D3D11_BIND_RENDER_TARGET;
-		
+
 		DXCALL(GraphicsContext::GetDevice()->CreateTexture2D(&textureDescriptor, nullptr, &m_Image));
 
 		//Create shader resource view 
@@ -33,7 +45,7 @@ namespace DT
 		DXCALL(GraphicsContext::GetDevice()->CreateShaderResourceView(m_Image.Get(), &srvDescriptor, &m_ShaderResourceView));
 
 		//Create Render target view 
-		if (specification.Usage == ImageUsage::Attachment)
+		if (m_Specification.Usage == ImageUsage::Attachment)
 		{
 			D3D11_RENDER_TARGET_VIEW_DESC rtvDescriptor{};
 			rtvDescriptor.Format = textureDescriptor.Format;
@@ -42,6 +54,7 @@ namespace DT
 			DXCALL(GraphicsContext::GetDevice()->CreateRenderTargetView(m_Image.Get(), &rtvDescriptor, &m_RenderTargetView));
 		}
 	}
+
 
 	Texture2D::Texture2D(const std::filesystem::path& filepath)
 	{
