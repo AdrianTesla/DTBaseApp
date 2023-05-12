@@ -67,7 +67,8 @@ namespace DT
 		m_Width = newWidth;
 		m_Height = newHeight;
 
-		m_ColorImage->Resize(m_Width, m_Height);
+		if(m_Width > 0u && m_Height > 0u)
+			m_ColorImage->Resize(m_Width, m_Height);
 	}
 
 	void Framebuffer::ClearAttachment(const glm::vec4& color)

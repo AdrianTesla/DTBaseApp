@@ -1,7 +1,6 @@
 cbuffer PrefilterUB : register(b0)
 {
     float4 CurveThreshold;
-    float Threshold;
     float Knee;
     float ClampIntensity;
 };

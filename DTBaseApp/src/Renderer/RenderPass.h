@@ -28,6 +28,8 @@ namespace DT
 		void End();
 
 		RenderPassSpecification& GetSpecification() { return m_Specification; }
+
+		static Ref<RenderPass> Create(const RenderPassSpecification& specification) { return CreateRef<RenderPass>(specification); }
 	private:
 		std::unordered_map<std::string, std::pair<Ref<Image2D>, uint32>> m_InputImages;
 		std::unordered_map<std::string, std::pair<Ref<UniformBuffer>, uint32>> m_InputUniformBuffers;

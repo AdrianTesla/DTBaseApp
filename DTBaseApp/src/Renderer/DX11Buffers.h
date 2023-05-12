@@ -25,6 +25,8 @@ namespace DT
 		void SetData(const void* data, uint64 size);
 
 		ID3D11Buffer* GetBuffer() const { return m_UniformBuffer.Get(); }
+
+		static Ref<UniformBuffer> Create(uint64 size) { return CreateRef<UniformBuffer>(size); }
 	private:
 		Microsoft::WRL::ComPtr<ID3D11Buffer> m_UniformBuffer;
 	};

@@ -22,6 +22,8 @@ namespace DT
 	public:
 		Pipeline(const PipelineSpecification& specification);
 		void Bind();
+
+		static Ref<Pipeline> Create(const PipelineSpecification& specification) { return CreateRef<Pipeline>(specification); }
 	private:
 		Microsoft::WRL::ComPtr<ID3D11VertexShader> m_VertexShader;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> m_PixelShader;

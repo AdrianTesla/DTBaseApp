@@ -25,6 +25,8 @@ namespace DT
 		void ClearAttachment(const glm::vec4& color);
 		Ref<Image2D> GetImage() const { return m_ColorImage; }
 		const FramebufferSpecification& GetSpecification() const { return m_Specification; }
+
+		static Ref<Framebuffer> Create(const FramebufferSpecification& specification) { return CreateRef<Framebuffer>(specification); }
 	private:
 		uint32 m_Width = 0u;
 		uint32 m_Height = 0u;
