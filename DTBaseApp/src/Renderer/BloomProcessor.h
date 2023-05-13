@@ -26,25 +26,33 @@ namespace DT
 	private:
 		struct PrefilterUB
 		{
+			glm::vec2 TexelSize;
 			glm::vec4 CurveThreshold;
 			float Knee = 0.5f;
 			float ClampIntensity = 0.0f;
+		};
+
+		struct DownscaleUB
+		{
+			glm::vec2 TexelSize;
 			float pad[2];
 		};
 
 		struct UpscaleUB
 		{
+			glm::vec2 TexelSize;
 			float SampleScale = 0.0f;
-			float pad[3];
+			float pad[1];
 		};
 
 		struct CombineUB
 		{
+			glm::vec2 TexelSize;
 			float BloomIntensity = 0.05f;
 			float UpsampleScale = 0.0f;
-			float pad[2];
 		};
 		PrefilterUB m_PrefilterUBData;
+		DownscaleUB m_DownscaleUBData;
 		UpscaleUB m_UpscaleUBData;
 		CombineUB m_CombineUBData;
 	private:
@@ -61,16 +69,17 @@ namespace DT
 		Ref<RenderPass> m_CombinePass;
 		
 		Ref<UniformBuffer> m_PrefilterUB;
+		Ref<UniformBuffer> m_DownscaleUB;
 		Ref<UniformBuffer> m_UpscaleUB;
 		Ref<UniformBuffer> m_CombineUB;
+
+		Ref<Sampler> m_Sampler;
 
 		uint32 m_Width = 0u;
 		uint32 m_Height = 0u;
 		uint32 m_MaxStages = 0u;
 		uint32 m_Iterations = 0u;
-		float m_UpsampleScale = 0.0f;
 
 		BloomSettings m_Settings;
-		Ref<Sampler> m_Sampler;
 	};
 }

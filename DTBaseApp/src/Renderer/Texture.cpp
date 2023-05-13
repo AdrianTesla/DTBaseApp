@@ -55,7 +55,6 @@ namespace DT
 		}
 	}
 
-
 	Texture2D::Texture2D(const std::filesystem::path& filepath)
 	{
 		int32 width;

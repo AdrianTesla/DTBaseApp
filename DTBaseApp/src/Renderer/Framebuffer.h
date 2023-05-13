@@ -18,6 +18,7 @@ namespace DT
 	{
 	public:
 		Framebuffer(const FramebufferSpecification& specification);
+		~Framebuffer();
 		void Bind();
 		void Resize(int32 width, int32 height, bool force = false);
 		uint32 GetWidth() const { return m_Width; }
@@ -37,10 +38,6 @@ namespace DT
 	class FramebufferPool
 	{
 	public:
-		static void AddFramebuffer(Framebuffer* framebuffer)
-		{
-			s_Framebuffers.emplace_back(framebuffer);
-		}
 		static void OnResize(int32 width, int32 height)
 		{
 			for (auto& framebuffer : s_Framebuffers)
@@ -50,6 +47,19 @@ namespace DT
 			}
 		}
 	private:
+		static void AddFramebuffer(Framebuffer* framebuffer)
+		{
+			s_Framebuffers.emplace_back(framebuffer);
+		}
+
+		static void RemoveFramebuffer(Framebuffer* framebuffer)
+		{
+			auto it = std::find(s_Framebuffers.begin(), s_Framebuffers.end(), framebuffer);
+			if (it != s_Framebuffers.end())
+				s_Framebuffers.erase(it);
+		}
+	private:
 		inline static std::vector<Framebuffer*> s_Framebuffers;
+		friend class Framebuffer;
 	};
 }

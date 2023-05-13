@@ -3,6 +3,11 @@ struct PSIn
     float2 TexCoord : TexCoord;
 };
 
+cbuffer DownscaleUB : register(b0)
+{
+    float2 TexelSize;
+};
+
 Texture2D PreviousStage : register(t0);
 SamplerState splr : register(s0);
 
@@ -11,10 +16,10 @@ float max_v3(float3 v)
     return max(max(v.r, v.g), v.b);
 }
 
-float3 downsample_filter_high(float2 uv, float2 texelSize)
+float3 downsample_filter_high(float2 uv)
 {
   /* Downsample with a 4x4 box filter + anti-flicker filter */
-    float4 d = texelSize.xyxy * float4(-1.0f, -1.0f, 1.0f, 1.0f);
+    float4 d = TexelSize.xyxy * float4(-1.0f, -1.0f, 1.0f, 1.0f);
 
     float3 s1 = PreviousStage.Sample(splr, uv + d.xy).rgb;
     float3 s2 = PreviousStage.Sample(splr, uv + d.zy).rgb;
@@ -33,11 +38,5 @@ float3 downsample_filter_high(float2 uv, float2 texelSize)
 
 float4 main(PSIn input) : SV_Target
 {
-    float4 color = float4(0.0f, 0.0f, 0.0f, 1.0f);
-    uint width;
-    uint height;
-    PreviousStage.GetDimensions(width, height);
-    float2 texelSize = 1.0f / float2((float) width, (float)height);
-    color.rgb = downsample_filter_high(input.TexCoord, texelSize);
-    return color;
+    return float4(downsample_filter_high(input.TexCoord), 1.0f);
 }

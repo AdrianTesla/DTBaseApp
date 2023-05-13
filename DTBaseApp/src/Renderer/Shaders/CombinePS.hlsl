@@ -9,6 +9,7 @@ SamplerState splr : register(s0);
 
 cbuffer CombineUB : register(b0)
 {
+    float2 TexelSize;
     float BloomIntensity;
     float UpsampleScale;
 }
@@ -103,14 +104,9 @@ float3 tone_mapping_aces_filmic(float3 color)
 }
 
 float3 upsample_filter_high(float2 uv)
-{
-    uint width;
-    uint height;
-    BloomLastStage.GetDimensions(width, height);
-    float2 texelSize = 1.0f / float2((float) width, (float) height);
-    
+{   
   /* 9-tap bilinear upsampler (tent filter) */
-    float4 d = texelSize.xyxy * float4(1.0f, 1.0f, -1.0f, 0.0f) * UpsampleScale;
+    float4 d = TexelSize.xyxy * float4(1.0f, 1.0f, -1.0f, 0.0f) * UpsampleScale;
 
     float3 s;
     s = BloomLastStage.Sample(splr, uv - d.xy).rgb;
@@ -128,14 +124,14 @@ float3 upsample_filter_high(float2 uv)
 
 float4 main(PSIn input) : SV_Target
 {   
-    float4 bloomedColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
-    bloomedColor.rgb = upsample_filter_high(input.TexCoord);
+    float3 bloomedColor = upsample_filter_high(input.TexCoord);
+    float3 originalColor = OriginalImage.Sample(splr, input.TexCoord).rgb;
     
-    float4 originalColor = OriginalImage.Sample(splr, input.TexCoord);
-    float4 finalColor = originalColor + bloomedColor * BloomIntensity;
+    float3 finalColor = originalColor + bloomedColor * BloomIntensity;
     
     //finalColor.rgb = aces_tonemap(finalColor.rgb);
     //finalColor.rgb = tone_mapping_aces_filmic(finalColor.rgb);
-    finalColor.rgb = ACESFitted(finalColor.rgb * 2.0f);
-    return finalColor;
+    finalColor = ACESFitted(finalColor * 2.0f);
+    
+    return float4(finalColor, 1.0f);
 };

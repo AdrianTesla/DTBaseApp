@@ -30,6 +30,11 @@ namespace DT
 		Resize(width, height);
 	}
 
+	Framebuffer::~Framebuffer()
+	{
+		FramebufferPool::RemoveFramebuffer(this);
+	}
+
 	void Framebuffer::Bind()
 	{
 		D3D11_VIEWPORT viewport{};
@@ -59,16 +64,15 @@ namespace DT
 			return;
 		}
 
-		uint32 newWidth = (uint32)(width * m_Specification.Scale);
-		uint32 newHeight = (uint32)(height * m_Specification.Scale);
+		uint32 newWidth = std::max((uint32)(width * m_Specification.Scale), 1u);
+		uint32 newHeight = std::max((uint32)(height * m_Specification.Scale), 1u);
 		if (!force && newWidth == m_Width && newHeight == m_Height)
 			return;
 
 		m_Width = newWidth;
 		m_Height = newHeight;
 
-		if(m_Width > 0u && m_Height > 0u)
-			m_ColorImage->Resize(m_Width, m_Height);
+		m_ColorImage->Resize(m_Width, m_Height);
 	}
 
 	void Framebuffer::ClearAttachment(const glm::vec4& color)

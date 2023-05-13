@@ -1,5 +1,6 @@
 cbuffer PrefilterUB : register(b0)
 {
+    float2 TexelSize;
     float4 CurveThreshold;
     float Knee;
     float ClampIntensity;
@@ -30,14 +31,9 @@ float max_v3(float3 v)
 }
 
 float4 prefilter(float2 texCoords)
-{
-   uint width;
-   uint height;
-   InputImage.GetDimensions(width, height);
-   float2 texelSize = 1.0f / float2((float) width, (float) height);
-    
+{   
   /* Anti flicker */
-   float3 d = texelSize.xyx * float3(1.0f, 1.0f, 0.0f);
+   float3 d = TexelSize.xyx * float3(1.0f, 1.0f, 0.0f);
    float3 s0 = safe_color(InputImage.Sample(splr, texCoords.xy, 0.0f).rgb);
    float3 s1 = safe_color(InputImage.Sample(splr, texCoords.xy - d.xz, 0.0f).rgb);
    float3 s2 = safe_color(InputImage.Sample(splr, texCoords.xy + d.xz, 0.0f).rgb);
