@@ -6,6 +6,7 @@
 #include "Renderer/Pipeline.h"
 #include "Renderer/Texture.h"
 #include "Renderer/ParticleSystem.h"
+#include "Renderer/BloomProcessor.h"
 
 namespace DT
 {
@@ -23,14 +24,14 @@ namespace DT
 			return 0.5f + 0.5f * std::sin(2.0f * glm::pi<float>() * speed * m_Time);
 		}
 	private:
-		Ref<Framebuffer> m_Framebuffer;
-		Ref<RenderPass> m_RenderPass;
-		Ref<Texture2D> m_Textures[2];
+		Ref<Framebuffer> m_ScreenFramebuffer;
+		Ref<Framebuffer> m_GeoFramebuffer;
+
 		float m_Time = 0.0f;
 		float m_Thickness = 0.02f;
 		float m_CircleThickness = 0.1f;
 		float m_Angle = 0.0f;
-		float m_Fade = 0.5f;
+		float m_Fade = 0.0f;
 		float m_Radius = 0.2f;
 		float m_Width = 0.05f;
 		float m_Height = 0.05f;
@@ -41,6 +42,7 @@ namespace DT
 		glm::vec2 m_Position = { 0.0f, 0.0f };
 		glm::vec4 m_Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		
+		BloomProcessor m_BloomProcessor;
 		ParticleSystem m_ParticleSystem;
 		ParticleProperties m_Properties;
 	};

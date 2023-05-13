@@ -13,22 +13,19 @@ namespace DT
 
 		FramebufferSpecification speciFICAtion{};
 		speciFICAtion.SwapchainTarget = true;
-		m_Framebuffer = CreateRef<Framebuffer>(speciFICAtion);
+		m_ScreenFramebuffer = CreateRef<Framebuffer>(speciFICAtion);
 
-		RenderPassSpecification renderPassSpecification{};
-		renderPassSpecification.ClearColor = { Animate(1.0f), 0.1f, 0.4f, 1.0f};
-		m_RenderPass = CreateRef<RenderPass>(renderPassSpecification);
+		FramebufferSpecification geoFramebufferSpec{};
+		geoFramebufferSpec.Format = ImageFormat::RGBA16F;
+		geoFramebufferSpec.SwapchainTarget = false;
+		m_GeoFramebuffer = Framebuffer::Create(geoFramebufferSpec);
 
-		//m_Textures[0] = CreateRef<Texture2D>("assets/textures/M_FloorTiles1_Inst_0_BaseColor.png");
-		//m_Textures[1] = CreateRef<Texture2D>("assets/textures/PBRPack/pbr14/albedo.png");
-
-		Renderer2D::SetTargetFramebuffer(m_Framebuffer);
+		Renderer2D::SetTargetFramebuffer(m_GeoFramebuffer);
 	}
 
 	void RenderingTestLayer::OnUpdate(float dt)
 	{
 		m_Time = m_Time + dt;
-		m_RenderPass->GetSpecification().ClearColor = { 0.15f * Animate(0.5f), 0.0f, 0.15f * Animate(0.3f), 1.0f};
 		m_ParticleSystem.OnUpdate(dt);
 
 		//Control particles with mouse 
@@ -37,8 +34,8 @@ namespace DT
 			if (Input::MouseIsPressed(Mouse::Left))
 			{
 				glm::vec2 mousePosition;
-				mousePosition.x =((float)Input::GetMouseX() / Application::Get().GetWindow().GetWidth() - 0.5f) * 2.0f * 16.0f / 9.0f;
-				mousePosition.y = - ((float)Input::GetMouseY() / Application::Get().GetWindow().GetHeight() - 0.5f) * 2.0f;
+				mousePosition.x =((float)Input::GetMouseX() / m_ScreenFramebuffer->GetWidth() - 0.5f) * 2.0f * 16.0f / 9.0f;
+				mousePosition.y = -((float)Input::GetMouseY() / m_ScreenFramebuffer->GetHeight() - 0.5f) * 2.0f;
 				m_Properties.Position = mousePosition;
 				m_ParticleSystem.EmitParticle(m_Properties);
 			}
@@ -51,7 +48,7 @@ namespace DT
 
 	void RenderingTestLayer::OnRender()
 	{
-		m_Framebuffer->ClearAttachment({ 0.0f, 0.0f, 0.0f, 1.0f });
+		m_GeoFramebuffer->ClearAttachment({ 0.0f, 0.0f, 0.0f, 1.0f });
 		Renderer2D::BeginScene();
 
 		//Renderer2D::DrawQuad({ 0.5f, 0.5f }, 0.2f, 0.2f, { 0.0f, 0.4f, 0.9f, 1.0f });
@@ -90,6 +87,8 @@ namespace DT
 		m_ParticleSystem.OnRender(m_Fade);
 
 		Renderer2D::EndScene();
+
+		m_BloomProcessor.Execute(m_GeoFramebuffer->GetImage(), m_ScreenFramebuffer);
 	}
 
 	void RenderingTestLayer::OnUIRender()
@@ -109,8 +108,10 @@ namespace DT
 			ImGui::SliderFloat("Lifetime", &m_Properties.Lifetime, 0.0f, 10.0f);
 			ImGui::Separator();
 			ImGui::SliderFloat("Fade", &m_Fade, 0.0f, 1.5f);
-			ImGui::ColorEdit4("Start Color", glm::value_ptr(m_Properties.StartColor), ImGuiColorEditFlags_PickerHueWheel);
-			ImGui::ColorEdit4("End Color", glm::value_ptr(m_Properties.EndColor), ImGuiColorEditFlags_PickerHueWheel);
+			ImGui::ColorEdit4("Start Color", glm::value_ptr(m_Properties.StartColor), ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_HDR);
+			ImGui::DragFloat("Start Emission", &m_Properties.StartEmission, 0.1f, 0.0f, 1000.0f);
+			ImGui::ColorEdit4("End Color", glm::value_ptr(m_Properties.EndColor), ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_HDR);
+			ImGui::DragFloat("End Emission", &m_Properties.EndEmission, 0.1f, 0.0f, 1000.0f);
 			ImGui::SliderFloat("Start Size", &m_Properties.StartSize, 0.0f, 0.2f);
 			ImGui::SliderFloat("End Size", &m_Properties.EndSize, 0.0f, 0.2f);
 			ImGui::End();
@@ -134,6 +135,16 @@ namespace DT
 			ImGui::Text("DrawCalls: %d", Renderer2D::GetStatistics().DrawCalls);
 			ImGui::Text("Polygon Count: %d", Renderer2D::GetStatistics().PolygonCount);
 			ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
+			ImGui::End();
+
+			BloomSettings& settings = m_BloomProcessor.GetSettings();
+
+			ImGui::Begin("Bloom");
+			ImGui::SliderFloat("Intensity", &settings.Intensity, 0.0f, 0.1f);
+			ImGui::SliderFloat("Radius", &settings.Radius, 0.0f, 10.0f);
+			ImGui::SliderFloat("Threshold", &settings.Threshold, 0.0f, 10.0f);
+			ImGui::SliderFloat("Knee", &settings.Knee, 0.0f, 1.0f);
+			ImGui::SliderFloat("Clamp", &settings.Clamp, 0.0f, 1000.0f);
 			ImGui::End();
 		}
 	}

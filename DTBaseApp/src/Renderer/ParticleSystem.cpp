@@ -27,9 +27,15 @@ namespace DT
 		particle.StartColor = properties.StartColor;
 		particle.EndColor = properties.EndColor;
 		particle.CurrentColor = particle.StartColor;
+
+		particle.StartEmission = properties.StartEmission;
+		particle.EndEmission = properties.EndEmission;
+		particle.CurrentEmission = properties.StartEmission;
+
 		particle.StartSize = properties.StartSize;
 		particle.EndSize = properties.EndSize;
 		particle.CurrentSize = particle.StartSize;
+
 		particle.AngularVelocity = properties.RotationVariation * (rand() / 65'536.0f - 0.5f) * 2.0f;
 		particle.Angle = 0.0f;
 	}
@@ -55,6 +61,7 @@ namespace DT
 
 			particle.CurrentColor = glm::mix(particle.StartColor, particle.EndColor, fraction);
 			particle.CurrentSize = glm::mix(particle.StartSize, particle.EndSize, fraction);
+			particle.CurrentEmission = glm::mix(particle.StartEmission, particle.EndEmission, fraction);
 			particle.CurrentLife += dt;
 		}
 	}
@@ -64,8 +71,12 @@ namespace DT
 		for (uint32 i = 0u; i < m_AliveParticles; i++)
 		{
 			Particle& particle = m_Particles[i];
-			//Renderer2D::DrawRotatedQuad(particle.Position, particle.CurrentSize, particle.CurrentSize, particle.Angle, particle.CurrentColor);
-			Renderer2D::DrawCircle(particle.Position, particle.CurrentSize, 1.0f, fade, particle.CurrentColor);
+			glm::vec4 color = particle.CurrentColor;
+			color.x *= particle.CurrentEmission;
+			color.y *= particle.CurrentEmission;
+			color.z *= particle.CurrentEmission;
+			Renderer2D::DrawRotatedQuad(particle.Position, particle.CurrentSize, particle.CurrentSize, particle.Angle, color);
+			//Renderer2D::DrawCircle(particle.Position, particle.CurrentSize, 1.0f, fade, color);
 		}
 	}
 }

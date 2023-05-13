@@ -42,7 +42,7 @@ namespace DT
 		//Create prefilter framebuffer 
 		FramebufferSpecification prefilterFramebufferSpec{};
 		prefilterFramebufferSpec.SwapchainTarget = false;
-		prefilterFramebufferSpec.Format = ImageFormat::R11G11B10F;
+		prefilterFramebufferSpec.Format = ImageFormat::RGBA16F;
 
 		//Create the prefilter render pass
 		RenderPassSpecification prefilterPassSpec{};
@@ -73,7 +73,7 @@ namespace DT
 		{
 			FramebufferSpecification framebufferSpec{};
 			framebufferSpec.SwapchainTarget = false;
-			framebufferSpec.Format = ImageFormat::R11G11B10F;
+			framebufferSpec.Format = ImageFormat::RGBA16F;
 			framebufferSpec.Scale = scale;
 			m_Stages[i] = Framebuffer::Create(framebufferSpec);
 			scale = scale / 2.0f;
@@ -125,7 +125,7 @@ namespace DT
 		uint32 minSize = std::min(width, height);
 		float logh = std::log2f((float)minSize) + m_Settings.Radius - 8.0f;
 		uint32 logi = (uint32)logh;
-		m_Iterations = std::clamp(logi, 1u, m_MaxStages);
+		m_Iterations = std::clamp(logi, 1u, 8u);
 
 		//Execute prefilter render pass
 		Renderer::BeginRenderPass(m_PrefilterPass, false);
@@ -135,6 +135,7 @@ namespace DT
 		float prefilterWidth = m_PrefilterPass->GetOutput()->GetImage()->GetWidth();
 		float prefilterHeight = m_PrefilterPass->GetOutput()->GetImage()->GetHeight();
 		m_DownscaleUBData.TexelSize = 1.0f / glm::vec2(prefilterWidth, prefilterHeight);
+		m_DownscaleUBData.IsFirstStage = 1u;
 		m_DownscaleUB->SetData(&m_DownscaleUBData, sizeof(DownscaleUB));
 
 		m_DownscalePasses[0]->SetInput("Prefilter output", m_PrefilterPass->GetOutput()->GetImage(), 0u);
@@ -151,6 +152,7 @@ namespace DT
 			float previousWidth = m_Stages[i - 1]->GetImage()->GetWidth();
 			float previousHeight = m_Stages[i - 1]->GetImage()->GetHeight();
 			m_DownscaleUBData.TexelSize = 1.0f / glm::vec2(previousWidth, previousHeight);
+			m_DownscaleUBData.IsFirstStage = 0u;
 			m_DownscaleUB->SetData(&m_DownscaleUBData, sizeof(DownscaleUB));
 
 			m_DownscalePasses[i]->SetInput(std::format("Stage {}", i), m_Stages[i - 1]->GetImage(), 0u);

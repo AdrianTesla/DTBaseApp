@@ -12,11 +12,13 @@ namespace DT
 		float VelocityVariation = 1.0f;
 		float Lifetime = 1.0f;
 		float RotationVariation = 1.0f;
-		float StartSize = 0.02f;
-		float EndSize = 0.01f;
+		float StartSize = 0.01f;
+		float EndSize = 0.000f;
+		float StartEmission = 1.0f;
+		float EndEmission = 1.0f;
 
 		glm::vec4 StartColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-		glm::vec4 EndColor = { 0.0f, 0.0f, 0.0f, 0.0f };
+		glm::vec4 EndColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 	};
 
 	class ParticleSystem
@@ -41,6 +43,9 @@ namespace DT
 			float CurrentSize;
 			float StartSize;
 			float EndSize;
+			float StartEmission;
+			float CurrentEmission;
+			float EndEmission;
 		};
 	private:
 		std::vector<Particle> m_Particles;

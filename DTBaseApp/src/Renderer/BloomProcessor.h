@@ -35,7 +35,8 @@ namespace DT
 		struct DownscaleUB
 		{
 			glm::vec2 TexelSize;
-			float pad[2];
+			uint32 IsFirstStage;
+			float pad[1];
 		};
 
 		struct UpscaleUB

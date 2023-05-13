@@ -5,9 +5,9 @@ namespace DT
 	Sampler::Sampler(bool bilinear)
 	{
 		D3D11_SAMPLER_DESC samplerDescriptor{};
-		samplerDescriptor.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		samplerDescriptor.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		samplerDescriptor.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		samplerDescriptor.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+		samplerDescriptor.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		samplerDescriptor.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 		//samplerDescriptor.BorderColor = nullptr;
 		samplerDescriptor.ComparisonFunc = D3D11_COMPARISON_LESS;
 		samplerDescriptor.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
