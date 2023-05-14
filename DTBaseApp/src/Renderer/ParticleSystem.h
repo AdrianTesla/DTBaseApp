@@ -9,6 +9,7 @@ namespace DT
 	{
 		glm::vec2 Position = { 0.0f, 0.0f };
 		glm::vec2 Velocity = { 0.0f, 0.0f };
+		glm::vec2 Acceleration = { 0.0f, -10.0f };
 		float VelocityVariation = 1.0f;
 		float Lifetime = 1.0f;
 		float RotationVariation = 1.0f;
@@ -27,12 +28,12 @@ namespace DT
 		ParticleSystem();
 		void EmitParticle(const ParticleProperties& properties);
 		void OnUpdate(float dt);
-		void OnRender(float fade);
 
 		struct Particle
 		{
 			glm::vec2 Position;
 			glm::vec2 Velocity;
+			glm::vec2 Acceleration;
 			glm::vec4 CurrentColor;
 			glm::vec4 StartColor;
 			glm::vec4 EndColor;
@@ -47,6 +48,8 @@ namespace DT
 			float CurrentEmission;
 			float EndEmission;
 		};
+
+		void OnRender(const std::function<void(const Particle& particle)>& function);
 	private:
 		std::vector<Particle> m_Particles;
 		uint32 m_AliveParticles;

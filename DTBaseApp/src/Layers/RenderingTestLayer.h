@@ -23,15 +23,21 @@ namespace DT
 		{
 			m_Properties.Position = { 0.0f, 0.0f };
 			m_Properties.Velocity = { 0.0f, 0.0f };
+			m_Properties.Acceleration = { 0.0f, 0.0f };
 			m_Properties.VelocityVariation = 1.0f;
 			m_Properties.Lifetime = 1.0f;
 			m_Properties.RotationVariation = 10.0f;
-			m_Properties.StartSize = 0.1f;
+			m_Properties.StartSize = 0.05f;
 			m_Properties.EndSize = 0.0f;
 			m_Properties.StartEmission = 2.0f;
 			m_Properties.EndEmission = 50.0f;
 			m_Properties.StartColor = { 1.0f, 1.0f, 0.0f, 1.0f };
 			m_Properties.EndColor = { 1.0f, 0.0f, 0.0f, 1.0f };
+			m_RotationSpeed = 1.0f;
+			m_VerticalRadius = 0.7f;
+			m_HorizontalRadius = 0.7f;
+			m_HorizontalSpeed = 1;
+			m_VerticalSpeed = 1;
 		}
 
 		float Animate(float speed = 1.0f)
@@ -43,20 +49,25 @@ namespace DT
 		Ref<Framebuffer> m_GeoFramebuffer;
 
 		float m_Time = 0.0f;
-		float m_Thickness = 0.02f;
-		float m_CircleThickness = 0.1f;
-		float m_Angle = 0.0f;
-		float m_Fade = 0.0f;
-		float m_Radius = 0.2f;
-		float m_Width = 0.05f;
-		float m_Height = 0.05f;
-		float m_Tiling = 1.0f;
-		float m_Spacing = 0.230f;
-		bool m_UseMouse = false;
 		bool m_ImGuiEnabled = true;
-		glm::vec2 m_Position = { 0.0f, 0.0f };
-		glm::vec4 m_Color = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+		float m_CircleThickness = 1.0f;
+		float m_Fade = 0.0f;
+		float m_Width = 1.0f;
+		float m_Height = 1.0f;
+
+		bool m_UseMouse = false;
+
+		bool m_RenderQuads = false;
+		bool m_RenderCircles = true;
 		
+		bool m_EnableRotation = false;
+		float m_RotationSpeed = 1.0f;
+		float m_VerticalRadius = 0.7f;
+		float m_HorizontalRadius = 0.7f;
+		int32 m_HorizontalSpeed = 1;
+		int32 m_VerticalSpeed = 1;
+
 		BloomProcessor m_BloomProcessor;
 		ParticleSystem m_ParticleSystem;
 		ParticleProperties m_Properties;

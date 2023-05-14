@@ -20,6 +20,7 @@ namespace DT
 		particle.Lifetime = properties.Lifetime;
 		particle.Position = properties.Position;
 		particle.Velocity = properties.Velocity;
+		particle.Acceleration = properties.Acceleration;
 
 		if(properties.VelocityVariation > 0.0f)
 			particle.Velocity += glm::diskRand(properties.VelocityVariation);
@@ -36,7 +37,7 @@ namespace DT
 		particle.EndSize = properties.EndSize;
 		particle.CurrentSize = particle.StartSize;
 
-		particle.AngularVelocity = properties.RotationVariation * (rand() / 65'536.0f - 0.5f) * 2.0f;
+		particle.AngularVelocity = properties.RotationVariation * (rand() / (float)RAND_MAX - 0.5f) * 2.0f;
 		particle.Angle = 3.1415f * (rand() / (float)RAND_MAX * 2.0f - 1.0f);
 	}
 
@@ -54,6 +55,7 @@ namespace DT
 			}
 
 			//Update current particle parameters
+			particle.Velocity += particle.Acceleration * dt;
 			particle.Position += particle.Velocity * dt;
 			particle.Angle += particle.AngularVelocity * dt;
 
@@ -66,17 +68,9 @@ namespace DT
 		}
 	}
 
-	void ParticleSystem::OnRender(float fade)
+	void ParticleSystem::OnRender(const std::function<void(const Particle& particle)>& function)
 	{
 		for (uint32 i = 0u; i < m_AliveParticles; i++)
-		{
-			Particle& particle = m_Particles[i];
-			glm::vec4 color = particle.CurrentColor;
-			color.x *= particle.CurrentEmission;
-			color.y *= particle.CurrentEmission;
-			color.z *= particle.CurrentEmission;
-			Renderer2D::DrawRotatedQuad(particle.Position, particle.CurrentSize, particle.CurrentSize, particle.Angle, color);
-			//Renderer2D::DrawCircle(particle.Position, particle.CurrentSize, 1.0f, fade, color);
-		}
+			function(m_Particles[i]);
 	}
 }

@@ -132,8 +132,8 @@ namespace DT
 		Renderer::DrawFullscreenQuad();
 		Renderer::EndRenderPass();
 
-		float prefilterWidth = m_PrefilterPass->GetOutput()->GetImage()->GetWidth();
-		float prefilterHeight = m_PrefilterPass->GetOutput()->GetImage()->GetHeight();
+		float prefilterWidth = (float)m_PrefilterPass->GetOutput()->GetWidth();
+		float prefilterHeight = (float)m_PrefilterPass->GetOutput()->GetHeight();
 		m_DownscaleUBData.TexelSize = 1.0f / glm::vec2(prefilterWidth, prefilterHeight);
 		m_DownscaleUBData.IsFirstStage = 1u;
 		m_DownscaleUB->SetData(&m_DownscaleUBData, sizeof(DownscaleUB));
@@ -149,8 +149,8 @@ namespace DT
 
 		for (uint32 i = 1u; i < m_Iterations; i++)
 		{
-			float previousWidth = m_Stages[i - 1]->GetImage()->GetWidth();
-			float previousHeight = m_Stages[i - 1]->GetImage()->GetHeight();
+			float previousWidth = (float)m_Stages[i - 1]->GetWidth();
+			float previousHeight = (float)m_Stages[i - 1]->GetHeight();
 			m_DownscaleUBData.TexelSize = 1.0f / glm::vec2(previousWidth, previousHeight);
 			m_DownscaleUBData.IsFirstStage = 0u;
 			m_DownscaleUB->SetData(&m_DownscaleUBData, sizeof(DownscaleUB));
@@ -169,8 +169,8 @@ namespace DT
 		//Execute upscale passes
 		for (uint32 i = 0u; i < m_Iterations - 1u; i++)
 		{
-			float previousWidth = m_Stages[m_Iterations - 1 - i]->GetImage()->GetWidth();
-			float previousHeight = m_Stages[m_Iterations - 1 - i]->GetImage()->GetHeight();
+			float previousWidth = (float)m_Stages[m_Iterations - 1 - i]->GetWidth();
+			float previousHeight = (float)m_Stages[m_Iterations - 1 - i]->GetHeight();
 			m_UpscaleUBData.TexelSize = 1.0f / glm::vec2(previousWidth, previousHeight);
 			m_UpscaleUB->SetData(&m_UpscaleUBData, sizeof(UpscaleUB));
 
@@ -183,8 +183,8 @@ namespace DT
 			Renderer::EndRenderPass();
 		}
 
-		float lastStageWidth = m_Stages[0]->GetImage()->GetWidth();
-		float lastStageHeight = m_Stages[0]->GetImage()->GetHeight();
+		float lastStageWidth = (float)m_Stages[0]->GetWidth();
+		float lastStageHeight = (float)m_Stages[0]->GetHeight();
 		m_CombineUBData.TexelSize = 1.0f / glm::vec2(lastStageWidth, lastStageHeight);
 		m_CombineUBData.BloomIntensity = m_Settings.Intensity;
 		m_CombineUBData.UpsampleScale = m_UpscaleUBData.SampleScale;

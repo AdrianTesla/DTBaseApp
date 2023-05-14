@@ -6,7 +6,10 @@ int main()
 {
 	DT::InitializeCore();
 
-	DT::Application* app = new DT::Application({});
+	DT::ApplicationSpecification applicationSpec{};
+	applicationSpec.WindowSpecification.StartFullscreen = false;
+	applicationSpec.WindowSpecification.Title = "Particle Bloom";
+	DT::Application* app = new DT::Application(applicationSpec);
 	app->Run();
 	delete app;
 
