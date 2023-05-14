@@ -23,6 +23,7 @@ namespace DT
 		void Resize(int32 width, int32 height, bool force = false);
 		uint32 GetWidth() const { return m_Width; }
 		uint32 GetHeight() const { return m_Height; }
+		float GetAspectRatio() const { return (float)m_Width / (float)m_Height; }
 		void ClearAttachment(const glm::vec4& color);
 		Ref<Image2D> GetImage() const { return m_ColorImage; }
 		const FramebufferSpecification& GetSpecification() const { return m_Specification; }

@@ -19,6 +19,21 @@ namespace DT
 		virtual void OnUIRender() override;
 		virtual void OnEvent(Event& event) override;
 		virtual void OnDetach() override;
+		void ResetParticles()
+		{
+			m_Properties.Position = { 0.0f, 0.0f };
+			m_Properties.Velocity = { 0.0f, 0.0f };
+			m_Properties.VelocityVariation = 1.0f;
+			m_Properties.Lifetime = 1.0f;
+			m_Properties.RotationVariation = 10.0f;
+			m_Properties.StartSize = 0.1f;
+			m_Properties.EndSize = 0.0f;
+			m_Properties.StartEmission = 2.0f;
+			m_Properties.EndEmission = 50.0f;
+			m_Properties.StartColor = { 1.0f, 1.0f, 0.0f, 1.0f };
+			m_Properties.EndColor = { 1.0f, 0.0f, 0.0f, 1.0f };
+		}
+
 		float Animate(float speed = 1.0f)
 		{
 			return 0.5f + 0.5f * std::sin(2.0f * glm::pi<float>() * speed * m_Time);

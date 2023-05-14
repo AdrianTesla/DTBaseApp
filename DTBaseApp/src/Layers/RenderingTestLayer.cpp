@@ -21,6 +21,8 @@ namespace DT
 		m_GeoFramebuffer = Framebuffer::Create(geoFramebufferSpec);
 
 		Renderer2D::SetTargetFramebuffer(m_GeoFramebuffer);
+
+		ResetParticles();
 	}
 
 	void RenderingTestLayer::OnUpdate(float dt)
@@ -34,7 +36,8 @@ namespace DT
 			if (Input::MouseIsPressed(Mouse::Left))
 			{
 				glm::vec2 mousePosition;
-				mousePosition.x =((float)Input::GetMouseX() / m_ScreenFramebuffer->GetWidth() - 0.5f) * 2.0f * 16.0f / 9.0f;
+				float aspect = m_ScreenFramebuffer->GetAspectRatio();
+				mousePosition.x =((float)Input::GetMouseX() / m_ScreenFramebuffer->GetWidth() - 0.5f) * 2.0f * aspect;
 				mousePosition.y = -((float)Input::GetMouseY() / m_ScreenFramebuffer->GetHeight() - 0.5f) * 2.0f;
 				m_Properties.Position = mousePosition;
 				m_ParticleSystem.EmitParticle(m_Properties);
@@ -96,7 +99,13 @@ namespace DT
 		if (m_ImGuiEnabled)
 		{
 			ImGui::Begin("Particle System");
-			ImGui::Checkbox("Use mouse", &m_UseMouse);
+
+			if (ImGui::Checkbox("Use mouse", &m_UseMouse))
+				m_Properties.Position = { 0.0f, 0.0f };
+
+			ImGui::SameLine();
+			if (ImGui::Button("Reset"))
+				ResetParticles();
 
 			if (!m_UseMouse)
 				ImGui::DragFloat2("Emit Position", glm::value_ptr(m_Properties.Position), 0.005f);
@@ -108,9 +117,9 @@ namespace DT
 			ImGui::SliderFloat("Lifetime", &m_Properties.Lifetime, 0.0f, 10.0f);
 			ImGui::Separator();
 			ImGui::SliderFloat("Fade", &m_Fade, 0.0f, 1.5f);
-			ImGui::ColorEdit4("Start Color", glm::value_ptr(m_Properties.StartColor), ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_HDR);
+			ImGui::ColorEdit4("Start Color", glm::value_ptr(m_Properties.StartColor), ImGuiColorEditFlags_PickerHueWheel);
 			ImGui::DragFloat("Start Emission", &m_Properties.StartEmission, 0.1f, 0.0f, 1000.0f);
-			ImGui::ColorEdit4("End Color", glm::value_ptr(m_Properties.EndColor), ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_HDR);
+			ImGui::ColorEdit4("End Color", glm::value_ptr(m_Properties.EndColor), ImGuiColorEditFlags_PickerHueWheel);
 			ImGui::DragFloat("End Emission", &m_Properties.EndEmission, 0.1f, 0.0f, 1000.0f);
 			ImGui::SliderFloat("Start Size", &m_Properties.StartSize, 0.0f, 0.2f);
 			ImGui::SliderFloat("End Size", &m_Properties.EndSize, 0.0f, 0.2f);

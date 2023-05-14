@@ -37,7 +37,7 @@ namespace DT
 		particle.CurrentSize = particle.StartSize;
 
 		particle.AngularVelocity = properties.RotationVariation * (rand() / 65'536.0f - 0.5f) * 2.0f;
-		particle.Angle = 0.0f;
+		particle.Angle = 3.1415f * (rand() / (float)RAND_MAX * 2.0f - 1.0f);
 	}
 
 	void ParticleSystem::OnUpdate(float dt)
