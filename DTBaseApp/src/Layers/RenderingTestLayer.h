@@ -7,6 +7,7 @@
 #include "Renderer/Texture.h"
 #include "Renderer/ParticleSystem.h"
 #include "Renderer/BloomProcessor.h"
+#include "Audio/AudioEngine.h"
 
 namespace DT
 {
@@ -55,6 +56,7 @@ namespace DT
 		float m_Fade = 0.0f;
 		float m_Width = 1.0f;
 		float m_Height = 1.0f;
+		float m_MasterVolume = 1.0f;
 
 		bool m_UseMouse = false;
 
@@ -71,5 +73,6 @@ namespace DT
 		BloomProcessor m_BloomProcessor;
 		ParticleSystem m_ParticleSystem;
 		ParticleProperties m_Properties;
+		Ref<Sound> m_Sound;
 	};
 }

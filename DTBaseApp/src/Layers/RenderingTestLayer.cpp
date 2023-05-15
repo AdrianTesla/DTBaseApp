@@ -23,6 +23,8 @@ namespace DT
 		Renderer2D::SetTargetFramebuffer(m_GeoFramebuffer);
 
 		ResetParticles();
+
+		m_Sound = AudioEngine::LoadFromFile("assets/sounds/Infected Mushroom & Ganja White Nights - Kill to Feel.mp3");
 	}
 
 	void RenderingTestLayer::OnUpdate(float dt)
@@ -157,6 +159,16 @@ namespace DT
 			ImGui::SliderFloat("Threshold", &settings.Threshold, 0.0f, 10.0f);
 			ImGui::SliderFloat("Knee", &settings.Knee, 0.0f, 1.0f);
 			ImGui::SliderFloat("Clamp", &settings.Clamp, 0.0f, 1000.0f);
+			ImGui::End();
+
+			ImGui::Begin("Music");
+
+			if (ImGui::SliderFloat("Master Volume", &m_MasterVolume, 0.0f, 1.0f))
+				AudioEngine::SetMasterVolume(m_MasterVolume);
+
+			if (ImGui::Button("Play Music"))
+				AudioEngine::Play(m_Sound);
+
 			ImGui::End();
 		}
 	}
