@@ -3,6 +3,7 @@
 #include "Renderer/Renderer.h"
 #include "Layers/RenderingTestLayer.h"
 #include "Layers/BloomLayer.h"
+#include "Audio/AudioEngine.h"
 
 
 namespace DT
@@ -19,6 +20,8 @@ namespace DT
 		m_GraphicsContext->Init();
 
 		Renderer::Init();
+		AudioEngine::Init();
+		
 
 		if (std::filesystem::exists(m_Specification.WorkingDirectory))
 			std::filesystem::current_path(m_Specification.WorkingDirectory);
@@ -42,7 +45,9 @@ namespace DT
 			delete layer;
 		}
 
+		AudioEngine::Shutdown();
 		Renderer::Shutdown();
+
 		delete m_GraphicsContext;
 		delete m_Window;
 	}

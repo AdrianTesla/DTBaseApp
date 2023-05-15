@@ -23,7 +23,8 @@ project "DTBaseApp"
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.stb}",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.imgui}"
+		"%{IncludeDir.imgui}",
+		"%{IncludeDir.miniaudio}"
 	}
 
 	libdirs 
