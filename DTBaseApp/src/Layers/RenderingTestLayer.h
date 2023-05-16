@@ -56,7 +56,11 @@ namespace DT
 		float m_Fade = 0.0f;
 		float m_Width = 1.0f;
 		float m_Height = 1.0f;
+
 		float m_MasterVolume = 1.0f;
+		float m_SoundVolume = 1.0f;
+		float m_SoundPitch = 1.0f;
+		float m_SoundPan = 0.0f;
 
 		bool m_UseMouse = false;
 

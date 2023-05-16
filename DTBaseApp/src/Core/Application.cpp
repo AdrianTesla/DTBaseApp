@@ -63,6 +63,7 @@ namespace DT
 		Timer timer;
 		while (m_AppRunning)
 		{
+			ExecuteMainThreadQueue();
 			m_Window->ProcessEvents();
 			UpdatePhase(timer.Mark());
 			if (!m_AppMinimized)
@@ -95,6 +96,23 @@ namespace DT
 			m_ImguiLayer->EndFrame();
 
 		Renderer::EndFrame();
+	}
+
+	void Application::SubmitToMainThread(const std::function<void()>& function)
+	{
+		std::scoped_lock<std::mutex> lock(m_Mutex);
+
+		m_MainThreadQueue.emplace_back(function);
+	}
+
+	void Application::ExecuteMainThreadQueue()
+	{
+		std::scoped_lock<std::mutex> lock(m_Mutex);
+
+		for (auto& function : m_MainThreadQueue)
+			function();
+
+		m_MainThreadQueue.clear();
 	}
 
 	void Application::OnEvent(Event& event)

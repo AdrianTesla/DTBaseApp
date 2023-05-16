@@ -29,9 +29,12 @@ namespace DT
 		Window& GetWindow() { return *m_Window; }
 
 		static Application& Get() { return *s_Instance; }
+
+		void SubmitToMainThread(const std::function<void()>& function);
 	private:
 		void UpdatePhase(float dt);
 		void RenderPhase();
+		void ExecuteMainThreadQueue();
 	private:
 		bool m_AppRunning = true;
 		bool m_AppMinimized = false;
@@ -40,6 +43,9 @@ namespace DT
 		std::vector<Layer*> m_Layers;
 		ImguiLayer* m_ImguiLayer = nullptr;
 		GraphicsContext* m_GraphicsContext;
+
+		std::vector<std::function<void()>> m_MainThreadQueue;
+		std::mutex m_Mutex;
 
 		ApplicationSpecification m_Specification;
 		inline static Application* s_Instance = nullptr;

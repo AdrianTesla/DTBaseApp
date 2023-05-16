@@ -24,7 +24,8 @@ namespace DT
 
 		ResetParticles();
 
-		m_Sound = AudioEngine::LoadFromFile("assets/sounds/Infected Mushroom & Ganja White Nights - Kill to Feel.mp3");
+		//m_Sound = Sound::Create("assets/sounds/Tomb Raider III/ROOFS_00093.wav");
+		m_Sound = Sound::Create("assets/sounds/Infected Mushroom & Ganja White Nights - Kill to Feel.mp3");
 	}
 
 	void RenderingTestLayer::OnUpdate(float dt)
@@ -166,8 +167,29 @@ namespace DT
 			if (ImGui::SliderFloat("Master Volume", &m_MasterVolume, 0.0f, 1.0f))
 				AudioEngine::SetMasterVolume(m_MasterVolume);
 
-			if (ImGui::Button("Play Music"))
-				AudioEngine::Play(m_Sound);
+			ImGui::SeparatorText("Sounds");
+			
+			if (ImGui::Button("Play"))
+				m_Sound->Play();
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Pause"))
+				m_Sound->Pause();
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Stop"))
+				m_Sound->Stop();
+
+			if (ImGui::SliderFloat("Volume", &m_SoundVolume, 0.0f, 1.0f))
+				m_Sound->SetVolume(m_SoundVolume);
+
+			if (ImGui::SliderFloat("Pitch", &m_SoundPitch, 0.5f, 1.5f))
+				m_Sound->SetPitch(m_SoundPitch);
+
+			if (ImGui::SliderFloat("Pan", &m_SoundPan, -1.0f, 1.0f))
+				m_Sound->SetPan(m_SoundPan);
 
 			ImGui::End();
 		}
