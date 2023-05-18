@@ -106,6 +106,7 @@ namespace DT
 
 			ImGui::DragFloat2("Emit Velocity", glm::value_ptr(m_Properties.Velocity), 0.005f);
 			ImGui::DragFloat2("Acceleration", glm::value_ptr(m_Properties.Acceleration), 0.005f);
+			ImGui::SliderFloat("Friction", &m_Properties.Friction, 0.0f, 10.0f);
 			ImGui::SliderFloat("Velocity Variation", &m_Properties.VelocityVariation, 0.0f, 2.0f);
 			ImGui::SliderFloat("Rotation Variation", &m_Properties.RotationVariation, -10.0f, 10.0f);
 			ImGui::Separator();

@@ -21,6 +21,7 @@ namespace DT
 		particle.Position = properties.Position;
 		particle.Velocity = properties.Velocity;
 		particle.Acceleration = properties.Acceleration;
+		particle.Friction = properties.Friction;
 
 		if(properties.VelocityVariation > 0.0f)
 			particle.Velocity += glm::diskRand(properties.VelocityVariation);
@@ -55,8 +56,8 @@ namespace DT
 			}
 
 			//Update current particle parameters
-			particle.Velocity += particle.Acceleration * dt;
-			particle.Position += particle.Velocity * dt;
+			particle.Velocity += (particle.Acceleration - particle.Friction * particle.Velocity) * dt;
+			particle.Position += particle.Velocity * dt + 0.5f * (particle.Acceleration - particle.Friction * particle.Velocity) *dt * dt;
 			particle.Angle += particle.AngularVelocity * dt;
 
 			float fraction = particle.CurrentLife / particle.Lifetime;

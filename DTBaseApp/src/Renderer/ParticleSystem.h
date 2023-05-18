@@ -17,6 +17,7 @@ namespace DT
 		float EndSize = 0.000f;
 		float StartEmission = 1.0f;
 		float EndEmission = 1.0f;
+		float Friction = 0.0f;
 
 		glm::vec4 StartColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 		glm::vec4 EndColor = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -47,6 +48,7 @@ namespace DT
 			float StartEmission;
 			float CurrentEmission;
 			float EndEmission;
+			float Friction;
 		};
 
 		void OnRender(const std::function<void(const Particle& particle)>& function);
