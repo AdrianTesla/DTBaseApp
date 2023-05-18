@@ -3,11 +3,29 @@
 
 namespace DT
 {
+	struct SoundProperties
+	{
+		float Volume = 1.0f;
+		float Pitch = 1.0f;
+		float Pan = 0.0f;
+	};
+
+	class SoundEffect
+	{
+	public:
+		SoundEffect(const char* filePath);
+		~SoundEffect();
+	private:
+		void* m_ActiveSound = nullptr;
+	};
+
 	class Sound
 	{
 	public:
 		Sound(const char* filePath);
 		~Sound();
+
+		std::string GetName() const { return m_AssetPath.filename().string(); }
 
 		void Play();
 		void Pause();
@@ -23,18 +41,16 @@ namespace DT
 		}
 	private:
 		int32 m_Index = -1;
-		void* m_CopiedActiveSound = nullptr;
-
-		float m_Volume = 1.0f;
-		float m_Pitch = 1.0f;
-		float m_Pan = 0.0f;
+		std::filesystem::path m_AssetPath;
 	};
 
-	class AudioEngine
+	class Audio
 	{
 	public:
 		static void Init();
 		static void Shutdown();
+
+		static void PlaySound(const SoundProperties& properties);
 
 		static void SetMasterVolume(float volume);
 	};

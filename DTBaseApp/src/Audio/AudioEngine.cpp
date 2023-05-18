@@ -12,6 +12,7 @@ namespace DT
 		ma_engine Engine;
 		ma_sound Sounds[1000];
 		uint32 SoundCount = 0u;
+		ma_sound* ActiveSound = nullptr;
 	};
 	
 	static AudioEngineData* s_AudioData = nullptr;
@@ -29,6 +30,7 @@ namespace DT
 	}
 
 	Sound::Sound(const char* filePath)
+		: m_AssetPath(filePath)
 	{
 		m_Index = s_AudioData->SoundCount++;
 
@@ -42,71 +44,53 @@ namespace DT
 	Sound::~Sound()
 	{
 		ma_sound_uninit(&s_AudioData->Sounds[m_Index]);
+		s_AudioData->SoundCount--;
 	}
 
 	void Sound::Play()
 	{
-		if(!m_CopiedActiveSound)
-		{
-			ma_sound* copiedSound = new ma_sound;
-			m_CopiedActiveSound = copiedSound;
-			MA_CALL(ma_sound_init_copy(&s_AudioData->Engine, &s_AudioData->Sounds[m_Index], 0u, nullptr, copiedSound));
-			ma_sound_set_volume(copiedSound, m_Volume);
-			ma_sound_set_pitch(copiedSound, m_Pitch);
-			ma_sound_set_pan(copiedSound, m_Pan);
-			MA_CALL(ma_sound_set_end_callback(copiedSound, OnReleaseSound, &m_CopiedActiveSound));
-		}
-		MA_CALL(ma_sound_start((ma_sound*)m_CopiedActiveSound));
+		ma_sound* sound = &s_AudioData->Sounds[m_Index];
+		MA_CALL(ma_sound_start(sound));
 	}
 
 	void Sound::Pause()
 	{
-		if(m_CopiedActiveSound)
-			MA_CALL(ma_sound_stop((ma_sound*)m_CopiedActiveSound));
+		ma_sound* sound = &s_AudioData->Sounds[m_Index];
+		MA_CALL(ma_sound_stop(sound));
 	}
 
 	void Sound::Stop()
 	{
-		if (m_CopiedActiveSound)
-		{
-			MA_CALL(ma_sound_stop((ma_sound*)m_CopiedActiveSound));
-			MA_CALL(ma_sound_seek_to_pcm_frame((ma_sound*)m_CopiedActiveSound, 0u));
-		}
+		ma_sound* sound = &s_AudioData->Sounds[m_Index];
+		MA_CALL(ma_sound_stop(sound));
+		MA_CALL(ma_sound_seek_to_pcm_frame(sound, 0u));
 	}
 
 	void Sound::SetVolume(float volume)
 	{
-		m_Volume = volume;
-
-		if(m_CopiedActiveSound)
-			ma_sound_set_volume((ma_sound*)m_CopiedActiveSound, m_Volume);
+		ma_sound* sound = &s_AudioData->Sounds[m_Index];
+		ma_sound_set_volume(sound, volume);
 	}
 
 	void Sound::SetPitch(float pitch)
 	{
-		m_Pitch = pitch;
-
-		if (m_CopiedActiveSound)
-			ma_sound_set_pitch((ma_sound*)m_CopiedActiveSound, m_Pitch);
+		ma_sound* sound = &s_AudioData->Sounds[m_Index];
+		ma_sound_set_pitch(sound, pitch);
 	}
 
 	void Sound::SetPan(float pan)
 	{
-		m_Pan = pan;
-
-		if (m_CopiedActiveSound)
-			ma_sound_set_pan((ma_sound*)m_CopiedActiveSound, m_Pan);
+		ma_sound* sound = &s_AudioData->Sounds[m_Index];
+		ma_sound_set_pan(sound, pan);
 	}
 
-	void AudioEngine::Init()
+	void Audio::Init()
 	{
 		s_AudioData = new AudioEngineData;
-		
-		ma_engine_config engineConfig = ma_engine_config_init();
-		MA_CALL(ma_engine_init(&engineConfig, &s_AudioData->Engine));
+		MA_CALL(ma_engine_init(nullptr, &s_AudioData->Engine));
 	}
 
-	void AudioEngine::Shutdown()
+	void Audio::Shutdown()
 	{
 		ma_engine_uninit(&s_AudioData->Engine);
 
@@ -114,7 +98,18 @@ namespace DT
 		s_AudioData = nullptr;
 	}
 
-	void AudioEngine::SetMasterVolume(float volume)
+	void Audio::PlaySound(const SoundProperties& properties)
+	{
+		//ma_sound* copiedSound = new ma_sound;
+		//s_AudioData->ActiveSound = copiedSound;
+		//MA_CALL(ma_sound_init_copy(&s_AudioData->Engine, &s_AudioData->Sounds[m_Index], 0u, nullptr, copiedSound));
+		//ma_sound_set_volume(copiedSound, properties.Volume);
+		//ma_sound_set_pitch(copiedSound, properties.Pitch);
+		//ma_sound_set_pan(copiedSound, properties.Pan);
+		//MA_CALL(ma_sound_set_end_callback(copiedSound, OnReleaseSound, &m_CopiedActiveSound));
+	}
+
+	void Audio::SetMasterVolume(float volume)
 	{
 		MA_CALL(ma_engine_set_volume(&s_AudioData->Engine, volume));
 	}

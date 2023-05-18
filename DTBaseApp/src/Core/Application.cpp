@@ -20,7 +20,7 @@ namespace DT
 		m_GraphicsContext->Init();
 
 		Renderer::Init();
-		AudioEngine::Init();
+		Audio::Init();
 		
 
 		if (std::filesystem::exists(m_Specification.WorkingDirectory))
@@ -45,7 +45,7 @@ namespace DT
 			delete layer;
 		}
 
-		AudioEngine::Shutdown();
+		Audio::Shutdown();
 		Renderer::Shutdown();
 
 		delete m_GraphicsContext;

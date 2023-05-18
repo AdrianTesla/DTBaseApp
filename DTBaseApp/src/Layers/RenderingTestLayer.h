@@ -77,6 +77,8 @@ namespace DT
 		BloomProcessor m_BloomProcessor;
 		ParticleSystem m_ParticleSystem;
 		ParticleProperties m_Properties;
-		Ref<Sound> m_Sound;
+
+		std::vector<Ref<Sound>> m_Sounds;
+		Ref<Sound> m_SelectedSound;
 	};
 }

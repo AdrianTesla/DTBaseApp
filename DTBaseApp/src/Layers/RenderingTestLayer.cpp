@@ -23,9 +23,14 @@ namespace DT
 		Renderer2D::SetTargetFramebuffer(m_GeoFramebuffer);
 
 		ResetParticles();
-
-		//m_Sound = Sound::Create("assets/sounds/Tomb Raider III/ROOFS_00093.wav");
-		m_Sound = Sound::Create("assets/sounds/Infected Mushroom & Ganja White Nights - Kill to Feel.mp3");
+		for (auto& dirEntry : std::filesystem::recursive_directory_iterator("assets/sounds"))
+		{
+			std::filesystem::path filePath = dirEntry.path();
+			if (filePath.extension() == ".mp3" || filePath.extension() == ".wav")
+			{
+				m_Sounds.emplace_back(Sound::Create(filePath.string().c_str()));
+			}
+		}
 	}
 
 	void RenderingTestLayer::OnUpdate(float dt)
@@ -86,6 +91,7 @@ namespace DT
 	{
 		if (m_ImGuiEnabled)
 		{
+			ImGui::ShowDemoWindow();
 			ImGui::Begin("Particle System");
 
 			if (ImGui::Checkbox("Use mouse", &m_UseMouse))
@@ -165,31 +171,44 @@ namespace DT
 			ImGui::Begin("Music");
 
 			if (ImGui::SliderFloat("Master Volume", &m_MasterVolume, 0.0f, 1.0f))
-				AudioEngine::SetMasterVolume(m_MasterVolume);
+				Audio::SetMasterVolume(m_MasterVolume);
 
 			ImGui::SeparatorText("Sounds");
-			
-			if (ImGui::Button("Play"))
-				m_Sound->Play();
+			for (uint64 i = 0u; i < m_Sounds.size(); i++)
+			{
+				ImGui::PushID(i);
+				ImGui::SeparatorText(m_Sounds[i]->GetName().c_str());
 
-			ImGui::SameLine();
+				if (ImGui::Button("Play"))
+				{
+					m_Sounds[i]->Play();
+					m_SelectedSound = m_Sounds[i];
+				}
 
-			if (ImGui::Button("Pause"))
-				m_Sound->Pause();
+				ImGui::SameLine();
 
-			ImGui::SameLine();
+				if (ImGui::Button("Pause"))
+					m_Sounds[i]->Pause();
 
-			if (ImGui::Button("Stop"))
-				m_Sound->Stop();
+				ImGui::SameLine();
 
-			if (ImGui::SliderFloat("Volume", &m_SoundVolume, 0.0f, 1.0f))
-				m_Sound->SetVolume(m_SoundVolume);
+				if (ImGui::Button("Stop"))
+					m_Sounds[i]->Stop();
 
-			if (ImGui::SliderFloat("Pitch", &m_SoundPitch, 0.5f, 1.5f))
-				m_Sound->SetPitch(m_SoundPitch);
+				ImGui::PopID();
+			}
 
-			if (ImGui::SliderFloat("Pan", &m_SoundPan, -1.0f, 1.0f))
-				m_Sound->SetPan(m_SoundPan);
+			if (m_SelectedSound)
+			{
+				if (ImGui::SliderFloat("Volume", &m_SoundVolume, 0.0f, 1.0f))
+					m_SelectedSound->SetVolume(m_SoundVolume);
+
+				if (ImGui::SliderFloat("Pitch", &m_SoundPitch, 0.5f, 1.5f))
+					m_SelectedSound->SetPitch(m_SoundPitch);
+
+				if (ImGui::SliderFloat("Pan", &m_SoundPan, -1.0f, 1.0f))
+					m_SelectedSound->SetPan(m_SoundPan);
+			}
 
 			ImGui::End();
 		}
