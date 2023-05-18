@@ -104,6 +104,7 @@ namespace DT
 			if (!m_UseMouse)
 				ImGui::DragFloat2("Emit Position", glm::value_ptr(m_Properties.Position), 0.005f);
 
+			ImGui::SliderFloat("Position Variation", &m_Properties.PositionVariation, 0.0f, 1.0f);
 			ImGui::DragFloat2("Emit Velocity", glm::value_ptr(m_Properties.Velocity), 0.005f);
 			ImGui::DragFloat2("Acceleration", glm::value_ptr(m_Properties.Acceleration), 0.005f);
 			ImGui::SliderFloat("Friction", &m_Properties.Friction, 0.0f, 10.0f);

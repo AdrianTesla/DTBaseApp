@@ -39,6 +39,8 @@ namespace DT
 			m_HorizontalRadius = 0.7f;
 			m_HorizontalSpeed = 1;
 			m_VerticalSpeed = 1;
+			m_Properties.Friction = 0.0f;
+			m_Properties.PositionVariation = 0.0f;
 		}
 
 		float Animate(float speed = 1.0f)

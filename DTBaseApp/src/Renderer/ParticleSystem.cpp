@@ -26,6 +26,9 @@ namespace DT
 		if(properties.VelocityVariation > 0.0f)
 			particle.Velocity += glm::diskRand(properties.VelocityVariation);
 
+		if (properties.PositionVariation > 0.0f)
+			particle.Position += glm::diskRand(properties.PositionVariation);
+
 		particle.StartColor = properties.StartColor;
 		particle.EndColor = properties.EndColor;
 		particle.CurrentColor = particle.StartColor;
@@ -56,8 +59,9 @@ namespace DT
 			}
 
 			//Update current particle parameters
-			particle.Velocity += (particle.Acceleration - particle.Friction * particle.Velocity) * dt;
-			particle.Position += particle.Velocity * dt + 0.5f * (particle.Acceleration - particle.Friction * particle.Velocity) *dt * dt;
+			glm::vec2 acceleration = particle.Acceleration - particle.Friction * particle.Velocity;
+			particle.Velocity += acceleration * dt;
+			particle.Position += particle.Velocity * dt + 0.5f * acceleration * dt * dt;
 			particle.Angle += particle.AngularVelocity * dt;
 
 			float fraction = particle.CurrentLife / particle.Lifetime;

@@ -18,6 +18,7 @@ namespace DT
 		float StartEmission = 1.0f;
 		float EndEmission = 1.0f;
 		float Friction = 0.0f;
+		float PositionVariation = 0.0f;
 
 		glm::vec4 StartColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 		glm::vec4 EndColor = { 0.0f, 0.0f, 0.0f, 1.0f };
