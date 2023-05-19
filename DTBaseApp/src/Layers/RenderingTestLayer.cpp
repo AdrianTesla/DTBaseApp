@@ -26,16 +26,18 @@ namespace DT
 		for (auto& dirEntry : std::filesystem::recursive_directory_iterator("assets/sounds"))
 		{
 			std::filesystem::path filePath = dirEntry.path();
-			if (filePath.extension() == ".mp3" || filePath.extension() == ".wav")
-			{
+
+			if (filePath.extension() == ".mp3")
 				m_Sounds.emplace_back(Sound::Create(filePath.string().c_str()));
-			}
+			else if(filePath.extension() == ".wav")
+				m_SoundEffects.emplace_back(SoundEffect::Create(filePath.string().c_str()));
 		}
 	}
 
 	void RenderingTestLayer::OnUpdate(float dt)
 	{
 		m_Time = m_Time + dt;
+		m_ParticleSystem.SetAttractionPoint(m_AttractionPoint.Position, m_AttractionPoint.Strenght);
 		m_ParticleSystem.OnUpdate(dt);
 
 		//Control particles with mouse 
@@ -82,6 +84,7 @@ namespace DT
 				Renderer2D::DrawRotatedQuad(particle.Position, m_Width * particle.CurrentSize, m_Height * particle.CurrentSize, particle.Angle, color);
 		});
 
+		Renderer2D::DrawCircle(m_AttractionPoint.Position, 0.015f * std::abs(m_AttractionPoint.Strenght), 0.1f, 0.1f, { 0.1f, 0.1f, 0.1f, 1.0f });
 		Renderer2D::EndScene();
 
 		m_BloomProcessor.Execute(m_GeoFramebuffer->GetImage(), m_ScreenFramebuffer);
@@ -100,6 +103,10 @@ namespace DT
 			ImGui::SameLine();
 			if (ImGui::Button("Reset"))
 				ResetParticles();
+
+			ImGui::DragFloat2("Attractor Position", glm::value_ptr(m_AttractionPoint.Position), 0.01f);
+			ImGui::SliderFloat("Attractor Strenght", &m_AttractionPoint.Strenght, -10.0f, 10.0f);
+			ImGui::Separator();
 
 			if (!m_UseMouse)
 				ImGui::DragFloat2("Emit Position", glm::value_ptr(m_Properties.Position), 0.005f);
@@ -176,42 +183,66 @@ namespace DT
 				Audio::SetMasterVolume(m_MasterVolume);
 
 			ImGui::SeparatorText("Sounds");
-			for (uint64 i = 0u; i < m_Sounds.size(); i++)
+
+			if (ImGui::BeginCombo("Sounds", m_Sounds[m_CurrentSound]->GetName().c_str()))
 			{
-				ImGui::PushID(i);
-				ImGui::SeparatorText(m_Sounds[i]->GetName().c_str());
+				for (uint64 i = 0u; i < m_Sounds.size(); i++)
+				{
+					bool isSelected = (m_CurrentSound == i);
+					if (ImGui::Selectable(m_Sounds[i]->GetName().c_str(), isSelected))
+					{
+						if(m_CurrentSound != i)
+							m_Sounds[m_CurrentSound]->Stop();
+
+						m_CurrentSound = i;
+					}
+
+					if (isSelected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+
+			if (ImGui::Button("Play"))
+			{
+				m_Sounds[m_CurrentSound]->Play();
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Pause"))
+				m_Sounds[m_CurrentSound]->Pause();
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Stop"))
+				m_Sounds[m_CurrentSound]->Stop();
+
+			if (ImGui::SliderFloat("Volume", &m_SoundVolume, 0.0f, 1.0f))
+				m_Sounds[m_CurrentSound]->SetVolume(m_SoundVolume);
+
+			if (ImGui::SliderFloat("Pitch", &m_SoundPitch, 0.5f, 1.5f))
+				m_Sounds[m_CurrentSound]->SetPitch(m_SoundPitch);
+
+			if (ImGui::SliderFloat("Pan", &m_SoundPan, -1.0f, 1.0f))
+				m_Sounds[m_CurrentSound]->SetPan(m_SoundPan);
+
+			for (uint64 i = 0u; i < m_SoundEffects.size(); i++)
+			{
+				ImGui::PushID((int32)i);
+				ImGui::SeparatorText(m_SoundEffects[i]->GetName().c_str());
 
 				if (ImGui::Button("Play"))
 				{
-					m_Sounds[i]->Play();
-					m_SelectedSound = m_Sounds[i];
+					SoundProperties properties{};
+					properties.Volume = rand() / (float)RAND_MAX;
+					properties.Pitch = 1.0f + 0.5f * rand() / (float)RAND_MAX - 0.25f;
+					properties.Pan = rand() / (float)RAND_MAX - 0.5f;
+					Audio::PlaySoundEffect(m_SoundEffects[i], properties);
 				}
-
-				ImGui::SameLine();
-
-				if (ImGui::Button("Pause"))
-					m_Sounds[i]->Pause();
-
-				ImGui::SameLine();
-
-				if (ImGui::Button("Stop"))
-					m_Sounds[i]->Stop();
 
 				ImGui::PopID();
 			}
-
-			if (m_SelectedSound)
-			{
-				if (ImGui::SliderFloat("Volume", &m_SoundVolume, 0.0f, 1.0f))
-					m_SelectedSound->SetVolume(m_SoundVolume);
-
-				if (ImGui::SliderFloat("Pitch", &m_SoundPitch, 0.5f, 1.5f))
-					m_SelectedSound->SetPitch(m_SoundPitch);
-
-				if (ImGui::SliderFloat("Pan", &m_SoundPan, -1.0f, 1.0f))
-					m_SelectedSound->SetPan(m_SoundPan);
-			}
-
 			ImGui::End();
 		}
 	}

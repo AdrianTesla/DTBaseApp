@@ -27,9 +27,11 @@ namespace DT
 		struct PrefilterUB
 		{
 			glm::vec2 TexelSize;
+			float pad[2];
 			glm::vec4 CurveThreshold;
 			float Knee = 0.5f;
 			float ClampIntensity = 0.0f;
+			float pad2[2];
 		};
 
 		struct DownscaleUB
@@ -52,6 +54,7 @@ namespace DT
 			float BloomIntensity = 0.05f;
 			float UpsampleScale = 0.0f;
 		};
+
 		PrefilterUB m_PrefilterUBData;
 		DownscaleUB m_DownscaleUBData;
 		UpscaleUB m_UpscaleUBData;

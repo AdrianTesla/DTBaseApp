@@ -28,6 +28,8 @@ namespace DT
 			m_Properties.VelocityVariation = 1.0f;
 			m_Properties.Lifetime = 1.0f;
 			m_Properties.RotationVariation = 10.0f;
+			m_Properties.Friction = 0.0f;
+			m_Properties.PositionVariation = 0.0f;
 			m_Properties.StartSize = 0.05f;
 			m_Properties.EndSize = 0.0f;
 			m_Properties.StartEmission = 2.0f;
@@ -39,8 +41,8 @@ namespace DT
 			m_HorizontalRadius = 0.7f;
 			m_HorizontalSpeed = 1;
 			m_VerticalSpeed = 1;
-			m_Properties.Friction = 0.0f;
-			m_Properties.PositionVariation = 0.0f;
+			m_AttractionPoint.Position = { 0.5f, 0.5f };
+			m_AttractionPoint.Strenght = 0.0f;
 		}
 
 		float Animate(float speed = 1.0f)
@@ -79,8 +81,10 @@ namespace DT
 		BloomProcessor m_BloomProcessor;
 		ParticleSystem m_ParticleSystem;
 		ParticleProperties m_Properties;
+		AttractionPoint m_AttractionPoint;
 
+		std::vector<Ref<SoundEffect>> m_SoundEffects;
 		std::vector<Ref<Sound>> m_Sounds;
-		Ref<Sound> m_SelectedSound;
+		uint32 m_CurrentSound = 0u;
 	};
 }

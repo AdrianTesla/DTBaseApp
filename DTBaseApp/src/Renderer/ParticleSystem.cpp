@@ -45,6 +45,13 @@ namespace DT
 		particle.Angle = 3.1415f * (rand() / (float)RAND_MAX * 2.0f - 1.0f);
 	}
 
+	void ParticleSystem::SetAttractionPoint(const glm::vec2& position, float strenght)
+	{
+		m_AttractionPointEnabled = true;
+		m_AttractionPoint.Position = position;
+		m_AttractionPoint.Strenght = strenght;
+	}
+
 	void ParticleSystem::OnUpdate(float dt)
 	{
 		for (uint32 i = 0u; i < m_AliveParticles; i++)
@@ -60,8 +67,21 @@ namespace DT
 
 			//Update current particle parameters
 			glm::vec2 acceleration = particle.Acceleration - particle.Friction * particle.Velocity;
+
+			if (m_AttractionPointEnabled)
+			{
+				glm::vec2 particleToPoint = m_AttractionPoint.Position - particle.Position;
+
+				float distanceSquared = glm::dot(particleToPoint, particleToPoint);
+
+				glm::vec2 direction = glm::normalize(particleToPoint);
+
+				float attenuation = m_AttractionPoint.Strenght / (1.0f + distanceSquared);
+				acceleration += direction * attenuation;
+			}
+
 			particle.Velocity += acceleration * dt;
-			particle.Position += particle.Velocity * dt + 0.5f * acceleration * dt * dt;
+			particle.Position += particle.Velocity * dt + 0.5f * acceleration * (dt * dt);
 			particle.Angle += particle.AngularVelocity * dt;
 
 			float fraction = particle.CurrentLife / particle.Lifetime;

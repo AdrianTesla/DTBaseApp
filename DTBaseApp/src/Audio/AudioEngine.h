@@ -15,8 +15,15 @@ namespace DT
 	public:
 		SoundEffect(const char* filePath);
 		~SoundEffect();
+
+		std::string GetName() const { return m_AssetPath.filename().string(); }
+
+		void* GetHandle() const { return m_Sound; }
+
+		static Ref<SoundEffect> Create(const char* filePath) { return CreateRef<SoundEffect>(filePath); }
 	private:
-		void* m_ActiveSound = nullptr;
+		void* m_Sound = nullptr;
+		std::filesystem::path m_AssetPath;
 	};
 
 	class Sound
@@ -35,12 +42,9 @@ namespace DT
 		void SetPitch(float pitch);
 		void SetPan(float pan);
 
-		static Ref<Sound> Create(const char* filePath)
-		{
-			return CreateRef<Sound>(filePath);
-		}
+		static Ref<Sound> Create(const char* filePath) { return CreateRef<Sound>(filePath); }
 	private:
-		int32 m_Index = -1;
+		void* m_Sound = nullptr;
 		std::filesystem::path m_AssetPath;
 	};
 
@@ -50,7 +54,7 @@ namespace DT
 		static void Init();
 		static void Shutdown();
 
-		static void PlaySound(const SoundProperties& properties);
+		static void PlaySoundEffect(const Ref<SoundEffect>& sound, const SoundProperties& properties);
 
 		static void SetMasterVolume(float volume);
 	};

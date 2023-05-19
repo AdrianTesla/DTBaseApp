@@ -24,11 +24,18 @@ namespace DT
 		glm::vec4 EndColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 	};
 
+	struct AttractionPoint
+	{
+		glm::vec2 Position = { 0.5f, 0.5f };
+		float Strenght = 0.0f;
+	};
+
 	class ParticleSystem
 	{
 	public:
 		ParticleSystem();
 		void EmitParticle(const ParticleProperties& properties);
+		void SetAttractionPoint(const glm::vec2& position, float strenght);
 		void OnUpdate(float dt);
 
 		struct Particle
@@ -56,5 +63,7 @@ namespace DT
 	private:
 		std::vector<Particle> m_Particles;
 		uint32 m_AliveParticles;
+		AttractionPoint m_AttractionPoint;
+		bool m_AttractionPointEnabled = false;
 	};
 }
