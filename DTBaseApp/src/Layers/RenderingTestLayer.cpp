@@ -33,9 +33,15 @@ namespace DT
 				m_SoundEffects.emplace_back(SoundEffect::Create(filePath.string().c_str(), &m_EffectsGroup));
 		}
 
+		std::vector<float> buffer;
+		m_Sounds[2]->GetAudioBuffer(buffer);
+
 		m_LowPassFilter = AudioNodes::LowPassFilter::Create(20'000.0f);
+		m_DelayNode = AudioNodes::Delay::Create(0.25f, 0.4f);
+
 		Audio::AttachOutputBus(m_MusicGroup.GetHandle(), m_LowPassFilter->GetHandle());
-		Audio::AttachOutputBusToEndpoint(m_LowPassFilter->GetHandle());
+		Audio::AttachOutputBus(m_EffectsGroup.GetHandle(), m_LowPassFilter->GetHandle());
+		Audio::AttachOutputBusToEndpoint(m_LowPassFilter->GetHandle());	
 	}
 
 	void RenderingTestLayer::OnUpdate(float dt)
@@ -255,6 +261,32 @@ namespace DT
 
 			if (ImGui::SliderFloat("Pan", &m_SoundPan, -1.0f, 1.0f))
 				m_Sounds[m_CurrentSound]->SetPan(m_SoundPan);
+
+			uint64 min = 0u;
+			uint64 max = 10'000u;
+			if (ImGui::SliderScalar("Fade Duration", ImGuiDataType_U64, &m_MusicFadeMilliseconds, &min, &max, "%d (ms)"))
+				m_Sounds[m_CurrentSound]->SetFade(m_MusicFadeMilliseconds, m_MusicFadeStartVolume, m_MusicFadeEndVolume);
+
+			if (ImGui::SliderFloat("Fade Start Volume", &m_MusicFadeStartVolume, 0.0f, 1.0f))
+				m_Sounds[m_CurrentSound]->SetFade(m_MusicFadeMilliseconds, m_MusicFadeStartVolume, m_MusicFadeEndVolume);
+
+			if (ImGui::SliderFloat("Fade End Volume", &m_MusicFadeEndVolume, 0.0f, 1.0f))
+				m_Sounds[m_CurrentSound]->SetFade(m_MusicFadeMilliseconds, m_MusicFadeStartVolume, m_MusicFadeEndVolume);
+
+			if (ImGui::Checkbox("Enable Delay", &m_DelayEnabled))
+			{
+				if (m_DelayEnabled)
+				{
+					Audio::AttachOutputBus(m_MusicGroup.GetHandle(), m_DelayNode->GetHandle());
+					Audio::AttachOutputBus(m_EffectsGroup.GetHandle(), m_DelayNode->GetHandle());
+					Audio::AttachOutputBus(m_DelayNode->GetHandle(), m_LowPassFilter->GetHandle());
+				}
+				else 
+				{
+					Audio::AttachOutputBus(m_MusicGroup.GetHandle(), m_LowPassFilter->GetHandle());
+					Audio::AttachOutputBus(m_EffectsGroup.GetHandle(), m_LowPassFilter->GetHandle());
+				}
+			}
 
 			ImGui::SeparatorText("Effects Group");
 

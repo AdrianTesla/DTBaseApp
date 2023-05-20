@@ -37,10 +37,12 @@ namespace DT
 		std::string GetName() const { return m_AssetPath.filename().string(); }
 
 		void* GetHandle() const { return m_Sound; }
+		void* GetGroupHandle() const { return m_SoundGroup; }
 
 		static Ref<SoundEffect> Create(const char* filePath, SoundGroup* group = nullptr) { return CreateRef<SoundEffect>(filePath, group); }
 	private:
 		void* m_Sound = nullptr;
+		void* m_SoundGroup = nullptr;
 		std::filesystem::path m_AssetPath;
 	};
 
@@ -59,6 +61,12 @@ namespace DT
 		void SetVolume(float volume);
 		void SetPitch(float pitch);
 		void SetPan(float pan);
+		void SetFade(uint64 milliseconds, float startVolume, float endVolume);
+
+		float GetVolume();
+		float GetPitch();
+		float GetPan();
+		void GetAudioBuffer(std::vector<float>& buffer);
 
 		static Ref<Sound> Create(const char* filePath, SoundGroup* group = nullptr) { return CreateRef<Sound>(filePath, group); }
 	private:
@@ -85,6 +93,20 @@ namespace DT
 			void* m_Node = nullptr;
 			float m_Frequency;
 			uint32 m_Order;
+		};
+
+		class Delay
+		{
+		public:
+			Delay(float delaySeconds, float decay);
+			~Delay();
+
+			void* GetHandle() const { return m_Node; }
+			static Ref<Delay> Create(float delaySeconds, float decay) { return CreateRef<Delay>(delaySeconds, decay); }
+		private:
+			void* m_Node = nullptr;
+			float m_Delay;
+			float m_Decay; 
 		};
 	}
 

@@ -30,12 +30,12 @@ namespace DT
 			m_Properties.RotationVariation = 10.0f;
 			m_Properties.Friction = 0.0f;
 			m_Properties.PositionVariation = 0.0f;
-			m_Properties.StartSize = 0.05f;
+			m_Properties.StartSize = 0.03f;
 			m_Properties.EndSize = 0.0f;
-			m_Properties.StartEmission = 2.0f;
+			m_Properties.StartEmission = 10.0f;
 			m_Properties.EndEmission = 50.0f;
-			m_Properties.StartColor = { 1.0f, 1.0f, 0.0f, 1.0f };
-			m_Properties.EndColor = { 1.0f, 0.0f, 0.0f, 1.0f };
+			m_Properties.StartColor = { 1.0f, 0.0f, 1.0f, 1.0f };
+			m_Properties.EndColor = { 0.0f, 1.0f, 1.0f, 1.0f };
 			m_RotationSpeed = 1.0f;
 			m_VerticalRadius = 0.7f;
 			m_HorizontalRadius = 0.7f;
@@ -70,6 +70,10 @@ namespace DT
 		float m_MusicVolume = 1.0f;
 		float m_MusicPitch = 1.0f;
 		float m_MusicPan = 0.0f;
+		uint64 m_MusicFadeMilliseconds = 3000u;
+		float m_MusicFadeStartVolume = 0.0f;
+		float m_MusicFadeEndVolume = 1.0f;
+		bool m_DelayEnabled = false;
 
 		float m_EffectsVolume = 1.0f;
 		float m_EffectsPitch = 1.0f;
@@ -92,9 +96,10 @@ namespace DT
 		ParticleProperties m_Properties;
 		AttractionPoint m_AttractionPoint;
 
+		Ref<AudioNodes::LowPassFilter> m_LowPassFilter;
+		Ref<AudioNodes::Delay> m_DelayNode;
 		SoundGroup m_MusicGroup;
 		SoundGroup m_EffectsGroup;
-		Ref<AudioNodes::LowPassFilter> m_LowPassFilter;
 		std::vector<Ref<SoundEffect>> m_SoundEffects;
 		std::vector<Ref<Sound>> m_Sounds;
 		uint32 m_CurrentSound = 0u;
