@@ -28,10 +28,14 @@ namespace DT
 			std::filesystem::path filePath = dirEntry.path();
 
 			if (filePath.extension() == ".mp3")
-				m_Sounds.emplace_back(Sound::Create(filePath.string().c_str()));
+				m_Sounds.emplace_back(Sound::Create(filePath.string().c_str(), &m_MusicGroup));
 			else if(filePath.extension() == ".wav")
-				m_SoundEffects.emplace_back(SoundEffect::Create(filePath.string().c_str()));
+				m_SoundEffects.emplace_back(SoundEffect::Create(filePath.string().c_str(), &m_EffectsGroup));
 		}
+
+		m_LowPassFilter = AudioNodes::LowPassFilter::Create(20'000.0f);
+		Audio::AttachOutputBus(m_MusicGroup.GetHandle(), m_LowPassFilter->GetHandle());
+		Audio::AttachOutputBusToEndpoint(m_LowPassFilter->GetHandle());
 	}
 
 	void RenderingTestLayer::OnUpdate(float dt)
@@ -182,9 +186,36 @@ namespace DT
 			if (ImGui::SliderFloat("Master Volume", &m_MasterVolume, 0.0f, 1.0f))
 				Audio::SetMasterVolume(m_MasterVolume);
 
-			ImGui::SeparatorText("Sounds");
+			ImGui::SeparatorText("Music Group");
 
-			if (ImGui::BeginCombo("Sounds", m_Sounds[m_CurrentSound]->GetName().c_str()))
+			if (ImGui::Button("Play##Music"))
+				m_MusicGroup.Play();
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Pause##Music"))
+				m_MusicGroup.Pause();
+
+			if (ImGui::SliderFloat("Volume##Music", &m_MusicVolume, 0.0f, 1.0f))
+				m_MusicGroup.SetVolume(m_MusicVolume);
+
+			if (ImGui::SliderFloat("Pitch##Music", &m_MusicPitch, 0.5f, 1.5f))
+				m_MusicGroup.SetPitch(m_MusicPitch);
+
+			if (ImGui::SliderFloat("Pan##Music", &m_MusicPan, -1.0f, 1.0f))
+				m_MusicGroup.SetPan(m_MusicPan);
+
+			ImGui::Separator();
+
+			{
+				float frequency = m_LowPassFilter->GetFrequency();
+				if (ImGui::SliderFloat("LPF Frequency", &frequency, 0.0f, 20'000.0f))
+					m_LowPassFilter->UpdateParameters(frequency);
+			}
+
+			ImGui::Separator();
+
+			if (ImGui::BeginCombo("Music", m_Sounds[m_CurrentSound]->GetName().c_str()))
 			{
 				for (uint64 i = 0u; i < m_Sounds.size(); i++)
 				{
@@ -194,7 +225,7 @@ namespace DT
 						if(m_CurrentSound != i)
 							m_Sounds[m_CurrentSound]->Stop();
 
-						m_CurrentSound = i;
+						m_CurrentSound = (uint32)i;
 					}
 
 					if (isSelected)
@@ -204,9 +235,7 @@ namespace DT
 			}
 
 			if (ImGui::Button("Play"))
-			{
 				m_Sounds[m_CurrentSound]->Play();
-			}
 
 			ImGui::SameLine();
 
@@ -227,6 +256,25 @@ namespace DT
 			if (ImGui::SliderFloat("Pan", &m_SoundPan, -1.0f, 1.0f))
 				m_Sounds[m_CurrentSound]->SetPan(m_SoundPan);
 
+			ImGui::SeparatorText("Effects Group");
+
+			if (ImGui::Button("Play##Effects"))
+				m_EffectsGroup.Play();
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Pause##Effects"))
+				m_EffectsGroup.Pause();
+
+			if (ImGui::SliderFloat("Volume##Effects", &m_EffectsVolume, 0.0f, 1.0f))
+				m_EffectsGroup.SetVolume(m_EffectsVolume);
+
+			if (ImGui::SliderFloat("Pitch##Effects", &m_EffectsPitch, 0.5f, 1.5f))
+				m_EffectsGroup.SetPitch(m_EffectsPitch);
+
+			if (ImGui::SliderFloat("Pan##Effects", &m_EffectsPan, -1.0f, 1.0f))
+				m_EffectsGroup.SetPan(m_EffectsPan);
+
 			for (uint64 i = 0u; i < m_SoundEffects.size(); i++)
 			{
 				ImGui::PushID((int32)i);
@@ -240,7 +288,6 @@ namespace DT
 					properties.Pan = rand() / (float)RAND_MAX - 0.5f;
 					Audio::PlaySoundEffect(m_SoundEffects[i], properties);
 				}
-
 				ImGui::PopID();
 			}
 			ImGui::End();

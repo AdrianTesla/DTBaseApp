@@ -62,9 +62,18 @@ namespace DT
 		float m_Height = 1.0f;
 
 		float m_MasterVolume = 1.0f;
+
 		float m_SoundVolume = 1.0f;
 		float m_SoundPitch = 1.0f;
 		float m_SoundPan = 0.0f;
+
+		float m_MusicVolume = 1.0f;
+		float m_MusicPitch = 1.0f;
+		float m_MusicPan = 0.0f;
+
+		float m_EffectsVolume = 1.0f;
+		float m_EffectsPitch = 1.0f;
+		float m_EffectsPan = 0.0f;
 
 		bool m_UseMouse = false;
 
@@ -83,6 +92,9 @@ namespace DT
 		ParticleProperties m_Properties;
 		AttractionPoint m_AttractionPoint;
 
+		SoundGroup m_MusicGroup;
+		SoundGroup m_EffectsGroup;
+		Ref<AudioNodes::LowPassFilter> m_LowPassFilter;
 		std::vector<Ref<SoundEffect>> m_SoundEffects;
 		std::vector<Ref<Sound>> m_Sounds;
 		uint32 m_CurrentSound = 0u;
