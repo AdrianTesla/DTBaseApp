@@ -1,8 +1,10 @@
 #include "AudioEngine.h"
 #include "Core/Log.h"
 #include "Core/Application.h"
-#define MINIAUDIO_IMPLEMENTATION
+
 #include <miniaudio.h>
+#include "extras/nodes/ma_reverb_node/ma_reverb_node.h"
+
 #define MA_CALL(call) { ma_result res = (call); if (res != MA_SUCCESS) { LOG_ERROR(ma_result_description(res)); __debugbreak(); } }
 
 namespace DT
@@ -10,10 +12,34 @@ namespace DT
 
 	struct AudioEngineData
 	{
+		ma_device Device;
 		ma_engine Engine;
+		ma_node_graph* NodeGraph = nullptr;
+		uint32 Channels;
+		uint32 SampleRate;
+		float LastOutput = 0.0f;
 	};
 	
 	static AudioEngineData* s_AudioData = nullptr;
+
+	static void AudioCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
+	{
+		// when the audio card is hungry 
+		ma_engine* engine = (ma_engine*)pDevice->pUserData;
+		uint64 framesRead;
+		MA_CALL(ma_engine_read_pcm_frames(engine, pOutput, frameCount, &framesRead));
+
+		uint32 channels = s_AudioData->Channels;
+
+		Application::Get().SubmitToMainThread([framesRead, pOutput, channels]()
+		{
+			float sum = 0.0f;
+			for (uint32 i = 0; i < channels; i++)
+				sum += *((float*)pOutput + channels * (framesRead - 1) + i);
+
+			s_AudioData->LastOutput = sum / channels;
+		});
+	}
 
 	static void OnSoundEnd(void* pUserData, ma_sound* pSound)
 	{
@@ -75,7 +101,7 @@ namespace DT
 
 		MA_CALL(ma_sound_init_from_file(&s_AudioData->Engine,
 			filePath,
-			MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC,
+			MA_SOUND_FLAG_DECODE,
 			soundGroup, nullptr,
 			(ma_sound*)m_Sound));
 	}
@@ -108,12 +134,12 @@ namespace DT
 		ma_sound_set_volume((ma_sound*)m_Sound, volume);
 	}
 
-	void Sound::SetPitch(float pitch)
+	void Sound::SetPitch(float pitch) 
 	{
 		ma_sound_set_pitch((ma_sound*)m_Sound, pitch);
 	}
 
-	void Sound::SetPan(float pan)
+	void Sound::SetPan(float pan) 
 	{
 		ma_sound_set_pan((ma_sound*)m_Sound, pan);
 	}
@@ -123,30 +149,58 @@ namespace DT
 		ma_sound_set_fade_in_milliseconds((ma_sound*)m_Sound, startVolume, endVolume, milliseconds);
 	}
 
-	float Sound::GetVolume()
+	uint64 Sound::GetCursorInPcmFrames() const
+	{
+		uint64 cursor;
+		uint64 frameCount;
+		MA_CALL(ma_sound_get_cursor_in_pcm_frames((ma_sound*)m_Sound, &cursor));
+		MA_CALL(ma_sound_get_length_in_pcm_frames((ma_sound*)m_Sound, &frameCount));
+		return cursor % frameCount;
+	}
+
+	float Sound::GetVolume() const
 	{
 		return ma_sound_get_volume((const ma_sound*)m_Sound);
 	}
 
-	float Sound::GetPitch()
+	float Sound::GetPitch() const
 	{
 		return ma_sound_get_pitch((const ma_sound*)m_Sound);
 	}
 
-	float Sound::GetPan()
+	float Sound::GetPan() const
 	{
 		return ma_sound_get_pan((const ma_sound*)m_Sound);
 	}
 
-	void Sound::GetAudioBuffer(std::vector<float>& buffer)
+	void Sound::GetAudioBuffer(std::vector<float>& buffer) const
 	{
+		MA_CALL(ma_sound_stop((ma_sound*)m_Sound));
+		MA_CALL(ma_sound_seek_to_pcm_frame((ma_sound*)m_Sound, 0u));
+
 		uint64 frameCount;
 		MA_CALL(ma_sound_get_length_in_pcm_frames((ma_sound*)m_Sound, &frameCount));
-		buffer.resize(frameCount * ma_engine_get_channels(&s_AudioData->Engine));
+		uint32 channels = s_AudioData->Channels;
+
+		buffer.resize(frameCount);
+		float* frames = new float[frameCount * channels];
+
 		uint64 framesRead;
-		Stop();
-		MA_CALL(ma_data_source_read_pcm_frames(ma_sound_get_data_source((const ma_sound*)m_Sound), buffer.data(), frameCount, &framesRead));
-		Stop();
+		MA_CALL(ma_data_source_read_pcm_frames(
+			ma_sound_get_data_source((const ma_sound*)m_Sound), 
+			frames, frameCount, &framesRead));
+
+		for (uint32 i = 0; i < frameCount; i++)
+		{
+			float sum = 0.0f;
+			for (uint32 j = 0; j < channels; j++)
+				sum += frames[i * channels + j];
+
+			buffer[i] = sum / channels;
+		}
+
+		MA_CALL(ma_sound_seek_to_pcm_frame((ma_sound*)m_Sound, 0u));
+		delete[] frames;
 	}
 
 	SoundEffect::SoundEffect(const char* filePath, SoundGroup* group)
@@ -173,7 +227,18 @@ namespace DT
 	void Audio::Init()
 	{
 		s_AudioData = new AudioEngineData;
-		MA_CALL(ma_engine_init(nullptr, &s_AudioData->Engine));
+		ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
+		deviceConfig.dataCallback = AudioCallback;
+		deviceConfig.pUserData = &s_AudioData->Engine;
+		MA_CALL(ma_device_init(nullptr, &deviceConfig, &s_AudioData->Device));
+
+		ma_engine_config engineConfig = ma_engine_config_init();
+		engineConfig.pDevice = &s_AudioData->Device;
+		MA_CALL(ma_engine_init(&engineConfig, &s_AudioData->Engine));
+		
+		s_AudioData->Channels = ma_engine_get_channels(&s_AudioData->Engine);
+		s_AudioData->NodeGraph = ma_engine_get_node_graph(&s_AudioData->Engine);
+		s_AudioData->SampleRate = ma_engine_get_sample_rate(&s_AudioData->Engine);
 	}
 
 	void Audio::Shutdown()
@@ -184,12 +249,12 @@ namespace DT
 		s_AudioData = nullptr;
 	}
 
-	void Audio::AttachOutputBus(void* sourceNode, void* destinationNode)
+	void Audio::Connect(void* sourceNode, void* destinationNode)
 	{
 		MA_CALL(ma_node_attach_output_bus((ma_node*)sourceNode, 0u, (ma_node*)destinationNode, 0u));
 	}
 
-	void Audio::AttachOutputBusToEndpoint(void* sourceNode)
+	void Audio::ConnectToEndpoint(void* sourceNode)
 	{
 		MA_CALL(ma_node_attach_output_bus((ma_node*)sourceNode, 0u, ma_engine_get_endpoint(&s_AudioData->Engine), 0u));
 	}
@@ -210,6 +275,11 @@ namespace DT
 		MA_CALL(ma_sound_start(copiedSound));
 	}
 
+	float Audio::PeekOutput()
+	{
+		return s_AudioData->LastOutput;
+	}
+
 	void Audio::SetMasterVolume(float volume)
 	{
 		MA_CALL(ma_engine_set_volume(&s_AudioData->Engine, volume));
@@ -222,12 +292,11 @@ namespace DT
 		{
 			m_Node = new ma_lpf_node;
 			ma_lpf_node_config lpfNodeConfig = ma_lpf_node_config_init(
-				ma_engine_get_channels(&s_AudioData->Engine), 
-				ma_engine_get_sample_rate(&s_AudioData->Engine), 
-				(double)frequency, 
-				order);
+				s_AudioData->Channels, 
+				s_AudioData->SampleRate, 
+				(double)frequency, order);
 
-			MA_CALL(ma_lpf_node_init(ma_engine_get_node_graph(&s_AudioData->Engine), &lpfNodeConfig, nullptr, (ma_lpf_node*)m_Node));
+			MA_CALL(ma_lpf_node_init(s_AudioData->NodeGraph, &lpfNodeConfig, nullptr, (ma_lpf_node*)m_Node));
 		}
 
 		LowPassFilter::~LowPassFilter()
@@ -242,25 +311,69 @@ namespace DT
 			m_Order = order;
 
 			ma_lpf_config lpfConfig = ma_lpf_config_init(ma_format_f32,
-				ma_engine_get_channels(&s_AudioData->Engine), 
-				ma_engine_get_sample_rate(&s_AudioData->Engine),
+				s_AudioData->Channels, 
+				s_AudioData->SampleRate,
 				m_Frequency, m_Order);
 
 			MA_CALL(ma_lpf_node_reinit(&lpfConfig, (ma_lpf_node*)m_Node));
+		}
+
+		HighPassFilter::HighPassFilter(float frequency, uint32 order)
+			: m_Frequency(frequency), m_Order(order)
+		{
+			m_Node = new ma_hpf_node;
+			ma_hpf_node_config hpfNodeConfig = ma_hpf_node_config_init(
+				s_AudioData->Channels,
+				s_AudioData->SampleRate,
+				(double)frequency, order);
+
+			MA_CALL(ma_hpf_node_init(s_AudioData->NodeGraph, &hpfNodeConfig, nullptr, (ma_hpf_node*)m_Node));
+		}
+
+		HighPassFilter::~HighPassFilter()
+		{
+			ma_hpf_node_uninit((ma_hpf_node*)m_Node, nullptr);
+			delete m_Node;
+		}
+
+		void HighPassFilter::UpdateParameters(float frequency, uint32 order)
+		{
+			m_Frequency = frequency;
+			m_Order = order;
+
+			ma_hpf_config hpfConfig = ma_hpf_config_init(ma_format_f32,
+				s_AudioData->Channels,
+				s_AudioData->SampleRate,
+				m_Frequency, m_Order);
+
+			MA_CALL(ma_hpf_node_reinit(&hpfConfig, (ma_hpf_node*)m_Node));
 		}
 
 		Delay::Delay(float delaySeconds, float decay)
 			: m_Delay(delaySeconds), m_Decay(decay)
 		{
 			m_Node = new ma_delay_node;
-			uint32 delayInFrames = (uint32)(ma_engine_get_sample_rate(&s_AudioData->Engine) * delaySeconds);
-			ma_delay_node_config delayNodeConfig = ma_delay_node_config_init(ma_engine_get_channels(&s_AudioData->Engine), ma_engine_get_sample_rate(&s_AudioData->Engine), delayInFrames, decay);
-			MA_CALL(ma_delay_node_init(ma_engine_get_node_graph(&s_AudioData->Engine), &delayNodeConfig, nullptr, (ma_delay_node*)m_Node));
+			uint32 delayInFrames = (uint32)(s_AudioData->SampleRate * delaySeconds);
+			ma_delay_node_config delayNodeConfig = ma_delay_node_config_init(s_AudioData->Channels, s_AudioData->SampleRate, delayInFrames, decay);
+			MA_CALL(ma_delay_node_init(s_AudioData->NodeGraph, &delayNodeConfig, nullptr, (ma_delay_node*)m_Node));
 		}
 
 		Delay::~Delay()
 		{
 			ma_delay_node_uninit((ma_delay_node*)m_Node, nullptr);
+			delete m_Node;
+		}
+
+		Reverb::Reverb()
+		{
+			m_Node = new ma_reverb_node;
+			ma_reverb_node_config reverbNodeConfig = ma_reverb_node_config_init(s_AudioData->Channels, s_AudioData->SampleRate);
+			MA_CALL(ma_reverb_node_init(s_AudioData->NodeGraph, &reverbNodeConfig, nullptr, (ma_reverb_node*)m_Node));
+		}
+
+		Reverb::~Reverb()
+		{
+			ma_reverb_node_uninit((ma_reverb_node*)m_Node, nullptr);
 			delete m_Node;
 		}
 	}

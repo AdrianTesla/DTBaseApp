@@ -74,6 +74,7 @@ namespace DT
 		float m_MusicFadeStartVolume = 0.0f;
 		float m_MusicFadeEndVolume = 1.0f;
 		bool m_DelayEnabled = false;
+		bool m_LinkMusicToParticles = false;
 
 		float m_EffectsVolume = 1.0f;
 		float m_EffectsPitch = 1.0f;
@@ -97,7 +98,9 @@ namespace DT
 		AttractionPoint m_AttractionPoint;
 
 		Ref<AudioNodes::LowPassFilter> m_LowPassFilter;
+		Ref<AudioNodes::HighPassFilter> m_HighPassFilter;
 		Ref<AudioNodes::Delay> m_DelayNode;
+		Ref<AudioNodes::Reverb> m_ReverbNode;
 		SoundGroup m_MusicGroup;
 		SoundGroup m_EffectsGroup;
 		std::vector<Ref<SoundEffect>> m_SoundEffects;

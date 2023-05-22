@@ -33,15 +33,17 @@ namespace DT
 				m_SoundEffects.emplace_back(SoundEffect::Create(filePath.string().c_str(), &m_EffectsGroup));
 		}
 
-		std::vector<float> buffer;
-		m_Sounds[2]->GetAudioBuffer(buffer);
-
 		m_LowPassFilter = AudioNodes::LowPassFilter::Create(20'000.0f);
+		m_HighPassFilter = AudioNodes::HighPassFilter::Create(1.0f);
 		m_DelayNode = AudioNodes::Delay::Create(0.25f, 0.4f);
+		m_ReverbNode = AudioNodes::Reverb::Create();
 
-		Audio::AttachOutputBus(m_MusicGroup.GetHandle(), m_LowPassFilter->GetHandle());
-		Audio::AttachOutputBus(m_EffectsGroup.GetHandle(), m_LowPassFilter->GetHandle());
-		Audio::AttachOutputBusToEndpoint(m_LowPassFilter->GetHandle());	
+		Audio::Connect(m_MusicGroup.GetHandle(), m_LowPassFilter->GetHandle());
+		Audio::Connect(m_EffectsGroup.GetHandle(), m_LowPassFilter->GetHandle());
+		Audio::Connect(m_LowPassFilter->GetHandle(), m_ReverbNode->GetHandle());
+		Audio::Connect(m_ReverbNode->GetHandle(), m_HighPassFilter->GetHandle());
+		Audio::ConnectToEndpoint(m_HighPassFilter->GetHandle());
+
 	}
 
 	void RenderingTestLayer::OnUpdate(float dt)
@@ -69,6 +71,19 @@ namespace DT
 			{
 				m_Properties.Position.x = m_HorizontalRadius * std::cos(m_RotationSpeed * m_HorizontalSpeed * m_Time);
 				m_Properties.Position.y = m_VerticalRadius * std::sin(m_RotationSpeed * m_VerticalSpeed * m_Time);
+			}
+			else if(m_LinkMusicToParticles)
+			{
+				float frame = Audio::PeekOutput();
+				float frameAbs = std::abs(frame);
+				m_BloomProcessor.GetSettings().Intensity = 0.1f * frameAbs;
+				m_Properties.Position.y = frame;
+				m_Properties.Position.x = 1.5f;
+				m_Properties.VelocityVariation = 0.0f;
+				m_Properties.Velocity.x = -2.0f;
+				m_Properties.StartColor.r = frameAbs;
+				m_Properties.StartColor.g = 0.0f;
+				m_Properties.StartColor.b = 1.0f - frameAbs;
 			}
 
 			m_ParticleSystem.EmitParticle(m_Properties);
@@ -215,8 +230,14 @@ namespace DT
 
 			{
 				float frequency = m_LowPassFilter->GetFrequency();
-				if (ImGui::SliderFloat("LPF Frequency", &frequency, 0.0f, 20'000.0f))
+				if (ImGui::SliderFloat("LPF Frequency", &frequency, 1.0f, 20'000.0f,"%.3f (Hz)", ImGuiSliderFlags_Logarithmic))
 					m_LowPassFilter->UpdateParameters(frequency);
+			}
+
+			{
+				float frequency = m_HighPassFilter->GetFrequency();
+				if (ImGui::SliderFloat("HPF Frequency", &frequency, 1.0f, 20'000.0f,"%.3f (Hz)", ImGuiSliderFlags_Logarithmic))
+					m_HighPassFilter->UpdateParameters(frequency);
 			}
 
 			ImGui::Separator();
@@ -273,18 +294,25 @@ namespace DT
 			if (ImGui::SliderFloat("Fade End Volume", &m_MusicFadeEndVolume, 0.0f, 1.0f))
 				m_Sounds[m_CurrentSound]->SetFade(m_MusicFadeMilliseconds, m_MusicFadeStartVolume, m_MusicFadeEndVolume);
 
+			ImGui::Checkbox("Link Music To Particles", &m_LinkMusicToParticles);
+			ImGui::SameLine();
+
 			if (ImGui::Checkbox("Enable Delay", &m_DelayEnabled))
 			{
 				if (m_DelayEnabled)
 				{
-					Audio::AttachOutputBus(m_MusicGroup.GetHandle(), m_DelayNode->GetHandle());
-					Audio::AttachOutputBus(m_EffectsGroup.GetHandle(), m_DelayNode->GetHandle());
-					Audio::AttachOutputBus(m_DelayNode->GetHandle(), m_LowPassFilter->GetHandle());
+					Audio::Connect(m_MusicGroup.GetHandle(), m_DelayNode->GetHandle());
+					Audio::Connect(m_EffectsGroup.GetHandle(), m_DelayNode->GetHandle());
+					Audio::Connect(m_DelayNode->GetHandle(), m_LowPassFilter->GetHandle());
+					Audio::Connect(m_LowPassFilter->GetHandle(), m_ReverbNode->GetHandle());
+					Audio::Connect(m_ReverbNode->GetHandle(), m_HighPassFilter->GetHandle());
 				}
 				else 
 				{
-					Audio::AttachOutputBus(m_MusicGroup.GetHandle(), m_LowPassFilter->GetHandle());
-					Audio::AttachOutputBus(m_EffectsGroup.GetHandle(), m_LowPassFilter->GetHandle());
+					Audio::Connect(m_MusicGroup.GetHandle(), m_LowPassFilter->GetHandle());
+					Audio::Connect(m_EffectsGroup.GetHandle(), m_LowPassFilter->GetHandle());
+					Audio::Connect(m_LowPassFilter->GetHandle(), m_ReverbNode->GetHandle());
+					Audio::Connect(m_ReverbNode->GetHandle(), m_HighPassFilter->GetHandle());
 				}
 			}
 

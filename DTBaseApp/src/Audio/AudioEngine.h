@@ -63,10 +63,11 @@ namespace DT
 		void SetPan(float pan);
 		void SetFade(uint64 milliseconds, float startVolume, float endVolume);
 
-		float GetVolume();
-		float GetPitch();
-		float GetPan();
-		void GetAudioBuffer(std::vector<float>& buffer);
+		float GetVolume() const;
+		float GetPitch() const;
+		float GetPan() const;
+		void GetAudioBuffer(std::vector<float>& buffer) const;
+		uint64 GetCursorInPcmFrames() const;
 
 		static Ref<Sound> Create(const char* filePath, SoundGroup* group = nullptr) { return CreateRef<Sound>(filePath, group); }
 	private:
@@ -95,6 +96,25 @@ namespace DT
 			uint32 m_Order;
 		};
 
+		class HighPassFilter
+		{
+		public:
+			HighPassFilter(float frequency, uint32 order = 2u);
+			~HighPassFilter();
+
+			void UpdateParameters(float frequency, uint32 order = 2u);
+
+			float GetFrequency() const { return m_Frequency; }
+			uint32 GetOrder() const { return m_Order; }
+
+			void* GetHandle() const { return m_Node; }
+			static Ref<HighPassFilter> Create(float frequency, uint32 order = 2u) { return CreateRef<HighPassFilter>(frequency, order); }
+		private:
+			void* m_Node = nullptr;
+			float m_Frequency;
+			uint32 m_Order;
+		};
+
 		class Delay
 		{
 		public:
@@ -108,6 +128,18 @@ namespace DT
 			float m_Delay;
 			float m_Decay; 
 		};
+
+		class Reverb
+		{
+		public:
+			Reverb();
+			~Reverb();
+
+			void* GetHandle() const { return m_Node; }
+			static Ref<Reverb> Create() { return CreateRef<Reverb>(); }
+		private:
+			void* m_Node = nullptr;
+		};
 	}
 
 	class Audio
@@ -116,9 +148,10 @@ namespace DT
 		static void Init();
 		static void Shutdown();
 
-		static void AttachOutputBus(void* sourceNode, void* destinationNode);
-		static void AttachOutputBusToEndpoint(void* sourceNode);
+		static void Connect(void* sourceNode, void* destinationNode);
+		static void ConnectToEndpoint(void* sourceNode);
 
+		static float PeekOutput();
 		static void PlaySoundEffect(const Ref<SoundEffect>& sound, const SoundProperties& properties);
 
 		static void SetMasterVolume(float volume);
