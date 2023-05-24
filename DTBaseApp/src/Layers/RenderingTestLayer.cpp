@@ -37,6 +37,7 @@ namespace DT
 		m_HighPassFilter = AudioNodes::HighPassFilter::Create(1.0f);
 		m_DelayNode = AudioNodes::Delay::Create(0.25f, 0.4f);
 		m_ReverbNode = AudioNodes::Reverb::Create();
+		m_ReverbNode->SetDryWet(0.0f);
 
 		Audio::Connect(m_MusicGroup.GetHandle(), m_LowPassFilter->GetHandle());
 		Audio::Connect(m_EffectsGroup.GetHandle(), m_LowPassFilter->GetHandle());
@@ -229,15 +230,53 @@ namespace DT
 			ImGui::Separator();
 
 			{
-				float frequency = m_LowPassFilter->GetFrequency();
-				if (ImGui::SliderFloat("LPF Frequency", &frequency, 1.0f, 20'000.0f,"%.3f (Hz)", ImGuiSliderFlags_Logarithmic))
-					m_LowPassFilter->UpdateParameters(frequency);
+				float value = m_LowPassFilter->GetFrequency();
+				if (ImGui::SliderFloat("LPF Frequency", &value, 1.0f, 20'000.0f,"%.3f (Hz)", ImGuiSliderFlags_Logarithmic))
+					m_LowPassFilter->UpdateParameters(value);
 			}
 
 			{
-				float frequency = m_HighPassFilter->GetFrequency();
-				if (ImGui::SliderFloat("HPF Frequency", &frequency, 1.0f, 20'000.0f,"%.3f (Hz)", ImGuiSliderFlags_Logarithmic))
-					m_HighPassFilter->UpdateParameters(frequency);
+				float value = m_HighPassFilter->GetFrequency();
+				if (ImGui::SliderFloat("HPF Frequency", &value, 1.0f, 20'000.0f,"%.3f (Hz)", ImGuiSliderFlags_Logarithmic))
+					m_HighPassFilter->UpdateParameters(value);
+			}
+
+			ImGui::SeparatorText("Reverb");
+
+			{
+				float value = m_ReverbNode->GetDryWet();
+				if (ImGui::SliderFloat("Dry/Wet", &value, 0.0f, 1.0f))
+					m_ReverbNode->SetDryWet(value);
+			}
+
+			{
+				float value = m_ReverbNode->GetRoomSize();
+				if (ImGui::SliderFloat("Room Size", &value, 0.0f, 1.0f))
+					m_ReverbNode->SetRoomSize(value);
+			}
+
+			{
+				float value = m_ReverbNode->GetDamping();
+				if (ImGui::SliderFloat("Damping", &value, 0.0f, 1.0f))
+					m_ReverbNode->SetDamping(value);
+			}
+
+			{
+				float value = m_ReverbNode->GetStereoWidth();
+				if (ImGui::SliderFloat("Stereo Width", &value, 0.0f, 1.0f))
+					m_ReverbNode->SetStereoWidth(value);
+			}
+
+			{
+				float value = m_ReverbNode->GetInputStereoWidth();
+				if (ImGui::SliderFloat("Input Stereo Width", &value, 0.0f, 1.0f))
+					m_ReverbNode->SetInputStereoWidth(value);
+			}
+
+			{
+				float value = m_ReverbNode->GetMode();
+				if (ImGui::SliderFloat("Mode", &value, 0.0f, 1.0f))
+					m_ReverbNode->SetMode(value);
 			}
 
 			ImGui::Separator();
@@ -273,6 +312,14 @@ namespace DT
 
 			if (ImGui::Button("Stop"))
 				m_Sounds[m_CurrentSound]->Stop();
+
+			float soundLength = m_Sounds[m_CurrentSound]->GetLengthInSeconds();
+			float cursorPosition = m_Sounds[m_CurrentSound]->GetCursorInSeconds();
+			uint32 minutes = (uint32)cursorPosition / 60u;
+			uint32 seconds = (uint32)cursorPosition % 60u;
+			std::string formattedCursor = std::format("{}m:{}s", minutes, seconds);
+			if (ImGui::SliderFloat("##CursorPosition", &cursorPosition, 0.0f, soundLength, formattedCursor.c_str()))
+				m_Sounds[m_CurrentSound]->SetCursorInSeconds(cursorPosition);
 
 			if (ImGui::SliderFloat("Volume", &m_SoundVolume, 0.0f, 1.0f))
 				m_Sounds[m_CurrentSound]->SetVolume(m_SoundVolume);

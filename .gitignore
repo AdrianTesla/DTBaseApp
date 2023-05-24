@@ -42,3 +42,6 @@
 /bin-intermediate
 *.filters
 DTBaseApp/assets
+DTBaseApp/src/Renderer/Shaders/ShaderBinaries
+vendor/imgui/bin
+vendor/imgui/bin-intermediate

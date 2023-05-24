@@ -62,12 +62,16 @@ namespace DT
 		void SetPitch(float pitch);
 		void SetPan(float pan);
 		void SetFade(uint64 milliseconds, float startVolume, float endVolume);
+		void SetCursorInPcmFrames(uint64 frameIndex);
+		void SetCursorInSeconds(float seconds);
 
 		float GetVolume() const;
 		float GetPitch() const;
 		float GetPan() const;
 		void GetAudioBuffer(std::vector<float>& buffer) const;
+		float GetLengthInSeconds() const;
 		uint64 GetCursorInPcmFrames() const;
+		float GetCursorInSeconds() const;
 
 		static Ref<Sound> Create(const char* filePath, SoundGroup* group = nullptr) { return CreateRef<Sound>(filePath, group); }
 	private:
@@ -134,6 +138,20 @@ namespace DT
 		public:
 			Reverb();
 			~Reverb();
+			
+			void SetRoomSize(float roomSize);
+			void SetDryWet(float dryWet);
+			void SetDamping(float damping);
+			void SetStereoWidth(float width);
+			void SetInputStereoWidth(float inputWidth);
+			void SetMode(float mode);
+
+			float GetDryWet() const;
+			float GetRoomSize() const;
+			float GetDamping() const;
+			float GetStereoWidth() const;
+			float GetInputStereoWidth() const;
+			float GetMode() const;
 
 			void* GetHandle() const { return m_Node; }
 			static Ref<Reverb> Create() { return CreateRef<Reverb>(); }

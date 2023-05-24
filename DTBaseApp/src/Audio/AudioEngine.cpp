@@ -101,7 +101,7 @@ namespace DT
 
 		MA_CALL(ma_sound_init_from_file(&s_AudioData->Engine,
 			filePath,
-			MA_SOUND_FLAG_DECODE,
+			MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC,
 			soundGroup, nullptr,
 			(ma_sound*)m_Sound));
 	}
@@ -149,6 +149,16 @@ namespace DT
 		ma_sound_set_fade_in_milliseconds((ma_sound*)m_Sound, startVolume, endVolume, milliseconds);
 	}
 
+	void Sound::SetCursorInPcmFrames(uint64 frameIndex)
+	{
+		MA_CALL(ma_sound_seek_to_pcm_frame((ma_sound*)m_Sound, frameIndex));
+	}
+
+	void Sound::SetCursorInSeconds(float seconds)
+	{
+		SetCursorInPcmFrames((uint64)(seconds * s_AudioData->SampleRate));
+	}
+
 	uint64 Sound::GetCursorInPcmFrames() const
 	{
 		uint64 cursor;
@@ -156,6 +166,13 @@ namespace DT
 		MA_CALL(ma_sound_get_cursor_in_pcm_frames((ma_sound*)m_Sound, &cursor));
 		MA_CALL(ma_sound_get_length_in_pcm_frames((ma_sound*)m_Sound, &frameCount));
 		return cursor % frameCount;
+	}
+
+	float Sound::GetCursorInSeconds() const
+	{
+		float seconds;
+		MA_CALL(ma_sound_get_cursor_in_seconds((ma_sound*)m_Sound, &seconds));
+		return seconds;
 	}
 
 	float Sound::GetVolume() const
@@ -171,6 +188,13 @@ namespace DT
 	float Sound::GetPan() const
 	{
 		return ma_sound_get_pan((const ma_sound*)m_Sound);
+	}
+
+	float Sound::GetLengthInSeconds() const
+	{
+		float seconds;
+		MA_CALL(ma_sound_get_length_in_seconds((ma_sound*)m_Sound, &seconds));
+		return seconds;
 	}
 
 	void Sound::GetAudioBuffer(std::vector<float>& buffer) const
@@ -202,6 +226,7 @@ namespace DT
 		MA_CALL(ma_sound_seek_to_pcm_frame((ma_sound*)m_Sound, 0u));
 		delete[] frames;
 	}
+
 
 	SoundEffect::SoundEffect(const char* filePath, SoundGroup* group)
 		: m_AssetPath(filePath), m_SoundGroup(nullptr)
@@ -375,6 +400,79 @@ namespace DT
 		{
 			ma_reverb_node_uninit((ma_reverb_node*)m_Node, nullptr);
 			delete m_Node;
+		}
+
+		void Reverb::SetRoomSize(float roomSize)
+		{
+			ma_reverb_node* node = (ma_reverb_node*)m_Node;
+			verblib_set_room_size(&node->reverb, roomSize);
+		}
+
+		void Reverb::SetDryWet(float dryWet)
+		{
+			ma_reverb_node* node = (ma_reverb_node*)m_Node;
+			verblib_set_dry(&node->reverb, 1.0f - dryWet);
+			verblib_set_wet(&node->reverb, dryWet);
+		}
+
+		void Reverb::SetDamping(float damping)
+		{
+			ma_reverb_node* node = (ma_reverb_node*)m_Node;
+			verblib_set_damping(&node->reverb, damping);
+		}
+
+		void Reverb::SetStereoWidth(float width)
+		{
+			ma_reverb_node* node = (ma_reverb_node*)m_Node;
+			verblib_set_width(&node->reverb, width);
+		}
+
+		void Reverb::SetInputStereoWidth(float inputWidth)
+		{
+			ma_reverb_node* node = (ma_reverb_node*)m_Node;
+			verblib_set_input_width(&node->reverb, inputWidth);
+		}
+
+		void Reverb::SetMode(float mode)
+		{
+			ma_reverb_node* node = (ma_reverb_node*)m_Node;
+			verblib_set_mode(&node->reverb, mode);
+		}
+
+		float Reverb::GetDryWet() const
+		{
+			ma_reverb_node* node = (ma_reverb_node*)m_Node;
+			return verblib_get_wet(&node->reverb);
+		}
+
+		float Reverb::GetRoomSize() const
+		{
+			ma_reverb_node* node = (ma_reverb_node*)m_Node;
+			return verblib_get_room_size(&node->reverb);
+		}
+
+		float Reverb::GetDamping() const
+		{
+			ma_reverb_node* node = (ma_reverb_node*)m_Node;
+			return verblib_get_damping(&node->reverb);
+		}
+
+		float Reverb::GetStereoWidth() const
+		{
+			ma_reverb_node* node = (ma_reverb_node*)m_Node;
+			return verblib_get_width(&node->reverb);
+		}
+
+		float Reverb::GetInputStereoWidth() const
+		{
+			ma_reverb_node* node = (ma_reverb_node*)m_Node;
+			return verblib_get_input_width(&node->reverb);
+		}
+
+		float Reverb::GetMode() const
+		{
+			ma_reverb_node* node = (ma_reverb_node*)m_Node;
+			return verblib_get_mode(&node->reverb);
 		}
 	}
 }
