@@ -53,6 +53,8 @@ namespace DT
 		~Sound();
 
 		std::string GetName() const { return m_AssetPath.filename().string(); }
+		void* GetHandle() const { return m_Sound; }
+		void* GetGroupHandle() const { return m_SoundGroup; }
 
 		void Play();
 		void Pause();
@@ -64,18 +66,22 @@ namespace DT
 		void SetFade(uint64 milliseconds, float startVolume, float endVolume);
 		void SetCursorInPcmFrames(uint64 frameIndex);
 		void SetCursorInSeconds(float seconds);
+		void SetLooping(bool looping);
 
 		float GetVolume() const;
 		float GetPitch() const;
 		float GetPan() const;
-		void GetAudioBuffer(std::vector<float>& buffer) const;
 		float GetLengthInSeconds() const;
 		uint64 GetCursorInPcmFrames() const;
 		float GetCursorInSeconds() const;
+		bool IsLooping() const;
+		bool IsPlaying() const;
+		bool IsAtEnd() const;
 
 		static Ref<Sound> Create(const char* filePath, SoundGroup* group = nullptr) { return CreateRef<Sound>(filePath, group); }
 	private:
 		void* m_Sound = nullptr;
+		void* m_SoundGroup = nullptr;
 		std::filesystem::path m_AssetPath;
 	};
 

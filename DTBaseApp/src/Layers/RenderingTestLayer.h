@@ -45,6 +45,41 @@ namespace DT
 			m_AttractionPoint.Strenght = 0.0f;
 		}
 
+		void ResetAudio()
+		{
+			m_MasterVolume = 1.0f;
+
+			m_MusicGroupVolume = 1.0f;
+			m_MusicGroupPitch = 1.0f;
+			m_MusicGroupPan = 0.0f;
+			m_MusicGroup.SetVolume(m_MusicGroupVolume);
+			m_MusicGroup.SetPitch(m_MusicGroupPitch);
+			m_MusicGroup.SetPan(m_MusicGroupPan);
+
+			m_EffectsGroupVolume = 1.0f;
+			m_EffectsGroupPitch = 1.0f;
+			m_EffectsGroupPan = 0.0f;
+			m_EffectsGroup.SetVolume(m_EffectsGroupVolume);
+			m_EffectsGroup.SetPitch(m_EffectsGroupPitch);
+			m_EffectsGroup.SetPan(m_EffectsGroupPan);
+
+			m_MusicVolume = 1.0f;
+			m_MusicPitch = 1.0f;
+			m_MusicPan = 0.0f;
+			m_MusicFadeMilliseconds = 3000u;
+			m_MusicFadeStartVolume = 0.0f;
+			m_MusicFadeEndVolume = 1.0f;
+			m_CursorChanged = false;
+			
+			for (auto& sound : m_Sounds)
+			{
+				sound->SetVolume(m_MusicVolume);
+				sound->SetPitch(m_MusicPitch);
+				sound->SetPan(m_MusicPan);
+				sound->SetFade(m_MusicFadeMilliseconds, m_MusicFadeStartVolume, m_MusicFadeEndVolume);
+			}
+		}
+
 		float Animate(float speed = 1.0f)
 		{
 			return 0.5f + 0.5f * std::sin(2.0f * glm::pi<float>() * speed * m_Time);
@@ -63,10 +98,11 @@ namespace DT
 
 		float m_MasterVolume = 1.0f;
 
-		float m_SoundVolume = 1.0f;
-		float m_SoundPitch = 1.0f;
-		float m_SoundPan = 0.0f;
+		float m_MusicGroupVolume = 1.0f;
+		float m_MusicGroupPitch = 1.0f;
+		float m_MusicGroupPan = 0.0f;
 
+		float m_CursorPosition = 0.0f;
 		float m_MusicVolume = 1.0f;
 		float m_MusicPitch = 1.0f;
 		float m_MusicPan = 0.0f;
@@ -75,10 +111,11 @@ namespace DT
 		float m_MusicFadeEndVolume = 1.0f;
 		bool m_DelayEnabled = false;
 		bool m_LinkMusicToParticles = false;
+		bool m_CursorChanged = false;
 
-		float m_EffectsVolume = 1.0f;
-		float m_EffectsPitch = 1.0f;
-		float m_EffectsPan = 0.0f;
+		float m_EffectsGroupVolume = 1.0f;
+		float m_EffectsGroupPitch = 1.0f;
+		float m_EffectsGroupPan = 0.0f;
 
 		bool m_UseMouse = false;
 

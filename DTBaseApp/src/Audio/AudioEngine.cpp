@@ -28,16 +28,15 @@ namespace DT
 		ma_engine* engine = (ma_engine*)pDevice->pUserData;
 		uint64 framesRead;
 		MA_CALL(ma_engine_read_pcm_frames(engine, pOutput, frameCount, &framesRead));
+		
+		uint32 sampleCount = frameCount * s_AudioData->Channels;
+		float sum = 0.0f;
+		for (uint32 i = 0; i < sampleCount; i++)
+			sum += *((float*)pOutput + i);
 
-		uint32 channels = s_AudioData->Channels;
-
-		Application::Get().SubmitToMainThread([framesRead, pOutput, channels]()
+		Application::Get().SubmitToMainThread([sum, sampleCount]()
 		{
-			float sum = 0.0f;
-			for (uint32 i = 0; i < channels; i++)
-				sum += *((float*)pOutput + channels * (framesRead - 1) + i);
-
-			s_AudioData->LastOutput = sum / channels;
+			s_AudioData->LastOutput = sum / sampleCount;
 		});
 	}
 
@@ -91,18 +90,17 @@ namespace DT
 	}
 
 	Sound::Sound(const char* filePath, SoundGroup* group)
-		: m_AssetPath(filePath)
+		: m_AssetPath(filePath), m_SoundGroup(nullptr)
 	{
 		m_Sound = new ma_sound;
 
-		ma_sound_group* soundGroup = nullptr;
 		if (group)
-			soundGroup = (ma_sound_group*)group->GetHandle();
+			m_SoundGroup = group->GetHandle();
 
 		MA_CALL(ma_sound_init_from_file(&s_AudioData->Engine,
 			filePath,
 			MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC,
-			soundGroup, nullptr,
+			(ma_sound_group*)m_SoundGroup, nullptr,
 			(ma_sound*)m_Sound));
 	}
 
@@ -159,6 +157,11 @@ namespace DT
 		SetCursorInPcmFrames((uint64)(seconds * s_AudioData->SampleRate));
 	}
 
+	void Sound::SetLooping(bool looping)
+	{
+		ma_sound_set_looping((ma_sound*)m_Sound, (ma_bool32)looping);
+	}
+
 	uint64 Sound::GetCursorInPcmFrames() const
 	{
 		uint64 cursor;
@@ -173,6 +176,21 @@ namespace DT
 		float seconds;
 		MA_CALL(ma_sound_get_cursor_in_seconds((ma_sound*)m_Sound, &seconds));
 		return seconds;
+	}
+
+	bool Sound::IsLooping() const
+	{
+		return (bool)ma_sound_is_looping((ma_sound*)m_Sound);
+	}
+
+	bool Sound::IsPlaying() const
+	{
+		return ma_sound_is_playing((ma_sound*)m_Sound);
+	}
+
+	bool Sound::IsAtEnd() const
+	{
+		return ma_sound_at_end((ma_sound*)m_Sound);
 	}
 
 	float Sound::GetVolume() const
@@ -196,37 +214,6 @@ namespace DT
 		MA_CALL(ma_sound_get_length_in_seconds((ma_sound*)m_Sound, &seconds));
 		return seconds;
 	}
-
-	void Sound::GetAudioBuffer(std::vector<float>& buffer) const
-	{
-		MA_CALL(ma_sound_stop((ma_sound*)m_Sound));
-		MA_CALL(ma_sound_seek_to_pcm_frame((ma_sound*)m_Sound, 0u));
-
-		uint64 frameCount;
-		MA_CALL(ma_sound_get_length_in_pcm_frames((ma_sound*)m_Sound, &frameCount));
-		uint32 channels = s_AudioData->Channels;
-
-		buffer.resize(frameCount);
-		float* frames = new float[frameCount * channels];
-
-		uint64 framesRead;
-		MA_CALL(ma_data_source_read_pcm_frames(
-			ma_sound_get_data_source((const ma_sound*)m_Sound), 
-			frames, frameCount, &framesRead));
-
-		for (uint32 i = 0; i < frameCount; i++)
-		{
-			float sum = 0.0f;
-			for (uint32 j = 0; j < channels; j++)
-				sum += frames[i * channels + j];
-
-			buffer[i] = sum / channels;
-		}
-
-		MA_CALL(ma_sound_seek_to_pcm_frame((ma_sound*)m_Sound, 0u));
-		delete[] frames;
-	}
-
 
 	SoundEffect::SoundEffect(const char* filePath, SoundGroup* group)
 		: m_AssetPath(filePath), m_SoundGroup(nullptr)

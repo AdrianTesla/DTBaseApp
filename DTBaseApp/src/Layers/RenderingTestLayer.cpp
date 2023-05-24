@@ -44,14 +44,13 @@ namespace DT
 		Audio::Connect(m_LowPassFilter->GetHandle(), m_ReverbNode->GetHandle());
 		Audio::Connect(m_ReverbNode->GetHandle(), m_HighPassFilter->GetHandle());
 		Audio::ConnectToEndpoint(m_HighPassFilter->GetHandle());
-
 	}
 
 	void RenderingTestLayer::OnUpdate(float dt)
 	{
 		m_Time = m_Time + dt;
 		m_ParticleSystem.SetAttractionPoint(m_AttractionPoint.Position, m_AttractionPoint.Strenght);
-		m_ParticleSystem.OnUpdate(dt);
+		m_ParticleSystem.OnUpdate(1.0f / 60.0f);
 
 		//Control particles with mouse 
 		if (m_UseMouse)
@@ -218,16 +217,20 @@ namespace DT
 			if (ImGui::Button("Pause##Music"))
 				m_MusicGroup.Pause();
 
+			ImGui::SameLine();
+			if (ImGui::Button("Reset"))
+				ResetAudio();
+
 			if (ImGui::SliderFloat("Volume##Music", &m_MusicVolume, 0.0f, 1.0f))
 				m_MusicGroup.SetVolume(m_MusicVolume);
 
-			if (ImGui::SliderFloat("Pitch##Music", &m_MusicPitch, 0.5f, 1.5f))
+			if (ImGui::SliderFloat("Pitch##Music", &m_MusicPitch, 0.25f, 1.5f))
 				m_MusicGroup.SetPitch(m_MusicPitch);
 
 			if (ImGui::SliderFloat("Pan##Music", &m_MusicPan, -1.0f, 1.0f))
 				m_MusicGroup.SetPan(m_MusicPan);
 
-			ImGui::Separator();
+			ImGui::SeparatorText("Filters");
 
 			{
 				float value = m_LowPassFilter->GetFrequency();
@@ -237,7 +240,7 @@ namespace DT
 
 			{
 				float value = m_HighPassFilter->GetFrequency();
-				if (ImGui::SliderFloat("HPF Frequency", &value, 1.0f, 20'000.0f,"%.3f (Hz)", ImGuiSliderFlags_Logarithmic))
+				if (ImGui::SliderFloat("HPF Frequency", &value, 5.0f, 20'000.0f,"%.3f (Hz)", ImGuiSliderFlags_Logarithmic))
 					m_HighPassFilter->UpdateParameters(value);
 			}
 
@@ -279,7 +282,7 @@ namespace DT
 					m_ReverbNode->SetMode(value);
 			}
 
-			ImGui::Separator();
+			ImGui::SeparatorText("Playing");
 
 			if (ImGui::BeginCombo("Music", m_Sounds[m_CurrentSound]->GetName().c_str()))
 			{
@@ -300,6 +303,30 @@ namespace DT
 				ImGui::EndCombo();
 			}
 
+			float soundLength = m_Sounds[m_CurrentSound]->GetLengthInSeconds();
+			uint32 minutes = (uint32)m_CursorPosition / 60u;
+			uint32 seconds = (uint32)m_CursorPosition % 60u;
+			std::string formattedCursor = std::format("{}m:{}s", minutes, seconds);
+
+			m_CursorChanged = ImGui::SliderFloat("##CursorPosition", &m_CursorPosition, 0.0f, soundLength, formattedCursor.c_str()) || m_CursorChanged;
+
+			if (m_CursorChanged && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+			{
+				m_Sounds[m_CurrentSound]->SetCursorInSeconds(m_CursorPosition);
+				m_CursorChanged = false;
+			}
+			else if (!m_CursorChanged && m_Sounds[m_CurrentSound]->IsPlaying())
+				m_CursorPosition = m_Sounds[m_CurrentSound]->GetCursorInSeconds();
+
+			if (m_Sounds[m_CurrentSound]->IsAtEnd())
+			{
+				m_CurrentSound++;
+				if (m_CurrentSound >= m_Sounds.size())
+					m_CurrentSound = 0u;
+
+				m_Sounds[m_CurrentSound]->Play();
+			}
+
 			if (ImGui::Button("Play"))
 				m_Sounds[m_CurrentSound]->Play();
 
@@ -311,24 +338,29 @@ namespace DT
 			ImGui::SameLine();
 
 			if (ImGui::Button("Stop"))
+			{
 				m_Sounds[m_CurrentSound]->Stop();
+				m_CursorPosition = 0.0f;
+			}
 
-			float soundLength = m_Sounds[m_CurrentSound]->GetLengthInSeconds();
-			float cursorPosition = m_Sounds[m_CurrentSound]->GetCursorInSeconds();
-			uint32 minutes = (uint32)cursorPosition / 60u;
-			uint32 seconds = (uint32)cursorPosition % 60u;
-			std::string formattedCursor = std::format("{}m:{}s", minutes, seconds);
-			if (ImGui::SliderFloat("##CursorPosition", &cursorPosition, 0.0f, soundLength, formattedCursor.c_str()))
-				m_Sounds[m_CurrentSound]->SetCursorInSeconds(cursorPosition);
+			ImGui::SameLine(0.0f, 20.0f);
 
-			if (ImGui::SliderFloat("Volume", &m_SoundVolume, 0.0f, 1.0f))
-				m_Sounds[m_CurrentSound]->SetVolume(m_SoundVolume);
+			{
+				bool looping = m_Sounds[m_CurrentSound]->IsLooping();
+				if (ImGui::Checkbox("Loop", &looping))
+					m_Sounds[m_CurrentSound]->SetLooping(looping);
+			}
 
-			if (ImGui::SliderFloat("Pitch", &m_SoundPitch, 0.5f, 1.5f))
-				m_Sounds[m_CurrentSound]->SetPitch(m_SoundPitch);
+			ImGui::SeparatorText("Music Settings");
 
-			if (ImGui::SliderFloat("Pan", &m_SoundPan, -1.0f, 1.0f))
-				m_Sounds[m_CurrentSound]->SetPan(m_SoundPan);
+			if (ImGui::SliderFloat("Volume", &m_MusicGroupVolume, 0.0f, 1.0f))
+				m_Sounds[m_CurrentSound]->SetVolume(m_MusicGroupVolume);
+
+			if (ImGui::SliderFloat("Pitch", &m_MusicGroupPitch, 0.25f, 1.5f))
+				m_Sounds[m_CurrentSound]->SetPitch(m_MusicGroupPitch);
+
+			if (ImGui::SliderFloat("Pan", &m_MusicGroupPan, -1.0f, 1.0f))
+				m_Sounds[m_CurrentSound]->SetPan(m_MusicGroupPan);
 
 			uint64 min = 0u;
 			uint64 max = 10'000u;
@@ -373,14 +405,14 @@ namespace DT
 			if (ImGui::Button("Pause##Effects"))
 				m_EffectsGroup.Pause();
 
-			if (ImGui::SliderFloat("Volume##Effects", &m_EffectsVolume, 0.0f, 1.0f))
-				m_EffectsGroup.SetVolume(m_EffectsVolume);
+			if (ImGui::SliderFloat("Volume##Effects", &m_EffectsGroupVolume, 0.0f, 1.0f))
+				m_EffectsGroup.SetVolume(m_EffectsGroupVolume);
 
-			if (ImGui::SliderFloat("Pitch##Effects", &m_EffectsPitch, 0.5f, 1.5f))
-				m_EffectsGroup.SetPitch(m_EffectsPitch);
+			if (ImGui::SliderFloat("Pitch##Effects", &m_EffectsGroupPitch, 0.5f, 1.5f))
+				m_EffectsGroup.SetPitch(m_EffectsGroupPitch);
 
-			if (ImGui::SliderFloat("Pan##Effects", &m_EffectsPan, -1.0f, 1.0f))
-				m_EffectsGroup.SetPan(m_EffectsPan);
+			if (ImGui::SliderFloat("Pan##Effects", &m_EffectsGroupPan, -1.0f, 1.0f))
+				m_EffectsGroup.SetPan(m_EffectsGroupPan);
 
 			for (uint64 i = 0u; i < m_SoundEffects.size(); i++)
 			{
