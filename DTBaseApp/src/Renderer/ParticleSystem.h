@@ -36,6 +36,7 @@ namespace DT
 		ParticleSystem();
 		void EmitParticle(const ParticleProperties& properties);
 		void SetAttractionPoint(const glm::vec2& position, float strenght);
+		void SetBounce(bool bounce) { m_Bounce = bounce; }
 		void OnUpdate(float dt);
 
 		struct Particle
@@ -65,5 +66,8 @@ namespace DT
 		uint32 m_AliveParticles;
 		AttractionPoint m_AttractionPoint;
 		bool m_AttractionPointEnabled = false;
+		bool m_Bounce = false;
+		glm::vec2 m_MinBounds;
+		glm::vec2 m_MaxBounds;
 	};
 }

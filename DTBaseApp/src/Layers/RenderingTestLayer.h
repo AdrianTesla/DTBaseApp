@@ -43,6 +43,14 @@ namespace DT
 			m_VerticalSpeed = 1;
 			m_AttractionPoint.Position = { 0.5f, 0.5f };
 			m_AttractionPoint.Strenght = 0.0f;
+			m_EmissionRate = 60.0f;
+
+			BloomSettings& settings = m_BloomProcessor.GetSettings();
+			settings.Clamp = 0.0f;
+			settings.Intensity = 0.05f;
+			settings.Knee = 0.5f;
+			settings.Radius = 6.5f;
+			settings.Threshold = 0.8f;
 		}
 
 		void ResetAudio()
@@ -80,6 +88,22 @@ namespace DT
 			}
 		}
 
+		void ResetFilters()
+		{
+			m_LowPassFilter->UpdateParameters(20'000.0f);
+			m_HighPassFilter->UpdateParameters(1.0f);
+		}
+
+		void ResetReverb()
+		{
+			m_ReverbNode->SetDamping(0.25f);
+			m_ReverbNode->SetDryWet(0.0f);
+			m_ReverbNode->SetRoomSize(0.5f);
+			m_ReverbNode->SetStereoWidth(1.0f);
+			m_ReverbNode->SetInputStereoWidth(0.0f);
+			m_ReverbNode->SetMode(0.0f);
+		}
+
 		float Animate(float speed = 1.0f)
 		{
 			return 0.5f + 0.5f * std::sin(2.0f * glm::pi<float>() * speed * m_Time);
@@ -95,6 +119,7 @@ namespace DT
 		float m_Fade = 0.0f;
 		float m_Width = 1.0f;
 		float m_Height = 1.0f;
+		float m_EmissionRate = 60.0f;
 
 		float m_MasterVolume = 1.0f;
 
@@ -121,6 +146,7 @@ namespace DT
 
 		bool m_RenderQuads = false;
 		bool m_RenderCircles = true;
+		bool m_Bounce = false;
 		
 		bool m_EnableRotation = false;
 		float m_RotationSpeed = 1.0f;
@@ -128,6 +154,7 @@ namespace DT
 		float m_HorizontalRadius = 0.7f;
 		int32 m_HorizontalSpeed = 1;
 		int32 m_VerticalSpeed = 1;
+		int32 m_SelectedOption = 2;
 
 		BloomProcessor m_BloomProcessor;
 		ParticleSystem m_ParticleSystem;

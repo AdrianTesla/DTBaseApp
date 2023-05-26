@@ -8,6 +8,11 @@ namespace DT
 	{
 		m_Particles.resize(1u);
 		m_AliveParticles = 0u;
+
+		m_MinBounds.x = -1.77778f;
+		m_MaxBounds.x = 1.77778f;
+		m_MinBounds.y = -1.0f;
+		m_MaxBounds.y = 1.0f;
 	}
 
 	void ParticleSystem::EmitParticle(const ParticleProperties& properties)
@@ -83,6 +88,37 @@ namespace DT
 			particle.Velocity += acceleration * dt;
 			particle.Position += particle.Velocity * dt + 0.5f * acceleration * (dt * dt);
 			particle.Angle += particle.AngularVelocity * dt;
+
+			if (m_Bounce)
+			{
+				//Right
+				if (particle.Position.x > m_MaxBounds.x)
+				{
+					particle.Position.x = m_MaxBounds.x;
+					particle.Velocity.x = -particle.Velocity.x;
+				}
+
+				//Left
+				if (particle.Position.x < m_MinBounds.x)
+				{
+					particle.Position.x = m_MinBounds.x;
+					particle.Velocity.x = -particle.Velocity.x;
+				}
+
+				//Up
+				if (particle.Position.y > m_MaxBounds.y)
+				{
+					particle.Position.y = m_MaxBounds.y;
+					particle.Velocity.y = -particle.Velocity.y;
+				}
+
+				//Down
+				if (particle.Position.y < m_MinBounds.y)
+				{
+					particle.Position.y = m_MinBounds.y;
+					particle.Velocity.y = -particle.Velocity.y;
+				}
+			}
 
 			float fraction = particle.CurrentLife / particle.Lifetime;
 

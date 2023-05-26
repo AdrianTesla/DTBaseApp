@@ -86,7 +86,19 @@ namespace DT
 				m_Properties.StartColor.b = 1.0f - frameAbs;
 			}
 
-			m_ParticleSystem.EmitParticle(m_Properties);
+			static float timeAccumulator = 0.0f;
+
+			// Aggiorna l'accumulatore di tempo
+			timeAccumulator += dt;
+
+			// Calcola il tempo di attesa tra le emissioni in secondi
+			float emissionDelay = 1.0f / m_EmissionRate;
+
+			while (timeAccumulator >= emissionDelay)
+			{
+				m_ParticleSystem.EmitParticle(m_Properties);
+				timeAccumulator -= emissionDelay;
+			}
 		}
 	}
 
@@ -119,11 +131,42 @@ namespace DT
 	{
 		if (m_ImGuiEnabled)
 		{
-			ImGui::ShowDemoWindow();
 			ImGui::Begin("Particle System");
+			
+			if (ImGui::RadioButton("Link Music To Particles", m_SelectedOption == 1))
+			{
+				m_SelectedOption = 1;
+			}
 
-			if (ImGui::Checkbox("Use mouse", &m_UseMouse))
-				m_Properties.Position = { 0.0f, 0.0f };
+			if (ImGui::RadioButton("Use Mouse", m_SelectedOption == 0))
+			{
+				m_SelectedOption = 0;
+				ResetParticles();
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::RadioButton("None", m_SelectedOption == 2))
+			{
+				m_SelectedOption = 2;
+				ResetParticles();
+			}
+
+			if (m_SelectedOption == 0)
+			{
+				m_UseMouse = true;
+				m_LinkMusicToParticles = false;
+			}
+			else if (m_SelectedOption == 1)
+			{
+				m_UseMouse = false;
+				m_LinkMusicToParticles = true;
+			}
+			else if (m_SelectedOption == 2)
+			{
+				m_UseMouse = false;
+				m_LinkMusicToParticles = false;
+			}
 
 			ImGui::SameLine();
 			if (ImGui::Button("Reset"))
@@ -144,6 +187,7 @@ namespace DT
 			ImGui::SliderFloat("Rotation Variation", &m_Properties.RotationVariation, -10.0f, 10.0f);
 			ImGui::Separator();
 			ImGui::SliderFloat("Lifetime", &m_Properties.Lifetime, 0.0f, 10.0f);
+			ImGui::SliderFloat("Particle Per Second", &m_EmissionRate, 1.0f, 130.0f);
 			ImGui::Separator();
 			ImGui::SliderFloat("Start Size", &m_Properties.StartSize, 0.0f, 0.2f);
 			ImGui::SliderFloat("End Size", &m_Properties.EndSize, 0.0f, 0.2f);
@@ -157,6 +201,10 @@ namespace DT
 			ImGui::Checkbox("Render Quads", &m_RenderQuads);
 			ImGui::SameLine();
 			ImGui::Checkbox("Render Circles", &m_RenderCircles);
+			ImGui::SameLine(0.0f, 3.0f);
+
+			if (ImGui::Checkbox("Bouncing Particles", &m_Bounce))
+				m_ParticleSystem.SetBounce(m_Bounce);
 
 			if (m_RenderQuads)
 			{
@@ -232,20 +280,25 @@ namespace DT
 
 			ImGui::SeparatorText("Filters");
 
+			if (ImGui::Button("Reset##Filters"))
+				ResetFilters();
+
 			{
 				float value = m_LowPassFilter->GetFrequency();
-				if (ImGui::SliderFloat("LPF Frequency", &value, 1.0f, 20'000.0f,"%.3f (Hz)", ImGuiSliderFlags_Logarithmic))
+				if (ImGui::SliderFloat("LPF Frequency", &value, 1.0f, 20'000.0f, "%.3f (Hz)", ImGuiSliderFlags_Logarithmic))
 					m_LowPassFilter->UpdateParameters(value);
 			}
 
 			{
 				float value = m_HighPassFilter->GetFrequency();
-				if (ImGui::SliderFloat("HPF Frequency", &value, 5.0f, 20'000.0f,"%.3f (Hz)", ImGuiSliderFlags_Logarithmic))
+				if (ImGui::SliderFloat("HPF Frequency", &value, 5.0f, 20'000.0f, "%.3f (Hz)", ImGuiSliderFlags_Logarithmic))
 					m_HighPassFilter->UpdateParameters(value);
 			}
 
 			ImGui::SeparatorText("Reverb");
 
+			if (ImGui::Button("Reset##Reverb"))
+				ResetReverb();
 			{
 				float value = m_ReverbNode->GetDryWet();
 				if (ImGui::SliderFloat("Dry/Wet", &value, 0.0f, 1.0f))
@@ -372,9 +425,6 @@ namespace DT
 
 			if (ImGui::SliderFloat("Fade End Volume", &m_MusicFadeEndVolume, 0.0f, 1.0f))
 				m_Sounds[m_CurrentSound]->SetFade(m_MusicFadeMilliseconds, m_MusicFadeStartVolume, m_MusicFadeEndVolume);
-
-			ImGui::Checkbox("Link Music To Particles", &m_LinkMusicToParticles);
-			ImGui::SameLine();
 
 			if (ImGui::Checkbox("Enable Delay", &m_DelayEnabled))
 			{
