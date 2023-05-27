@@ -32,6 +32,23 @@ float3 aces_tonemap(float3 color)
     return pow(clamp(mul(m2, (a / b)), 0.0, 1.0), 1.0 / 2.2);
 }
 
+float ToGamma(float x)
+{
+    if (x <= 0.0031308f)
+        return 12.92f * x;
+    else
+        return 1.055f * pow(x, 0.41666f) - 0.055f;
+}
+
+float3 LinearToGamma(float3 color)
+{
+    return float3(
+        ToGamma(color.x),
+        ToGamma(color.y),
+        ToGamma(color.z)
+    );
+}
+
 // The code in this file was originally written by Stephen Hill (@self_shadow), who deserves all
 // credit for coming up with this fit and implementing it. Buy him a beer next time you see him. :)
 
@@ -130,8 +147,8 @@ float4 main(PSIn input) : SV_Target
     float3 finalColor = originalColor + bloomedColor * BloomIntensity;
     
     //finalColor.rgb = aces_tonemap(finalColor.rgb);
-    //finalColor.rgb = tone_mapping_aces_filmic(finalColor.rgb);
-    finalColor = ACESFitted(finalColor * 2.0f);
+    finalColor.rgb = tone_mapping_aces_filmic(finalColor.rgb);
+    //finalColor = ACESFitted(finalColor * 2.0f);
     
-    return float4(finalColor, 1.0f);
+    return float4(LinearToGamma(finalColor), 1.0f);
 };

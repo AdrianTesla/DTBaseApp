@@ -56,7 +56,7 @@ namespace DT
 		ImGui::Begin("Bloom");
 		ImGui::ColorEdit4("Color", glm::value_ptr(m_Color), ImGuiColorEditFlags_PickerHueWheel);
 		ImGui::DragFloat("Emission", &m_Emission, 0.005f, 0.0f, 100.0f);
-		ImGui::SliderFloat("Radius", &settings.Radius, 0.0f, 10.0f);
+		ImGui::SliderFloat("Radius", &settings.Radius, 2.0f, 8.0f);
 		ImGui::SliderFloat("Threshold", &settings.Threshold, 0.0f, 10.0f);
 		ImGui::SliderFloat("Knee", &settings.Knee, 0.0f, 1.0f);
 		ImGui::SliderFloat("Clamp", &settings.Clamp, 0.0f, 1000.0f);

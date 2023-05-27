@@ -26,8 +26,7 @@ namespace DT
 		if (std::filesystem::exists(m_Specification.WorkingDirectory))
 			std::filesystem::current_path(m_Specification.WorkingDirectory);
 
-		LOG_INFO("Working Directory: {}", std::filesystem::current_path().string());
-
+		//PushLayer(new BloomLayer);
 		PushLayer(new RenderingTestLayer);
 
 		if (m_Specification.EnableImgui)

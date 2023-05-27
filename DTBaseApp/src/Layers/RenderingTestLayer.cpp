@@ -62,7 +62,15 @@ namespace DT
 				mousePosition.x = ((float)Input::GetMouseX() / m_ScreenFramebuffer->GetWidth() - 0.5f) * 2.0f * aspect;
 				mousePosition.y = -((float)Input::GetMouseY() / m_ScreenFramebuffer->GetHeight() - 0.5f) * 2.0f;
 				m_Properties.Position = mousePosition;
-				m_ParticleSystem.EmitParticle(m_Properties);
+
+				static float timeAccumulator = 0.0f;
+				timeAccumulator += dt;
+				float emissionDelay = 1.0f / m_EmissionRate;
+				while (timeAccumulator >= emissionDelay)
+				{
+					m_ParticleSystem.EmitParticle(m_Properties);
+					timeAccumulator -= emissionDelay;
+				}
 			}
 		}
 		else
@@ -141,7 +149,6 @@ namespace DT
 			if (ImGui::RadioButton("Use Mouse", m_SelectedOption == 0))
 			{
 				m_SelectedOption = 0;
-				ResetParticles();
 			}
 
 			ImGui::SameLine();
@@ -149,7 +156,6 @@ namespace DT
 			if (ImGui::RadioButton("None", m_SelectedOption == 2))
 			{
 				m_SelectedOption = 2;
-				ResetParticles();
 			}
 
 			if (m_SelectedOption == 0)
@@ -216,7 +222,7 @@ namespace DT
 			if (m_RenderCircles)
 			{
 				ImGui::TextColored({ 1.0f, 0.5f, 0.3f, 1.0f }, "Circle Settings");
-				ImGui::SliderFloat("Fade", &m_Fade, 0.0f, 1.5f);
+				ImGui::SliderFloat("Fade", &m_Fade, 0.0f, 1.0f);
 				ImGui::SliderFloat("Circle thickness", &m_CircleThickness, 0.0f, 1.0f);
 			};
 
@@ -244,7 +250,7 @@ namespace DT
 
 			ImGui::Begin("Bloom");
 			ImGui::SliderFloat("Intensity", &settings.Intensity, 0.0f, 0.1f);
-			ImGui::SliderFloat("Radius", &settings.Radius, 0.0f, 10.0f);
+			ImGui::SliderFloat("Radius", &settings.Radius, 2.0f, 8.0f);
 			ImGui::SliderFloat("Threshold", &settings.Threshold, 0.0f, 10.0f);
 			ImGui::SliderFloat("Knee", &settings.Knee, 0.0f, 1.0f);
 			ImGui::SliderFloat("Clamp", &settings.Clamp, 0.0f, 1000.0f);
