@@ -138,7 +138,6 @@ float3 GammaToLinear(float3 color)
     );
 }
 
-
 float4 main(PSIn input) : SV_Target
 {   
     float3 bloomedColor = upsample_filter_high(input.TexCoord);
@@ -146,8 +145,8 @@ float4 main(PSIn input) : SV_Target
     
     float3 finalColor = (originalColor) + (bloomedColor) * BloomIntensity;
     
-    //finalColor = tone_mapping_aces_filmic(finalColor);
-    finalColor = ACESFitted(finalColor);
+    finalColor = tone_mapping_aces_filmic(finalColor);
+    //finalColor = ACESFitted(finalColor);
         
     return float4(LinearToGamma(finalColor), 1.0f);
 };
