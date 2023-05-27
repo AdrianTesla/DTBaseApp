@@ -217,7 +217,7 @@ namespace DT
 			if (m_RenderCircles)
 			{
 				ImGui::TextColored({ 1.0f, 0.5f, 0.3f, 1.0f }, "Circle Settings");
-				ImGui::SliderFloat("Fade", &m_Fade, 0.0f, 1.5f);
+				ImGui::SliderFloat("Fade", &m_Fade, 0.0f, 1.0f);
 				ImGui::SliderFloat("Circle thickness", &m_CircleThickness, 0.0f, 1.0f);
 			};
 
@@ -245,7 +245,7 @@ namespace DT
 
 			ImGui::Begin("Bloom");
 			ImGui::SliderFloat("Intensity", &settings.Intensity, 0.0f, 0.1f);
-			ImGui::SliderFloat("Radius", &settings.Radius, 0.0f, 10.0f);
+			ImGui::SliderFloat("Radius", &settings.Radius, 2.0f, 8.0f);
 			ImGui::SliderFloat("Threshold", &settings.Threshold, 0.0f, 10.0f);
 			ImGui::SliderFloat("Knee", &settings.Knee, 0.0f, 1.0f);
 			ImGui::SliderFloat("Clamp", &settings.Clamp, 0.0f, 1000.0f);
