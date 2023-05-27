@@ -9,7 +9,7 @@ namespace DT
 {
 	void RenderingTestLayer::OnAttach()
 	{
-		Application::Get().GetWindow().SetSizeLimits(100,100,16'000,9'000);
+		Application::Get().GetWindow().SetSizeLimits(100, 100, 16'000, 9'000);
 
 		FramebufferSpecification speciFICAtion{};
 		speciFICAtion.SwapchainTarget = true;
@@ -62,7 +62,15 @@ namespace DT
 				mousePosition.x = ((float)Input::GetMouseX() / m_ScreenFramebuffer->GetWidth() - 0.5f) * 2.0f * aspect;
 				mousePosition.y = -((float)Input::GetMouseY() / m_ScreenFramebuffer->GetHeight() - 0.5f) * 2.0f;
 				m_Properties.Position = mousePosition;
-				m_ParticleSystem.EmitParticle(m_Properties);
+
+				static float timeAccumulator = 0.0f;
+				timeAccumulator += dt;
+				float emissionDelay = 1.0f / m_EmissionRate;
+				while (timeAccumulator >= emissionDelay)
+				{
+					m_ParticleSystem.EmitParticle(m_Properties);
+					timeAccumulator -= emissionDelay;
+				}
 			}
 		}
 		else
@@ -87,13 +95,8 @@ namespace DT
 			}
 
 			static float timeAccumulator = 0.0f;
-
-			// Aggiorna l'accumulatore di tempo
 			timeAccumulator += dt;
-
-			// Calcola il tempo di attesa tra le emissioni in secondi
 			float emissionDelay = 1.0f / m_EmissionRate;
-
 			while (timeAccumulator >= emissionDelay)
 			{
 				m_ParticleSystem.EmitParticle(m_Properties);
@@ -141,7 +144,6 @@ namespace DT
 			if (ImGui::RadioButton("Use Mouse", m_SelectedOption == 0))
 			{
 				m_SelectedOption = 0;
-				ResetParticles();
 			}
 
 			ImGui::SameLine();
@@ -149,7 +151,6 @@ namespace DT
 			if (ImGui::RadioButton("None", m_SelectedOption == 2))
 			{
 				m_SelectedOption = 2;
-				ResetParticles();
 			}
 
 			if (m_SelectedOption == 0)

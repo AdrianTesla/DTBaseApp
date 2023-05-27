@@ -11,7 +11,7 @@ namespace DT
 		float Intensity = 0.05f;
 		float Threshold = 0.8f;
 		float Knee = 0.5f;
-		float Radius = 6.5f;
+		float Radius = 8.0f;
 		float Clamp = 0.0f;
 	};
 
@@ -26,12 +26,10 @@ namespace DT
 	private:
 		struct PrefilterUB
 		{
-			glm::vec2 TexelSize;
-			float pad[2];
 			glm::vec4 CurveThreshold;
+			glm::vec2 TexelSize;
 			float Knee = 0.5f;
 			float ClampIntensity = 0.0f;
-			float pad2[2];
 		};
 
 		struct DownscaleUB

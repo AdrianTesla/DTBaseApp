@@ -25,8 +25,8 @@ namespace DT
 			m_Properties.Position = { 0.0f, 0.0f };
 			m_Properties.Velocity = { 0.0f, 0.0f };
 			m_Properties.Acceleration = { 0.0f, 0.0f };
-			m_Properties.VelocityVariation = 1.0f;
-			m_Properties.Lifetime = 1.0f;
+			m_Properties.VelocityVariation = 0.1f;
+			m_Properties.Lifetime = 5.0f;
 			m_Properties.RotationVariation = 10.0f;
 			m_Properties.Friction = 0.0f;
 			m_Properties.PositionVariation = 0.0f;
@@ -34,8 +34,8 @@ namespace DT
 			m_Properties.EndSize = 0.0f;
 			m_Properties.StartEmission = 10.0f;
 			m_Properties.EndEmission = 50.0f;
-			m_Properties.StartColor = { 1.0f, 0.0f, 1.0f, 1.0f };
-			m_Properties.EndColor = { 0.0f, 1.0f, 1.0f, 1.0f };
+			m_Properties.StartColor = { 1.0f, 0.5f, 0.0f, 1.0f };
+			m_Properties.EndColor = { 1.0f, 0.0f, 0.0f, 1.0f };
 			m_RotationSpeed = 1.0f;
 			m_VerticalRadius = 0.7f;
 			m_HorizontalRadius = 0.7f;
@@ -43,7 +43,7 @@ namespace DT
 			m_VerticalSpeed = 1;
 			m_AttractionPoint.Position = { 0.5f, 0.5f };
 			m_AttractionPoint.Strenght = 0.0f;
-			m_EmissionRate = 60.0f;
+			m_EmissionRate = 30.0f;
 
 			BloomSettings& settings = m_BloomProcessor.GetSettings();
 			settings.Clamp = 0.0f;

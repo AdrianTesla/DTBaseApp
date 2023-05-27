@@ -3,8 +3,8 @@ struct PSIn
     float2 TexCoord : TexCoord;
 };
 
-Texture2D OriginalImage : register(t0);
-Texture2D BloomLastStage : register(t1);
+Texture2D<float3> OriginalImage : register(t0);
+Texture2D<float3> BloomLastStage : register(t1);
 SamplerState splr : register(s0);
 
 cbuffer CombineUB : register(b0)
@@ -12,24 +12,6 @@ cbuffer CombineUB : register(b0)
     float2 TexelSize;
     float BloomIntensity;
     float UpsampleScale;
-}
-
-float3 aces_tonemap(float3 color)
-{
-    float3x3 m1 = float3x3(
-        0.59719, 0.07600, 0.02840,
-        0.35458, 0.90834, 0.13383,
-        0.04823, 0.01566, 0.83777
-	);
-    float3x3 m2 = float3x3(
-        1.60475, -0.10208, -0.00327,
-        -0.53108, 1.10813, -0.07276,
-        -0.07367, -0.00605, 1.07602
-	);
-    float3 v = mul(m1, color);
-    float3 a = v * (v + 0.0245786) - 0.000090537;
-    float3 b = v * (0.983729 * v + 0.4329510) + 0.238081;
-    return pow(clamp(mul(m2, (a / b)), 0.0, 1.0), 1.0 / 2.2);
 }
 
 // The code in this file was originally written by Stephen Hill (@self_shadow), who deserves all
@@ -109,29 +91,63 @@ float3 upsample_filter_high(float2 uv)
     float4 d = TexelSize.xyxy * float4(1.0f, 1.0f, -1.0f, 0.0f) * UpsampleScale;
 
     float3 s;
-    s = BloomLastStage.Sample(splr, uv - d.xy).rgb;
-    s += BloomLastStage.Sample(splr, uv - d.wy).rgb * 2.0f;
-    s += BloomLastStage.Sample(splr, uv - d.zy).rgb;
-    s += BloomLastStage.Sample(splr, uv + d.zw).rgb * 2.0f;
-    s += BloomLastStage.Sample(splr, uv).rgb * 4.0f;
-    s += BloomLastStage.Sample(splr, uv + d.xw).rgb * 2.0f;
-    s += BloomLastStage.Sample(splr, uv + d.zy).rgb;
-    s += BloomLastStage.Sample(splr, uv + d.wy).rgb * 2.0f;
-    s += BloomLastStage.Sample(splr, uv + d.xy).rgb; 
+    s  = BloomLastStage.Sample(splr, uv - d.xy);
+    s += BloomLastStage.Sample(splr, uv - d.wy) * 2.0f;
+    s += BloomLastStage.Sample(splr, uv - d.zy);
+    s += BloomLastStage.Sample(splr, uv + d.zw) * 2.0f;
+    s += BloomLastStage.Sample(splr, uv)        * 4.0f;
+    s += BloomLastStage.Sample(splr, uv + d.xw) * 2.0f;
+    s += BloomLastStage.Sample(splr, uv + d.zy);
+    s += BloomLastStage.Sample(splr, uv + d.wy) * 2.0f;
+    s += BloomLastStage.Sample(splr, uv + d.xy); 
 
     return s * (1.0f / 16.0f);
 }
 
+float ToLinear(float x)
+{
+    if (x <= 0.04045f)
+        return x / 12.92f;
+    else
+        return pow((x + 0.055f) / 1.055f, 2.4f);
+}
+
+float ToGamma(float x)
+{
+    if (x <= 0.0031308f)
+        return 12.92f * x;
+    else
+        return 1.055f * pow(x, 0.41666f) - 0.055f;
+}
+
+float3 LinearToGamma(float3 color)
+{
+    return float3(
+        ToGamma(color.x),
+        ToGamma(color.y),
+        ToGamma(color.z)
+    );
+}
+
+float3 GammaToLinear(float3 color)
+{
+    return float3(
+        ToLinear(color.x),
+        ToLinear(color.y),
+        ToLinear(color.z)
+    );
+}
+
+
 float4 main(PSIn input) : SV_Target
 {   
     float3 bloomedColor = upsample_filter_high(input.TexCoord);
-    float3 originalColor = OriginalImage.Sample(splr, input.TexCoord).rgb;
+    float3 originalColor = OriginalImage.Sample(splr, input.TexCoord);
     
-    float3 finalColor = originalColor + bloomedColor * BloomIntensity;
+    float3 finalColor = (originalColor) + (bloomedColor) * BloomIntensity;
     
-    //finalColor.rgb = aces_tonemap(finalColor.rgb);
-    //finalColor.rgb = tone_mapping_aces_filmic(finalColor.rgb);
-    finalColor = ACESFitted(finalColor * 2.0f);
-    
-    return float4(finalColor, 1.0f);
+    //finalColor = tone_mapping_aces_filmic(finalColor);
+    finalColor = ACESFitted(finalColor);
+        
+    return float4(LinearToGamma(finalColor), 1.0f);
 };

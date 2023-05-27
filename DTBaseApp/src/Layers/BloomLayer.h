@@ -20,12 +20,12 @@ namespace DT
 		virtual void OnDetach() override;
 		virtual void OnRender() override;
 		virtual void OnUIRender() override;
-		void InitBloom();
-		void ExecuteBloom();
 	private:
 		float m_Time = 0.0f;
-		glm::vec4 m_Color = { 1.0f, 0.0f, 0.0f, 1.0f };
+		glm::vec4 m_Color = { 0.0f, 0.0f, 1.0f, 1.0f };
 		float m_Emission = 1.0f;
+		float m_SquareWidth = 0.5f;
+		float m_SquareHeight = 0.5f;
 
 		Ref<Framebuffer> m_ScreenFramebuffer;  //represents the screen
 		Ref<Framebuffer> m_GeoFramebuffer;     //represents the rendered geometry in HDR

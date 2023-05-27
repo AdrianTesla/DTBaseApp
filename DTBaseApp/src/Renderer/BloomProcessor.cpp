@@ -125,7 +125,7 @@ namespace DT
 		uint32 minSize = std::min(width, height);
 		float logh = std::log2f((float)minSize) + m_Settings.Radius - 8.0f;
 		uint32 logi = (uint32)logh;
-		m_Iterations = std::clamp(logi, 1u, 8u);
+		m_Iterations = std::clamp(logi, 1u, m_MaxStages);
 
 		//Execute prefilter render pass
 		Renderer::BeginRenderPass(m_PrefilterPass, false);
@@ -164,7 +164,7 @@ namespace DT
 			Renderer::EndRenderPass();
 		}
 
-		m_UpscaleUBData.SampleScale = 0.5f + logh - (float)logi;
+		m_UpscaleUBData.SampleScale = 0.5f + (logh - (float)logi) * 1.5f;
 
 		//Execute upscale passes
 		for (uint32 i = 0u; i < m_Iterations - 1u; i++)

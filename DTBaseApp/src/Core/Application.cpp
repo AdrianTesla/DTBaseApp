@@ -22,13 +22,12 @@ namespace DT
 		Renderer::Init();
 		Audio::Init();
 		
-
 		if (std::filesystem::exists(m_Specification.WorkingDirectory))
 			std::filesystem::current_path(m_Specification.WorkingDirectory);
 
 		LOG_INFO("Working Directory: {}", std::filesystem::current_path().string());
 
-		PushLayer(new RenderingTestLayer);
+		PushLayer(new BloomLayer);
 
 		if (m_Specification.EnableImgui)
 		{
