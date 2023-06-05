@@ -26,9 +26,8 @@ namespace DT
 
 		struct Vertex
 		{
-			glm::vec2 Position;
-			glm::vec2 Velocity;
-			glm::vec3 Color;
+			glm::vec3 Position;
+			glm::vec2 TexCoord;
 		};
 
 		VkVertexInputBindingDescription vertexInputBindingDescription{};
@@ -36,21 +35,16 @@ namespace DT
 		vertexInputBindingDescription.stride    = sizeof(Vertex);
 		vertexInputBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-		VkVertexInputAttributeDescription vertexInputAttributeDescriptions[3];
+		VkVertexInputAttributeDescription vertexInputAttributeDescriptions[2];
 		vertexInputAttributeDescriptions[0].location = 0u;
 		vertexInputAttributeDescriptions[0].binding  = 0u;
-		vertexInputAttributeDescriptions[0].format   = VK_FORMAT_R32G32_SFLOAT;
+		vertexInputAttributeDescriptions[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
 		vertexInputAttributeDescriptions[0].offset   = offsetof(Vertex, Position);
 
 		vertexInputAttributeDescriptions[1].location = 1u;
 		vertexInputAttributeDescriptions[1].binding  = 0u;
 		vertexInputAttributeDescriptions[1].format   = VK_FORMAT_R32G32_SFLOAT;
-		vertexInputAttributeDescriptions[1].offset   = offsetof(Vertex, Velocity);
-
-		vertexInputAttributeDescriptions[2].location = 2u;
-		vertexInputAttributeDescriptions[2].binding  = 0u;
-		vertexInputAttributeDescriptions[2].format   = VK_FORMAT_R32G32B32_SFLOAT;
-		vertexInputAttributeDescriptions[2].offset   = offsetof(Vertex, Color);
+		vertexInputAttributeDescriptions[1].offset   = offsetof(Vertex, TexCoord);
 
 		VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo{};
 		pipelineVertexInputStateCreateInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

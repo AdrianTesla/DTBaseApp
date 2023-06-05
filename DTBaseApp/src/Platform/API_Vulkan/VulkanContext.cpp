@@ -449,7 +449,7 @@ namespace DT
 			if (i == m_QueueFamilyIndices.PresentIndex.value())
 				currentFamilyNames += "[PresentIndex]";
 
-			ASSERT(!currentFamilyNames.empty());
+			//ASSERT(!currentFamilyNames.empty());
 			LOG_WARN("  index {} {}:", i, currentFamilyNames);
 			LOG_TRACE("    flags: {}", string_VkQueueFlags(m_SupportDetails.QueueFamilyProperties[i].queueFlags));
 			LOG_TRACE("    presentSupport: {}", (bool)presentSupported);

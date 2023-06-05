@@ -28,8 +28,8 @@ namespace DT
 	void VulkanLearnLayer::OnAttach()
 	{
 		ShaderSpecification shaderSpec{};
-		shaderSpec.VertexSpirvPath = "assets/shaders/vert.spv";
-		shaderSpec.FragmentSpirvPath = "assets/shaders/frag.spv";
+		shaderSpec.VertexSpirvPath = "assets/shaders/SPIRV/vert.spv";
+		shaderSpec.FragmentSpirvPath = "assets/shaders/SPIRV/frag.spv";
 		Ref<VulkanShader> shader = Ref<VulkanShader>::Create(shaderSpec);
 
 		PipelineSpecification specification{};
@@ -79,6 +79,7 @@ namespace DT
 		if (assimpScene == nullptr)
 		{
 			MessageBoxes::ShowInfo("Fail! No model found.");
+			return;
 		}
 		ASSERT(assimpScene->mMeshes != nullptr);
 		aiMesh* assimpMesh = assimpScene->mMeshes[0]; 
@@ -210,7 +211,7 @@ namespace DT
 	void VulkanLearnLayer::CreateImage()
 	{
 		TextureSpecification specification{};
-		specification.AssetPath = "assets/textures/M_FloorTiles1_Inst_0_BaseColor.png";
+		specification.AssetPath = "assets/textures/3-12.bmp";
 		m_Texture = Ref<VulkanTexture2D>::Create(specification);
 	}
 

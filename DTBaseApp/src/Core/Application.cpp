@@ -19,7 +19,7 @@ namespace DT
 
 		Renderer::Init();
 
-		PushLayer(new VulkanComputeLayer);
+		PushLayer(new VulkanLearnLayer);
 	}
 
 	Application::~Application()
